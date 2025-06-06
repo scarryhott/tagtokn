@@ -42,8 +42,9 @@ const COMMISSION_RATE = 0.02; // 2%
 const Navigation = () => {
   const navigate = useNavigate();
   const [activeTab] = useState('dashboard');
-  const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState(null);
+  const [user] = useState(null);
+  // userData and setUserData are used in the component
+  const [, setUserData] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -307,12 +308,9 @@ const TokenomicsUI = () => {
   // Raffle System State
   const [dailyRevenue, setDailyRevenue] = useState(0);
   const [prizePool, setPrizePool] = useState(0);
-  const [winningInfluencer, setWinningInfluencer] = useState(null);
-  const [showRaffleModal, setShowRaffleModal] = useState(false);
   const [userRaffleWinningsCount, setUserRaffleWinningsCount] = useState(0);
   const [userRaffleWinningsAmount, setUserRaffleWinningsAmount] = useState(0);
   const [raffleTickets, setRaffleTickets] = useState(0);
-  const [raffleTimer, setRaffleTimer] = useState(null);
   const [nextRaffleTimestamp, setNextRaffleTimestamp] = useState(null);
 
   // User's owned tokens (simulated inventory)
@@ -355,7 +353,8 @@ const TokenomicsUI = () => {
   // Instagram Integration States (for the user earning tokens)
   const [connectedInstagramAccount, setConnectedInstagramAccount] = useState(null); // Stores connected username
   const [showInstagramConnectModal, setShowInstagramConnectModal] = useState(false);
-  const [instagramConnectInput, setInstagramConnectInput] = useState('');
+  // Instagram connect input is not currently used
+  // const [instagramConnectInput, setInstagramConnectInput] = useState('');
   const [instagramConnectMessage, setInstagramConnectMessage] = useState('');
   const [showInstagramLinkModal, setShowInstagramLinkModal] = useState(false);
   const [instagramPostLinkInput, setInstagramPostLinkInput] = useState('');
@@ -483,7 +482,7 @@ const TokenomicsUI = () => {
   // Simulates an influencer earning a token (e.g., through engagement)
   const simulateEarn = (influencerId, sourceLink) => { // Added sourceLink parameter
     // First, calculate the new global stats based on this earn action
-    const newGlobalStats = (() => {
+    const updateGlobalStats = useCallback(async () => {
       const newTotalEarned = globalStats.totalEarned + 1;
       // Ratio and earnedCoinValue now depend on totalMarketplaceBought
       const newEarnedToBoughtRatio = globalStats.totalMarketplaceBought > 0 ? newTotalEarned / globalStats.totalMarketplaceBought : (newTotalEarned > 0 ? newTotalEarned : 0);
