@@ -58,30 +58,7 @@ export const exchangeCodeForToken = async (code, state) => {
   }
 };
 
-const getInstagramUserData = async (accessToken) => {
-  // First get the user's pages
-  const pagesResponse = await fetch(
-    `${process.env.REACT_APP_FACEBOOK_API_URL}/me/accounts?fields=instagram_business_account{id,username,profile_picture_url,name,biography,followers_count,media_count}&access_token=${accessToken}`
-  );
-
-  if (!pagesResponse.ok) {
-    const error = await pagesResponse.json();
-    throw new Error(error.error?.message || 'Failed to fetch Instagram account');
-  }
-
-  const pagesData = await pagesResponse.json();
-  
-  // Find the first page with an Instagram business account
-  const instagramAccount = pagesData.data.find(
-    (page) => page.instagram_business_account
-  )?.instagram_business_account;
-
-  if (!instagramAccount) {
-    throw new Error('No Instagram Business Account found');
-  }
-
-  return instagramAccount;
-};
+// getInstagramUserData function has been removed as it's not currently used
 
 export const connectInstagram = async () => {
   try {
@@ -118,8 +95,9 @@ const cleanStateParam = (state) => {
 };
 
 export const handleInstagramCallback = async (code, state) => {
-  let oauthStateRef = null;
-  let userId = null;
+  // These variables are not currently used
+  // let oauthStateRef = null;
+  // let userId = null;
   
   try {
     console.log('Handling Instagram callback with code and state:', { code, state });
