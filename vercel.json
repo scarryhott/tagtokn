@@ -5,7 +5,10 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build"
+        "distDir": "build",
+        "nodeVersion": "20.x",
+        "installCommand": "npm install --legacy-peer-deps",
+        "buildCommand": "npm run build"
       }
     },
     {
@@ -13,6 +16,13 @@
       "use": "@vercel/node"
     }
   ],
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "GENERATE_SOURCEMAP": "false",
+      "NODE_OPTIONS": "--max_old_space_size=4096"
+    }
+  },
   "routes": [
     {
       "src": "/api/(.*)",
