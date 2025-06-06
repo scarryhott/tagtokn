@@ -42,7 +42,7 @@ const COMMISSION_RATE = 0.02; // 2%
 const Navigation = () => {
   const navigate = useNavigate();
   const [activeTab] = useState('dashboard');
-  const [user] = useState(null);
+  const [user, setUser] = useState(null);
   // userData and setUserData are used in the component
   const [, setUserData] = useState(null);
 
@@ -309,9 +309,9 @@ const TokenomicsUI = () => {
   const [dailyRevenue, setDailyRevenue] = useState(0);
   const [prizePool, setPrizePool] = useState(0);
   const [userRaffleWinningsCount, setUserRaffleWinningsCount] = useState(0);
-  const [userRaffleWinningsAmount, setUserRaffleWinningsAmount] = useState(0); // Raffle functionality state (currently not used)
-  // const [raffleTickets, setRaffleTickets] = useState(0);
-  // const [nextRaffleTimestamp, setNextRaffleTimestamp] = useState(0);
+  const [userRaffleWinningsAmount, setUserRaffleWinningsAmount] = useState(0); 
+  const [raffleTickets, setRaffleTickets] = useState(0);
+  const [nextRaffleTimestamp, setNextRaffleTimestamp] = useState(0);
   const [winningInfluencer, setWinningInfluencer] = useState(null);
   const [showRaffleModal, setShowRaffleModal] = useState(false);
   const [raffleTimer, setRaffleTimer] = useState(null);
@@ -356,8 +356,8 @@ const TokenomicsUI = () => {
   // Instagram Integration States (for the user earning tokens)
   const [connectedInstagramAccount, setConnectedInstagramAccount] = useState(null); // Stores connected username
   const [showInstagramConnectModal, setShowInstagramConnectModal] = useState(false);
-  // Instagram connect input is not currently used
-  // const [instagramConnectInput, setInstagramConnectInput] = useState('');
+  // Instagram connect input state
+  const [instagramConnectInput, setInstagramConnectInput] = useState('');
   const [instagramConnectMessage, setInstagramConnectMessage] = useState('');
   const [showInstagramLinkModal, setShowInstagramLinkModal] = useState(false);
   const [instagramPostLinkInput, setInstagramPostLinkInput] = useState('');
