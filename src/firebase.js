@@ -15,12 +15,12 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBRRHERb06oi8x5X8CrCy0WufXYLPgwc5Y",
-  authDomain: "tagtokn.firebaseapp.com",
-  projectId: "tagtokn",
-  storageBucket: "tagtokn.firebasestorage.app",
-  messagingSenderId: "1087424771839",
-  appId: "1:1087424771839:web:0d01bd2b5beeef78f87eca",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyBRRHERb06oi8x5X8CrCy0WufXYLPgwc5Y",
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "tagtokn.firebaseapp.com",
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "tagtokn",
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "tagtokn.firebasestorage.app",
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "1087424771839",
+  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:1087424771839:web:0d01bd2b5beeef78f87eca",
 };
 
 // Initialize Firebase
