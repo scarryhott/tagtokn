@@ -1,7 +1,7 @@
 {
   "name": "my-app",
   "version": "0.1.0",
-  "homepage": "https://tagtokn-com.web.app",
+  "homepage": "https://app.tagtokn.com",
   "private": true,
   "resolutions": {
     "workbox-google-analytics": "^6.6.0",
