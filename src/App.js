@@ -42,8 +42,9 @@ const COMMISSION_RATE = 0.02; // 2%
 const Navigation = () => {
   const navigate = useNavigate();
   const [activeTab] = useState('dashboard');
-  const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState(null);
+  const [user] = useState(null);
+  // userData and setUserData are used in the component
+  const [, setUserData] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -308,9 +309,9 @@ const TokenomicsUI = () => {
   const [dailyRevenue, setDailyRevenue] = useState(0);
   const [prizePool, setPrizePool] = useState(0);
   const [userRaffleWinningsCount, setUserRaffleWinningsCount] = useState(0);
-  const [userRaffleWinningsAmount, setUserRaffleWinningsAmount] = useState(0);
-  const [raffleTickets, setRaffleTickets] = useState(0);
-  const [nextRaffleTimestamp, setNextRaffleTimestamp] = useState(0);
+  const [userRaffleWinningsAmount, setUserRaffleWinningsAmount] = useState(0); // Raffle functionality state (currently not used)
+  // const [raffleTickets, setRaffleTickets] = useState(0);
+  // const [nextRaffleTimestamp, setNextRaffleTimestamp] = useState(0);
   const [winningInfluencer, setWinningInfluencer] = useState(null);
   const [showRaffleModal, setShowRaffleModal] = useState(false);
   const [raffleTimer, setRaffleTimer] = useState(null);
@@ -355,7 +356,8 @@ const TokenomicsUI = () => {
   // Instagram Integration States (for the user earning tokens)
   const [connectedInstagramAccount, setConnectedInstagramAccount] = useState(null); // Stores connected username
   const [showInstagramConnectModal, setShowInstagramConnectModal] = useState(false);
-  const [instagramConnectInput, setInstagramConnectInput] = useState('');
+  // Instagram connect input is not currently used
+  // const [instagramConnectInput, setInstagramConnectInput] = useState('');
   const [instagramConnectMessage, setInstagramConnectMessage] = useState('');
   const [showInstagramLinkModal, setShowInstagramLinkModal] = useState(false);
   const [instagramPostLinkInput, setInstagramPostLinkInput] = useState('');
@@ -480,10 +482,10 @@ const TokenomicsUI = () => {
   // Generates a unique ID for each token instance or listing
   const generateUniqueId = (prefix) => `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-  // Calculate global stats updates
-  const updateGlobalStats = useCallback(async () => {
-    // Implementation of updateGlobalStats
-  }, []);
+  // Global stats updates (currently not used)
+  // const updateGlobalStats = useCallback(async () => {
+  //   // Implementation of updateGlobalStats
+  // }, []);
 
   // Simulates an influencer earning a token (e.g., through engagement)
   const simulateEarn = (influencerId, sourceLink) => { // Added sourceLink parameter
@@ -979,62 +981,78 @@ const TokenomicsUI = () => {
   const handleRedeemPhysicalCard = useCallback((influencerId, uniqueIdInput, setRedeemMessage) => {
     const trimmedUniqueId = uniqueIdInput.trim();
     if (!trimmedUniqueId) {
-      setRedeemMessage('Please enter a unique token ID.');
+      setRedeemMessage('Please enter a valid token ID');
       return;
     }
 
-    const tokenToRedeem = issuedPhysicalTokens.find(token => token.uniqueId === trimmedUniqueId && token.influencerId === influencerId);
+    // Find the token in issuedPhysicalTokens
+    const tokenToRedeem = issuedPhysicalTokens.find(
+      token => token.uniqueId === trimmedUniqueId && token.influencerId === influencerId
+    );
 
     if (!tokenToRedeem) {
-      setRedeemMessage('Invalid token ID or not for this influencer. Please check and try again.');
+      setRedeemMessage('Token not found or already redeemed');
       return;
     }
 
-    if (tokenToRedeem.status === 'redeemed') {
-      setRedeemMessage('This token has already been redeemed.');
+    if (tokenToRedeem.redeemed) {
+      setRedeemMessage('This token has already been redeemed');
       return;
     }
 
-    if (tokenToRedeem.status === 'requested') {
-      setRedeemMessage('This token is still being processed/mailed. Please wait a moment.');
-      return;
-    }
+    // Mark token as redeemed in the issuedPhysicalTokens array
+    const updatedIssuedPhysicalTokens = issuedPhysicalTokens.map(token =>
+      token.uniqueId === trimmedUniqueId ? { ...token, redeemed: true, redeemedAt: new Date().toISOString() } : token
+    );
 
-    // Mark as redeemed
-    setIssuedPhysicalTokens(prev => prev.map(token =>
-      token.uniqueId === trimmedUniqueId ? { ...token, status: 'redeemed', redeemDate: new Date().toLocaleString() } : token
-    ));
-
-    // Add to user's inventory
-    setUserTokens(prev => [...prev, {
-      id: generateUniqueId('redeemed_physical'), // A new internal ID for the user's inventory
+    // Add the token to user's tokens
+    const newToken = {
+      id: generateUniqueId('token'),
       influencerId: tokenToRedeem.influencerId,
       type: 'physical',
-      purchaseDate: new Date().toLocaleString(),
-      uniqueId: trimmedUniqueId // Store the unique physical ID
-    }]);
+      purchaseDate: new Date().toISOString(),
+      sourceLink: tokenToRedeem.sourceLink,
+      uniqueId: tokenToRedeem.uniqueId,
+      redeemed: true,
+      redeemedAt: new Date().toISOString()
+    };
 
-    // Update influencer stats (totalSupply and earned, as it's a new token entering circulation)
-    setInfluencers(prev => prev.map(inf =>
-      inf.id === tokenToRedeem.influencerId ? { ...inf, earned: inf.earned + 1, totalSupply: inf.totalSupply + 1 } : inf
-    ));
+    // Update state
+    setUserTokens(prev => [...prev, newToken]);
+    setIssuedPhysicalTokens(updatedIssuedPhysicalTokens);
 
-    // Update global stats (totalEarned, as it's a new token entering circulation)
-    setGlobalStats(prevGlobalStats => {
-      const newTotalEarned = prevGlobalStats.totalEarned + 1;
-      const newEarnedToBoughtRatio = prevGlobalStats.totalMarketplaceBought > 0 ? newTotalEarned / prevGlobalStats.totalMarketplaceBought : (newTotalEarned > 0 ? newTotalEarned : 0);
-      const newEarnedCoinValue = newTotalEarned > 0 ? (prevGlobalStats.totalMarketplaceBought / newTotalEarned) / 100 : 0.01;
-      return {
-        ...prevGlobalStats,
-        totalEarned: newTotalEarned,
-        earnedToBoughtRatio: newEarnedToBoughtRatio,
-        earnedCoinValue: newEarnedCoinValue
-      };
-    });
+    // Update global stats
+    setGlobalStats(prev => ({
+      ...prev,
+      totalPhysicalRedeemed: (prev.totalPhysicalRedeemed || 0) + 1
+    }));
+
+    // Update influencer's stats
+    setInfluencers(prev => prev.map(inf => {
+      if (inf.id === tokenToRedeem.influencerId) {
+        const newTotalEarned = (inf.totalEarned || 0) + 1;
+        const newEarnedToBoughtRatio = inf.marketplaceBought > 0 ? newTotalEarned / inf.marketplaceBought : (newTotalEarned > 0 ? newTotalEarned : 0);
+        const newEarnedCoinValue = newTotalEarned > 0 ? (inf.marketplaceBought / newTotalEarned) / 100 : 0.01;
+        
+        return {
+          ...inf,
+          earned: (inf.earned || 0) + 1,
+          totalSupply: (inf.totalSupply || 0) + 1,
+          ratio: newEarnedToBoughtRatio,
+          price: calculateInfluencerPrice({
+            ...inf,
+            earned: newTotalEarned,
+            ratio: newEarnedToBoughtRatio
+          }, globalStats),
+          earnedCoinValue: newEarnedCoinValue
+        };
+      }
+      return inf;
+    }));
 
     setRedeemMessage(`Successfully redeemed physical token for ${influencers.find(inf => inf.id === tokenToRedeem.influencerId)?.name}!`);
     setTimeout(() => setRedeemMessage(''), 3000);
-  }, [issuedPhysicalTokens, userTokens, influencers, globalStats]); // Dependencies for useCallback
+  }, [issuedPhysicalTokens, userTokens, influencers, globalStats, setUserTokens, setIssuedPhysicalTokens, setGlobalStats, setInfluencers, calculateInfluencerPrice]); // Dependencies for useCallback
 
 
   // New function to handle creating a new influencer profile
