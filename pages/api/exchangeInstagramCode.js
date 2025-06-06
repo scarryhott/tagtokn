@@ -4,30 +4,52 @@ import admin from 'firebase-admin';
 import axios from 'axios';
 import crypto from 'crypto';
 
+// Allowed origins
+const allowedOrigins = [
+  'https://app.tagtokn.com',
+  'https://tagtokn.com',
+  'https://tagtokn-com.web.app',
+  'http://localhost:3000'
+];
+
 // Initialize CORS middleware with proper configuration
 const cors = initMiddleware(
   Cors({
-    origin: ['https://tagtokn.com', 'https://tagtokn-com.web.app'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `This site ${origin} does not have an access. Only specific domains are allowed.`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
     methods: ['POST', 'OPTIONS', 'GET'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   })
 );
 
 // Handle preflight requests
 const allowCors = (fn) => async (req, res) => {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || 'https://tagtokn.com');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-V, Authorization'
-  );
-
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-V, Authorization');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+    
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
+    }
+  } else if (origin) {
+    // Origin not allowed
+    return res.status(403).json({ error: 'Origin not allowed' });
   }
   
   return await fn(req, res);
