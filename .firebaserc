@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "tagtokn"
+  },
+  "targets": {
+    "tagtokn": {
+      "hosting": {
+        "tagtokn-com": [
+          "tagtokn-com"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
