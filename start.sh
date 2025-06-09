@@ -9,6 +9,6 @@ if [ ! -d "node_modules" ]; then
   npm install
 fi
 
-# Start the development server
+# Start the development server using the dev script
 echo "Starting the development server..."
-npm start
+npm run dev
