@@ -9,19 +9,16 @@ import autoprefixer from 'autoprefixer';
 // Base URL for production builds (empty for relative paths)
 const base = process.env.NODE_ENV === 'production' ? '/' : '/';
 
-// Fix for Emotion.js with React 18
+// Configure React with Emotion
 const reactPlugin = react({
+  // Force JSX runtime to automatic
   jsxRuntime: 'automatic',
   jsxImportSource: '@emotion/react',
+  // Ensure JSX is properly transformed in all files
+  include: ['**/*.jsx', '**/*.js', '**/*.ts', '**/*.tsx'],
   babel: {
-    plugins: [
-      '@emotion/babel-plugin',
-      // Fix for useInsertionEffect
-      ['@babel/plugin-transform-react-jsx', { runtime: 'automatic', importSource: '@emotion/react' }],
-    ],
-  },
-  // Exclude node_modules from Emotion processing
-  exclude: /node_modules\/.*\/node_modules\/@emotion\/react/,
+    plugins: ['@emotion/babel-plugin']
+  }
 });
 
 export default defineConfig({
@@ -67,6 +64,8 @@ export default defineConfig({
     headers: {
       'Cache-Control': 'no-cache',
       'X-Content-Type-Options': 'nosniff',
+      // Ensure JSX files are served with the correct MIME type
+      'Content-Type': 'application/javascript',
     },
     // File system options
     fs: {
@@ -115,6 +114,21 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     // Disable inline assets to prevent MIME type issues
     assetsInlineLimit: 0,
+    // Ensure proper JSX handling
+    esbuild: {
+      include: /.*\.(jsx?|js?)$/,
+      exclude: [],
+      jsx: 'automatic',
+      jsxImportSource: '@emotion/react',
+      // Ensure all JSX is transformed
+      jsxFactory: 'jsx',
+      jsxFragment: 'Fragment',
+      // Enable JSX in .js files
+      loader: {
+        '.js': 'jsx',
+        '.jsx': 'jsx'
+      },
+    },
     // CommonJS options
     commonjsOptions: {
       transformMixedEsModules: true,
