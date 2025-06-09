@@ -1,14 +1,19 @@
-import React from 'react';
-import { FcGoogle } from 'react-icons/fc';
-import { signInWithGoogle } from '../../firebase';
+import React, { useState } from 'react';
+import { signInWithEmailAndPassword } from '../../firebase';
 
 export default function Login() {
-  const handleGoogleSignIn = async () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+
+  const handleEmailSignIn = async (e) => {
+    e.preventDefault();
+    setError(null);
     try {
-      await signInWithGoogle();
-    } catch (error) {
-      console.error("Error signing in with Google:", error);
-      // You can add error handling here (e.g., show a toast notification)
+      await signInWithEmailAndPassword(email, password);
+    } catch (err) {
+      console.error('Error signing in with email:', err);
+      setError(err.message);
     }
   };
 
@@ -19,17 +24,38 @@ export default function Login() {
           <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
           <p className="mt-2 text-gray-600">Sign in to continue to your account</p>
         </div>
-        
-        <div className="mt-6">
+
+        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+
+        <form onSubmit={handleEmailSignIn} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              required
+            />
+          </div>
           <button
-            onClick={handleGoogleSignIn}
+            type="submit"
             className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            <FcGoogle className="w-5 h-5 mr-2" />
-            Sign in with Google
+            Log In
           </button>
-        </div>
-        
+        </form>
+
         <div className="text-center text-sm text-gray-500 mt-4">
           <p>By signing in, you agree to our Terms of Service and Privacy Policy</p>
         </div>
