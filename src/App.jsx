@@ -19,7 +19,7 @@ import {
   TrendingDown
 } from 'lucide-react'; 
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts/es6';
 import {
   auth,
   onAuthStateChanged,
