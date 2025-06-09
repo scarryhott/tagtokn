@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="InstaConnect - Connect with your audience" />
+    <meta name="theme-color" content="#ffffff" />
+    <!-- Modern web app capabilities -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <title>InstaConnect</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon.svg">
+    <link rel="mask-icon" href="/icon.svg" color="#2563EB">
+    <meta name="msapplication-TileImage" content="/icon.svg">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="msapplication-TileColor" content="#da532c">
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Theme color for browsers that support it -->
+    <meta name="theme-color" content="#0ea5e9">
+    
+    <!-- Import map must come first -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "/node_modules/react/index.js",
+        "react/jsx-runtime": "/node_modules/react/jsx-runtime.js",
+        "react-dom": "/node_modules/react-dom/client.js",
+        "@emotion/react": "/node_modules/@emotion/react/dist/emotion-react.browser.esm.js",
+        "@emotion/react/jsx-runtime": "/node_modules/@emotion/react/jsx-runtime/dist/emotion-react-jsx-runtime.browser.esm.js"
+      }
+    }
+    </script>
+    
+    <!-- Preload app entry with proper type -->
+    <link rel="modulepreload" href="/src/main.jsx" as="script" type="module" />
+  </head>
+  <body class="h-full bg-gray-50">
+    <noscript>
+      <div class="fixed inset-0 flex items-center justify-center p-4 bg-white">
+        <div class="max-w-md p-6 text-center rounded-lg shadow-lg">
+          <h1 class="mb-4 text-2xl font-bold text-gray-800">JavaScript is disabled</h1>
+          <p class="mb-6 text-gray-600">
+            This application requires JavaScript to function properly. Please enable JavaScript in your browser settings.
+          </p>
+          <a 
+            href="https://www.enable-javascript.com/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="inline-block px-6 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Learn How
+          </a>
+        </div>
+      </div>
+    </noscript>
+    <div id="root" class="h-full"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
