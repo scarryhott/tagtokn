@@ -1,6 +1,7 @@
-import React from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
+import { ErrorBoundary } from 'react-error-boundary';
+import App from './App.jsx';
 import './styles/globals.css';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -20,6 +21,22 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
+
+// Error boundary fallback component
+function ErrorFallback({ error, resetErrorBoundary }) {
+  return (
+    <div role="alert" className="p-4 bg-red-100 text-red-800 rounded-lg">
+      <h2 className="font-bold text-lg mb-2">Something went wrong</h2>
+      <pre className="whitespace-pre-wrap">{error.message}</pre>
+      <button 
+        onClick={resetErrorBoundary}
+        className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
 
 // Initialize Firebase with error handling
 let app;
@@ -67,11 +84,12 @@ if (!container) {
   throw new Error("Failed to find the root element");
 }
 
+// Initialize the app
 const root = createRoot(container);
-
-// Render the app
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <StrictMode>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <App />
+    </ErrorBoundary>
+  </StrictMode>
 );
