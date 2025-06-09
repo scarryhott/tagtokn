@@ -24,7 +24,8 @@ A platform for connecting with influencers and managing tokenized assets.
    ```bash
    npm run dev
    ```
-   This will start the development server at `http://localhost:3000`
+   This will start the development server at `http://localhost:3000`.
+   The `./start.sh` script also runs this command for convenience.
 
 ## Environment Variables
 
