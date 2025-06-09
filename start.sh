@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Use Node.js 20
-export PATH="/Users/harryscott/.nvm/versions/node/v20.19.2/bin:$PATH"
+# Use system Node.js (requires Node 18+)
+# Remove hard-coded path so the script works on any machine
 
 # Install dependencies if node_modules doesn't exist
 if [ ! -d "node_modules" ]; then
