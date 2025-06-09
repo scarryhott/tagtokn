@@ -32,21 +32,15 @@
     <!-- Theme color for browsers that support it -->
     <meta name="theme-color" content="#0ea5e9">
     
-    <!-- Import map must come first -->
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "/node_modules/react/index.js",
-        "react/jsx-runtime": "/node_modules/react/jsx-runtime.js",
-        "react-dom": "/node_modules/react-dom/client.js",
-        "@emotion/react": "/node_modules/@emotion/react/dist/emotion-react.browser.esm.js",
-        "@emotion/react/jsx-runtime": "/node_modules/@emotion/react/jsx-runtime/dist/emotion-react-jsx-runtime.browser.esm.js"
-      }
-    }
-    </script>
-    
     <!-- Preload app entry with proper type -->
     <link rel="modulepreload" href="/src/main.jsx" as="script" type="module" />
+    
+    <!-- Preload React and ReactDOM -->
+    <link rel="modulepreload" href="/node_modules/react/index.js" as="script" type="module" />
+    <link rel="modulepreload" href="/node_modules/react-dom/client.js" as="script" type="module" />
+    
+    <!-- Preload Emotion -->
+    <link rel="modulepreload" href="/node_modules/@emotion/react/dist/emotion-react.browser.esm.js" as="script" type="module" />
   </head>
   <body class="h-full bg-gray-50">
     <noscript>

@@ -57,35 +57,20 @@ export default defineConfig({
     cors: true,
     host: true,
     strictPort: true,
-    // Configure proper MIME types
-    mimeTypes: {
-      'application/javascript': ['js', 'jsx', 'mjs', 'cjs'],
-      'text/jsx': ['jsx'],
-      'text/javascript': ['js', 'jsx', 'mjs', 'cjs'],
-    },
     // Enable HMR
     hmr: {
       protocol: 'ws',
       host: 'localhost',
       overlay: false,
     },
-    // Configure headers for proper MIME types
+    // Configure basic headers
     headers: {
       'Cache-Control': 'no-cache',
       'X-Content-Type-Options': 'nosniff',
-      'Content-Type': 'application/javascript',
     },
-    // Fix for JSX MIME type issues
+    // File system options
     fs: {
       strict: true,
-    },
-    // Ensure proper MIME type for JSX files
-    proxy: {
-      '^/assets/.*\.jsx$': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/\.jsx$/, '.js'),
-      },
     },
   },
   optimizeDeps: {
