@@ -1,25 +1,62 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useNavigate, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { 
-  DollarSign, 
-  Users, 
-  Award, 
-  Shuffle, 
+  Search, 
   X, 
-  History, 
-  ShoppingCart, 
-  Store, 
-  Instagram, 
+  Menu, 
+  LogOut, 
+  User, 
   Settings, 
-  PlusCircle, 
-  CreditCard,
   Home,
-  Search,
+  BarChart2,
   TrendingUp,
   TrendingDown
 } from 'lucide-react'; 
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts/es6';
+// Chart components with direct imports
+const ChartWrapper = ({ children, loadingText }) => (
+  <Suspense fallback={<div className="text-center text-gray-400">{loadingText}</div>}>
+    {children}
+  </Suspense>
+);
+
+const PriceChart = ({ data }) => {
+  const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = require('recharts');
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+        <XAxis dataKey="time" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+        <YAxis stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 10 }} domain={['auto', 'auto']} />
+        <CartesianGrid stroke="#4B5563" strokeDasharray="3 3" />
+        <Tooltip
+          formatter={(value) => [`$${value.toFixed(4)}`, 'Price']}
+          contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
+          labelStyle={{ color: '#E5E7EB' }}
+        />
+        <Line type="monotone" dataKey="price" stroke="#8884d8" strokeWidth={2} dot={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+};
+
+const RatioChart = ({ data }) => {
+  const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = require('recharts');
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+        <XAxis dataKey="time" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+        <YAxis stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 10 }} domain={['auto', 'auto']} />
+        <CartesianGrid stroke="#4B5563" strokeDasharray="3 3" />
+        <Tooltip
+          formatter={(value) => [`${value.toFixed(2)}`, 'Ratio']}
+          contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
+          labelStyle={{ color: '#E5E7EB' }}
+        />
+        <Line type="monotone" dataKey="ratio" stroke="#00C49F" strokeWidth={2} dot={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+};
 import {
   auth,
   onAuthStateChanged,
@@ -2105,19 +2142,9 @@ const TokenDetailModal = ({ influencer, onClose, userTokens, issuedPhysicalToken
               {influencer.name} Price Chart
             </h4>
             {influencer.historicalPrices.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={influencer.historicalPrices} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <XAxis dataKey="time" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
-                  <YAxis stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 10 }} domain={['auto', 'auto']} />
-                  <CartesianGrid stroke="#4B5563" strokeDasharray="3 3" />
-                  <Tooltip
-                    formatter={(value) => [`$${value.toFixed(4)}`, 'Price']}
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#E5E7EB' }}
-                  />
-                  <Line type="monotone" dataKey="price" stroke="#8884d8" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+              <ChartWrapper loadingText="Loading price chart...">
+                <PriceChart data={influencer.historicalPrices} />
+              </ChartWrapper>
             ) : (
               <p className="text-gray-400 text-center">No price data available yet. Please wait for updates.</p>
             )}
@@ -2130,19 +2157,9 @@ const TokenDetailModal = ({ influencer, onClose, userTokens, issuedPhysicalToken
               {influencer.name} Investment Ratio Chart
             </h4>
             {influencer.historicalRatios.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={influencer.historicalRatios} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <XAxis dataKey="time" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
-                  <YAxis stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 10 }} domain={['auto', 'auto']} />
-                  <CartesianGrid stroke="#4B5563" strokeDasharray="3 3" />
-                  <Tooltip
-                    formatter={(value) => [`${value.toFixed(2)}`, 'Ratio']}
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#E5E7EB' }}
-                  />
-                  <Line type="monotone" dataKey="ratio" stroke="#00C49F" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+              <ChartWrapper loadingText="Loading ratio chart...">
+                <RatioChart data={influencer.historicalRatios} />
+              </ChartWrapper>
             ) : (
               <p className="text-gray-400 text-center">No ratio data available yet. Please wait for updates.</p>
             )}

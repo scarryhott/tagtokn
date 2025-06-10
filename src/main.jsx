@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ErrorBoundary } from 'react-error-boundary';
 import App from './App.jsx';
@@ -86,6 +86,10 @@ if (!container) {
 
 // Initialize the app
 const root = createRoot(container);
+
+
+
+// Initial render
 root.render(
   <StrictMode>
     <ErrorBoundary FallbackComponent={ErrorFallback}>
