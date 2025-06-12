@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { handleInstagramCallback } from '../services/instagramAuth';
 import { auth } from '../firebase';
+import { signInWithCustomToken } from 'firebase/auth';
 
 const InstagramCallback = () => {
   const [searchParams] = useSearchParams();
@@ -53,7 +54,7 @@ const InstagramCallback = () => {
         if (result.token) {
           // If we got a token, sign in with it
           setStatus('Signing in with your Instagram account...');
-          await auth.signInWithCustomToken(result.token);
+          await signInWithCustomToken(auth, result.token);
           
           setStatus('Success! Your Instagram account has been connected.');
           // Redirect to dashboard after a short delay
