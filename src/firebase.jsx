@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { 
   getAuth, 
   GoogleAuthProvider, 
@@ -23,11 +23,44 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:1087424771839:web:0d01bd2b5beeef78f87eca",
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const functions = getFunctions(app);
+// Initialize Firebase lazily to avoid duplicate initialization
+let appInstance;
+let authInstance;
+let dbInstance;
+let functionsInstance;
+
+export function getAppInstance() {
+  if (!appInstance) {
+    appInstance = initializeApp(firebaseConfig);
+  }
+  return appInstance;
+}
+
+export function getAuthInstance() {
+  if (!authInstance) {
+    authInstance = getAuth(getAppInstance());
+  }
+  return authInstance;
+}
+
+export function getDbInstance() {
+  if (!dbInstance) {
+    dbInstance = getFirestore(getAppInstance());
+  }
+  return dbInstance;
+}
+
+export function getFunctionsInstance() {
+  if (!functionsInstance) {
+    functionsInstance = getFunctions(getAppInstance());
+  }
+  return functionsInstance;
+}
+
+// Direct references for backward compatibility
+const auth = getAuthInstance();
+const db = getDbInstance();
+const functions = getFunctionsInstance();
 
 // Initialize providers
 const googleProvider = new GoogleAuthProvider();
@@ -41,7 +74,7 @@ githubProvider.addScope('user:email');
 
 // Common function to handle user data after authentication
 const handleUserAuth = async (user, additionalData = {}) => {
-  const userRef = doc(db, 'users', user.uid);
+  const userRef = doc(getDbInstance(), 'users', user.uid);
   const userDoc = await getDoc(userRef);
   
   const userData = {
@@ -164,7 +197,7 @@ const getCurrentUser = () => {
 // Function to update Instagram user data
 const updateInstagramData = async (userId, instagramData) => {
   try {
-    const userRef = doc(db, 'users', userId);
+    const userRef = doc(getDbInstance(), 'users', userId);
     await updateDoc(userRef, {
       instagram: instagramData,
       instagramUserId: instagramData.id,
@@ -181,7 +214,7 @@ const updateInstagramData = async (userId, instagramData) => {
 // Function to update user data
 const updateUserData = async (userId, data) => {
   try {
-    const userRef = doc(db, 'users', userId);
+    const userRef = doc(getDbInstance(), 'users', userId);
     await updateDoc(userRef, {
       ...data,
       updatedAt: serverTimestamp()
