@@ -958,6 +958,26 @@ new CustomChatbot();`;
         </div>
     </div>
     
+    <!-- WWWWW.AI Chatbot HTML Structure -->
+    <div id="chatContainer" class="chat-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 10000;">
+        <div id="chatWidget" class="chat-widget" style="display: none;">
+            <div id="chatHeader" class="chat-header">
+                <span id="businessName">${chatbot.name}</span>
+                <button id="minimizeButton" class="minimize-btn">−</button>
+                <button id="closeButton" class="close-btn">×</button>
+            </div>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div id="chatInput" class="chat-input">
+                <input type="text" id="messageInput" placeholder="Type your message..." />
+                <button id="sendButton">Send</button>
+            </div>
+        </div>
+        <button id="chatToggle" class="chat-toggle">💬</button>
+    </div>
+    
+    <!-- WWWWW.AI Chatbot Styles -->
+    <link rel="stylesheet" href="https://wwwww-ai-platform.netlify.app/styles.css">
+    
     <!-- WWWWW.AI Chatbot Integration -->
     <script src="https://wwwww-ai-platform.netlify.app/chatbot.js"></script>
     <script>
