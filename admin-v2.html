@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WWWWW.AI - Chatbot Management Platform</title>
+    <link rel="stylesheet" href="admin-v2.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1>WWWWW.AI</h1>
+                <p>Chatbot Platform</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </li>
+                <li class="nav-item" data-section="chatbots">
+                    <span class="nav-icon">🤖</span>
+                    <span class="nav-text">My Chatbots</span>
+                </li>
+                <li class="nav-item" data-section="create">
+                    <span class="nav-icon">➕</span>
+                    <span class="nav-text">Create Chatbot</span>
+                </li>
+                <li class="nav-item" data-section="leads">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Leads</span>
+                </li>
+                <li class="nav-item" data-section="analytics">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Analytics</span>
+                </li>
+                <li class="nav-item" data-section="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Settings</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h2>Dashboard</h2>
+                    <p>Overview of your chatbot performance</p>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🤖</div>
+                        <div class="stat-content">
+                            <h3 id="totalChatbots">0</h3>
+                            <p>Active Chatbots</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <h3 id="totalLeads">0</h3>
+                            <p>Total Leads</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-content">
+                            <h3 id="totalConversations">0</h3>
+                            <p>Conversations</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-content">
+                            <h3 id="conversionRate">0%</h3>
+                            <p>Conversion Rate</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-charts">
+                    <div class="chart-container">
+                        <h3>Leads Over Time</h3>
+                        <canvas id="leadsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Chatbot Performance</h3>
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chatbots Section -->
+            <section id="chatbots" class="content-section">
+                <div class="section-header">
+                    <h2>My Chatbots</h2>
+                    <button class="btn-primary" onclick="showSection('create')">Create New Chatbot</button>
+                </div>
+                
+                <div class="chatbots-grid" id="chatbotsGrid">
+                    <!-- Chatbot cards will be populated here -->
+                </div>
+            </section>
+
+            <!-- Create Chatbot Section -->
+            <section id="create" class="content-section">
+                <div class="section-header">
+                    <h2>Create New Chatbot</h2>
+                    <p>Build a custom chatbot for your website</p>
+                </div>
+
+                <div class="create-form-container">
+                    <form id="createChatbotForm" class="create-form">
+                        <div class="form-section">
+                            <h3>Basic Information</h3>
+                            <div class="form-group">
+                                <label for="chatbotName">Chatbot Name</label>
+                                <input type="text" id="chatbotName" required placeholder="e.g., Hampton Blue Pools Assistant">
+                            </div>
+                            <div class="form-group">
+                                <label for="websiteUrl">Website URL</label>
+                                <input type="url" id="websiteUrl" required placeholder="https://example.com">
+                                <button type="button" id="analyzeWebsite" class="btn-secondary">🤖 AI Analyze</button>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Company Information</h3>
+                            <div class="form-group">
+                                <label for="companyEthos">Company Ethos & Values</label>
+                                <textarea id="companyEthos" rows="4" placeholder="Describe your company's mission, values, and approach..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="businessInfo">Business Information (JSON)</label>
+                                <textarea id="businessInfo" rows="8" placeholder='{"services": [], "areas": [], "specialties": []}'></textarea>
+                                <button type="button" id="generateJson" class="btn-secondary">🤖 Auto-Generate</button>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Conversation Flow</h3>
+                            <div class="form-group">
+                                <label>5 W's Questions</label>
+                                <div class="questions-grid">
+                                    <div class="question-item">
+                                        <label>WHERE (Location)</label>
+                                        <input type="text" id="whereQuestion" placeholder="Which area do you serve?">
+                                    </div>
+                                    <div class="question-item">
+                                        <label>WHEN (Timing)</label>
+                                        <input type="text" id="whenQuestion" placeholder="When do you need service?">
+                                    </div>
+                                    <div class="question-item">
+                                        <label>WHAT (Service)</label>
+                                        <input type="text" id="whatQuestion" placeholder="What service do you need?">
+                                    </div>
+                                    <div class="question-item">
+                                        <label>WHY (Reason)</label>
+                                        <input type="text" id="whyQuestion" placeholder="What's the specific need?">
+                                    </div>
+                                    <div class="question-item">
+                                        <label>WHO (Contact)</label>
+                                        <input type="text" id="whoQuestion" placeholder="How should we contact you?">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Lead Criteria</h3>
+                            <div class="form-group">
+                                <label for="leadCriteria">Lead Qualification Criteria</label>
+                                <textarea id="leadCriteria" rows="3" placeholder="What makes a qualified lead? (e.g., budget range, timeline, location)"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>UI Customization</h3>
+                            <div class="customization-grid">
+                                <div class="form-group">
+                                    <label for="primaryColor">Primary Color</label>
+                                    <input type="color" id="primaryColor" value="#2196F3">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chatPosition">Chat Position</label>
+                                    <select id="chatPosition">
+                                        <option value="bottom-right">Bottom Right</option>
+                                        <option value="bottom-left">Bottom Left</option>
+                                        <option value="center">Center</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="animationType">Animation Type</label>
+                                    <select id="animationType">
+                                        <option value="slide-up">Slide Up</option>
+                                        <option value="fade-in">Fade In</option>
+                                        <option value="bounce">Bounce</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="triggerDelay">Trigger Delay (seconds)</label>
+                                    <input type="number" id="triggerDelay" value="3" min="0" max="60">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="previewChatbot()">Preview</button>
+                            <button type="submit" class="btn-primary">Create Chatbot</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Leads Section -->
+            <section id="leads" class="content-section">
+                <div class="section-header">
+                    <h2>Leads Management</h2>
+                    <div class="leads-filters">
+                        <select id="chatbotFilter">
+                            <option value="">All Chatbots</option>
+                        </select>
+                        <select id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="qualified">Qualified</option>
+                            <option value="converted">Converted</option>
+                        </select>
+                        <input type="date" id="dateFilter">
+                    </div>
+                </div>
+                
+                <div class="leads-table-container">
+                    <table class="leads-table" id="leadsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Contact</th>
+                                <th>Chatbot</th>
+                                <th>Context Summary</th>
+                                <th>Specific Requests</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadsTableBody">
+                            <!-- Leads will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics" class="content-section">
+                <div class="section-header">
+                    <h2>Analytics</h2>
+                    <p>Detailed performance insights</p>
+                </div>
+                
+                <div class="analytics-content">
+                    <div class="analytics-filters">
+                        <select id="analyticsTimeframe">
+                            <option value="7">Last 7 days</option>
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                        <select id="analyticsChatbot">
+                            <option value="">All Chatbots</option>
+                        </select>
+                    </div>
+                    
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <h3>Conversation Metrics</h3>
+                            <canvas id="conversationMetrics"></canvas>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Lead Quality Score</h3>
+                            <canvas id="leadQualityChart"></canvas>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Topic Completion Rate</h3>
+                            <canvas id="topicCompletionChart"></canvas>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Response Time Analysis</h3>
+                            <canvas id="responseTimeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings" class="content-section">
+                <div class="section-header">
+                    <h2>Settings</h2>
+                    <p>Configure your account and preferences</p>
+                </div>
+                
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h3>Account Information</h3>
+                        <div class="form-group">
+                            <label for="accountEmail">Email</label>
+                            <input type="email" id="accountEmail" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="accountPlan">Current Plan</label>
+                            <input type="text" id="accountPlan" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>API Configuration</h3>
+                        <div class="form-group">
+                            <label for="geminiApiKey">Gemini API Key</label>
+                            <input type="password" id="geminiApiKey" placeholder="Enter your Gemini API key">
+                        </div>
+                        <div class="form-group">
+                            <label for="firebaseConfig">Firebase Configuration</label>
+                            <textarea id="firebaseConfig" rows="6" placeholder="Paste your Firebase config JSON"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Email Agent Settings</h3>
+                        <div class="form-group">
+                            <label for="emailAgentEnabled">Enable Email Agent</label>
+                            <input type="checkbox" id="emailAgentEnabled">
+                            <span class="checkbox-label">Automatically find and contact businesses</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="emailTemplate">Email Template</label>
+                            <textarea id="emailTemplate" rows="8" placeholder="Template for outreach emails..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chatbot Preview</h3>
+                <button class="close-modal" onclick="closePreview()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="preview-container">
+                    <iframe id="previewFrame" src="about:blank"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embed Code Modal -->
+    <div id="embedModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Embed Code</h3>
+                <button class="close-modal" onclick="closeEmbedModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Copy this code and paste it before the closing &lt;/body&gt; tag on your website:</p>
+                <textarea id="embedCode" readonly rows="10"></textarea>
+                <button class="btn-primary" onclick="copyEmbedCode()">Copy Code</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin-v2.js"></script>
+</body>
+</html>
