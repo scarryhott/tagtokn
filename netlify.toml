@@ -1,6 +1,6 @@
 [build]
   publish = "."
-  command = "echo 'Static site - no build needed'"
+  command = "echo 'Static site deployment - no build needed'"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -10,8 +10,15 @@
   to = "/index.html"
   status = 200
 
-[context.production.environment]
-  NODE_ENV = "production"
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
 
-[context.deploy-preview.environment]
-  NODE_ENV = "development"
+[[headers]]
+  for = "/admin-v2.html"
+  [headers.values]
+    X-Frame-Options = "DENY"

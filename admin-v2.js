@@ -137,10 +137,18 @@ class WWWWWAdminPlatform {
     }
     
     initializeCharts() {
+        // Destroy existing charts if they exist
+        if (this.leadsChart) {
+            this.leadsChart.destroy();
+        }
+        if (this.performanceChart) {
+            this.performanceChart.destroy();
+        }
+        
         // Leads over time chart
         const leadsCtx = document.getElementById('leadsChart');
         if (leadsCtx) {
-            new Chart(leadsCtx, {
+            this.leadsChart = new Chart(leadsCtx, {
                 type: 'line',
                 data: {
                     labels: this.getLastSevenDays(),
@@ -166,7 +174,7 @@ class WWWWWAdminPlatform {
         // Performance chart
         const performanceCtx = document.getElementById('performanceChart');
         if (performanceCtx) {
-            new Chart(performanceCtx, {
+            this.performanceChart = new Chart(performanceCtx, {
                 type: 'doughnut',
                 data: {
                     labels: this.chatbots.map(bot => bot.name),
