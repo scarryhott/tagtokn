@@ -821,161 +821,137 @@ new CustomChatbot();`;
     }
     
     generatePreviewPage(chatbot) {
+        const websiteUrl = chatbot.website || chatbot.url || 'https://example.com';
+        
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${chatbot.name} - Live Preview</title>
+    <title>${chatbot.name} - Live Preview with Chatbot</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; }
-        .demo-website {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 2rem;
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        
+        .preview-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
+        
+        .website-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
-        .header {
-            background: #2c3e50;
+        
+        .preview-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(102, 126, 234, 0.9);
             color: white;
-            padding: 2rem;
+            padding: 10px 20px;
             text-align: center;
+            font-size: 14px;
+            z-index: 10000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-        .content {
-            padding: 3rem;
-        }
-        .services {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin: 2rem 0;
-        }
-        .service-card {
-            background: #f8f9fa;
-            padding: 2rem;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px solid #e9ecef;
-            transition: transform 0.3s ease;
-        }
-        .service-card:hover {
-            transform: translateY(-5px);
-            border-color: #667eea;
-        }
-        .service-card h3 {
-            color: #2c3e50;
-            margin-bottom: 1rem;
-        }
-        .cta {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+        
+        .preview-overlay .close-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
             color: white;
-            padding: 3rem;
-            text-align: center;
-            margin: 2rem 0;
-            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
         }
-        .cta h2 {
-            margin-bottom: 1rem;
-        }
-        .btn {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: white;
-            color: #667eea;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            margin-top: 1rem;
-            transition: transform 0.3s ease;
-        }
-        .btn:hover {
-            transform: scale(1.05);
-        }
-        .footer {
-            background: #34495e;
-            color: white;
-            padding: 2rem;
-            text-align: center;
-        }
+        
         .chat-notice {
             position: fixed;
             bottom: 100px;
             right: 30px;
             background: #667eea;
             color: white;
-            padding: 1rem;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            animation: bounce 2s infinite;
-            z-index: 1000;
+            padding: 12px 16px;
+            border-radius: 25px;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            animation: pulse 2s infinite;
+            z-index: 9999;
+            font-size: 14px;
+            font-weight: 500;
         }
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-10px); }
-            60% { transform: translateY(-5px); }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+        }
+        
+        .error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-width: 500px;
+        }
+        
+        .error-message h3 {
+            color: #dc3545;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message p {
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message .website-url {
+            background: #e9ecef;
+            padding: 0.5rem;
+            border-radius: 5px;
+            font-family: monospace;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
-    <div class="demo-website">
-        <div class="container">
-            <header class="header">
-                <h1>${chatbot.name}</h1>
-                <p>${chatbot.description || 'Professional Services You Can Trust'}</p>
-            </header>
-            
-            <main class="content">
-                <section>
-                    <h2>Welcome to Our Business</h2>
-                    <p>We provide exceptional service with a commitment to quality and customer satisfaction. Our experienced team is ready to help you with all your needs.</p>
-                </section>
-                
-                <section class="services">
-                    <div class="service-card">
-                        <h3>🏆 Quality Service</h3>
-                        <p>Professional expertise with attention to detail and commitment to excellence.</p>
-                    </div>
-                    <div class="service-card">
-                        <h3>⚡ Fast Response</h3>
-                        <p>Quick turnaround times and responsive customer service when you need it most.</p>
-                    </div>
-                    <div class="service-card">
-                        <h3>💰 Competitive Pricing</h3>
-                        <p>Fair, transparent pricing with no hidden fees or surprise charges.</p>
-                    </div>
-                </section>
-                
-                <section class="cta">
-                    <h2>Ready to Get Started?</h2>
-                    <p>Contact us today for a free consultation and see how we can help you achieve your goals.</p>
-                    <a href="#" class="btn">Get Free Quote</a>
-                </section>
-            </main>
-            
-            <footer class="footer">
-                <p>&copy; 2024 ${chatbot.name}. All rights reserved. | Powered by WWWWW.AI</p>
-            </footer>
+    <div class="preview-container">
+        <div class="preview-overlay">
+            🔥 Live Preview: ${chatbot.name} with WWWWW.AI Chatbot Overlay
         </div>
-    </div>
-    
-    <div class="chat-notice">
-        💬 Try our AI assistant!
+        
+        <iframe 
+            class="website-frame" 
+            src="${websiteUrl}"
+            title="${chatbot.name} Website"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"
+            onerror="this.style.display='none'; document.querySelector('.error-message').style.display='block';"
+        ></iframe>
+        
+        <div class="error-message" style="display: none;">
+            <h3>⚠️ Website Preview Unavailable</h3>
+            <p>The website URL may not allow embedding or may be unreachable:</p>
+            <div class="website-url">${websiteUrl}</div>
+            <p><strong>The chatbot will still work perfectly when embedded on the actual website!</strong></p>
+        </div>
+        
+        <div class="chat-notice">
+            💬 Try the AI Assistant!
+        </div>
     </div>
     
     <!-- WWWWW.AI Chatbot Integration -->
@@ -1013,9 +989,28 @@ new CustomChatbot();`;
             }
         };
         
+        // Handle iframe load errors
+        const iframe = document.querySelector('.website-frame');
+        const errorMessage = document.querySelector('.error-message');
+        
+        iframe.addEventListener('error', function() {
+            iframe.style.display = 'none';
+            errorMessage.style.display = 'block';
+        });
+        
         // Initialize chatbot when page loads
         document.addEventListener('DOMContentLoaded', function() {
             const chatbot = new WWWWWAIChatbot(chatbotConfig);
+            
+            // Show chatbot after a short delay to simulate real website behavior
+            setTimeout(() => {
+                // Chatbot is already initialized and will show automatically
+            }, 1000);
+        });
+        
+        // Handle cross-origin iframe issues
+        window.addEventListener('message', function(event) {
+            // Handle messages from iframe if needed
         });
     </script>
 </body>
