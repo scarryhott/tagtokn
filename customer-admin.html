@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Chatbot Dashboard - WWWWW.AI</title>
+    <link rel="stylesheet" href="customer-admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>WWWWW.AI</h1>
+                    <span class="customer-badge">Customer Portal</span>
+                </div>
+                <div class="header-actions">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">Loading...</span>
+                        <span class="user-plan" id="userPlan">Free Plan</span>
+                    </div>
+                    <button class="upgrade-btn">Upgrade Plan</button>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div class="welcome-content">
+                    <h2>Welcome back! 👋</h2>
+                    <p>Manage your chatbot and view performance insights</p>
+                </div>
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalLeads">0</div>
+                        <div class="stat-label">Total Leads</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="todayConversations">0</div>
+                        <div class="stat-label">Today's Conversations</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="conversionRate">0%</div>
+                        <div class="stat-label">Conversion Rate</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chatbot Management -->
+            <section class="chatbot-section">
+                <div class="section-header">
+                    <h3>Your Chatbot</h3>
+                    <div class="chatbot-status" id="chatbotStatus">
+                        <span class="status-indicator active"></span>
+                        <span class="status-text">Active</span>
+                    </div>
+                </div>
+
+                <div class="chatbot-card" id="chatbotCard">
+                    <div class="chatbot-preview">
+                        <div class="preview-window">
+                            <div class="preview-header">
+                                <div class="preview-dots">
+                                    <span></span><span></span><span></span>
+                                </div>
+                                <span class="preview-url" id="previewUrl">your-website.com</span>
+                            </div>
+                            <div class="preview-content">
+                                <div class="website-mockup">
+                                    <div class="mockup-header"></div>
+                                    <div class="mockup-content">
+                                        <div class="mockup-text"></div>
+                                        <div class="mockup-text short"></div>
+                                        <div class="mockup-text"></div>
+                                    </div>
+                                </div>
+                                <div class="chatbot-overlay" id="chatbotOverlay">
+                                    <div class="chat-trigger">
+                                        <span class="chat-icon">💬</span>
+                                        <span class="chat-text">Chat with us!</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chatbot-details">
+                        <div class="detail-row">
+                            <label>Chatbot Name:</label>
+                            <span id="chatbotName">Loading...</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Website:</label>
+                            <span id="websiteUrl">Loading...</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Created:</label>
+                            <span id="createdDate">Loading...</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Last Updated:</label>
+                            <span id="lastUpdated">Loading...</span>
+                        </div>
+
+                        <div class="chatbot-actions">
+                            <button class="btn-primary" onclick="testChatbot()">Test Chatbot</button>
+                            <button class="btn-secondary" onclick="editChatbot()">Edit Settings</button>
+                            <button class="btn-secondary" onclick="getEmbedCode()">Get Embed Code</button>
+                            <button class="btn-secondary" onclick="downloadAnalytics()">Download Data</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Performance Analytics -->
+            <section class="analytics-section">
+                <div class="section-header">
+                    <h3>Performance Analytics</h3>
+                    <div class="time-filter">
+                        <select id="timeRange" onchange="updateAnalytics()">
+                            <option value="7">Last 7 days</option>
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="chart-card">
+                        <h4>Conversations Over Time</h4>
+                        <canvas id="conversationsChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4>Lead Generation</h4>
+                        <canvas id="leadsChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4>Topic Completion</h4>
+                        <canvas id="topicsChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4>User Engagement</h4>
+                        <canvas id="engagementChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Leads -->
+            <section class="leads-section">
+                <div class="section-header">
+                    <h3>Recent Leads</h3>
+                    <button class="btn-secondary" onclick="exportLeads()">Export All</button>
+                </div>
+
+                <div class="leads-table-container">
+                    <table class="leads-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Contact</th>
+                                <th>Service Interest</th>
+                                <th>Context Summary</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadsTableBody">
+                            <!-- Leads will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Settings Panel -->
+            <section class="settings-section" id="settingsPanel" style="display: none;">
+                <div class="section-header">
+                    <h3>Chatbot Settings</h3>
+                    <button class="close-settings" onclick="closeSettings()">×</button>
+                </div>
+
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label for="editChatbotName">Chatbot Name</label>
+                        <input type="text" id="editChatbotName" placeholder="Enter chatbot name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editWebsiteUrl">Website URL</label>
+                        <input type="url" id="editWebsiteUrl" placeholder="https://your-website.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editCompanyEthos">Company Values & Ethos</label>
+                        <textarea id="editCompanyEthos" rows="4" placeholder="Describe your company's mission and values..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Appearance</label>
+                        <div class="appearance-controls">
+                            <div class="control-item">
+                                <label for="primaryColor">Primary Color</label>
+                                <input type="color" id="primaryColor" onchange="updatePreview()">
+                            </div>
+                            <div class="control-item">
+                                <label for="chatPosition">Position</label>
+                                <select id="chatPosition" onchange="updatePreview()">
+                                    <option value="bottom-right">Bottom Right</option>
+                                    <option value="bottom-left">Bottom Left</option>
+                                </select>
+                            </div>
+                            <div class="control-item">
+                                <label for="triggerDelay">Trigger Delay (seconds)</label>
+                                <input type="number" id="triggerDelay" min="0" max="60" value="3">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>5 W's Questions</label>
+                        <div class="questions-list">
+                            <div class="question-item">
+                                <label>WHERE (Location)</label>
+                                <input type="text" id="whereQuestion" placeholder="Which area do you serve?">
+                            </div>
+                            <div class="question-item">
+                                <label>WHEN (Timing)</label>
+                                <input type="text" id="whenQuestion" placeholder="When do you need service?">
+                            </div>
+                            <div class="question-item">
+                                <label>WHAT (Service)</label>
+                                <input type="text" id="whatQuestion" placeholder="What service do you need?">
+                            </div>
+                            <div class="question-item">
+                                <label>WHY (Reason)</label>
+                                <input type="text" id="whyQuestion" placeholder="What's the specific need?">
+                            </div>
+                            <div class="question-item">
+                                <label>WHO (Contact)</label>
+                                <input type="text" id="whoQuestion" placeholder="How should we contact you?">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+                        <button class="btn-primary" onclick="saveSettings()">Save Changes</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Test Chatbot Modal -->
+    <div id="testModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Test Your Chatbot</h3>
+                <button class="close-modal" onclick="closeTestModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="test-container">
+                    <iframe id="testFrame" src="about:blank"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embed Code Modal -->
+    <div id="embedModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Embed Your Chatbot</h3>
+                <button class="close-modal" onclick="closeEmbedModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="embed-instructions">
+                    <h4>Installation Instructions</h4>
+                    <ol>
+                        <li>Copy the code below</li>
+                        <li>Paste it before the closing &lt;/body&gt; tag on your website</li>
+                        <li>Your chatbot will appear automatically!</li>
+                    </ol>
+                </div>
+                <textarea id="embedCode" readonly rows="12"></textarea>
+                <div class="embed-actions">
+                    <button class="btn-primary" onclick="copyEmbedCode()">Copy Code</button>
+                    <button class="btn-secondary" onclick="downloadEmbedCode()">Download as File</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upgrade Plan Modal -->
+    <div id="upgradeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Upgrade Your Plan</h3>
+                <button class="close-modal" onclick="closeUpgradeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="plans-grid">
+                    <div class="plan-card">
+                        <h4>Starter</h4>
+                        <div class="plan-price">$29<span>/month</span></div>
+                        <ul class="plan-features">
+                            <li>1 Chatbot</li>
+                            <li>1,000 conversations/month</li>
+                            <li>Basic analytics</li>
+                            <li>Email support</li>
+                        </ul>
+                        <button class="btn-primary">Choose Starter</button>
+                    </div>
+                    <div class="plan-card featured">
+                        <h4>Professional</h4>
+                        <div class="plan-price">$79<span>/month</span></div>
+                        <ul class="plan-features">
+                            <li>5 Chatbots</li>
+                            <li>10,000 conversations/month</li>
+                            <li>Advanced analytics</li>
+                            <li>Priority support</li>
+                            <li>Custom branding</li>
+                        </ul>
+                        <button class="btn-primary">Choose Professional</button>
+                    </div>
+                    <div class="plan-card">
+                        <h4>Enterprise</h4>
+                        <div class="plan-price">$199<span>/month</span></div>
+                        <ul class="plan-features">
+                            <li>Unlimited chatbots</li>
+                            <li>Unlimited conversations</li>
+                            <li>Custom integrations</li>
+                            <li>Dedicated support</li>
+                            <li>White-label solution</li>
+                        </ul>
+                        <button class="btn-primary">Choose Enterprise</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="customer-admin.js"></script>
+</body>
+</html>

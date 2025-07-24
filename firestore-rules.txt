@@ -1,0 +1,30 @@
+// Firestore Security Rules for Hampton Blue Pools Chatbot
+// Copy these rules to your Firebase Console -> Firestore Database -> Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read and write access to the leads collection for all users (development mode)
+    match /hamptonBluePoolsLeads/{document} {
+      allow read, write: if true;
+    }
+    
+    // Allow read and write access to connection test collection
+    match /connectionTest/{document} {
+      allow read, write: if true;
+    }
+  }
+}
+
+// IMPORTANT: These rules are for development only!
+// For production, you should implement proper authentication and security rules.
+// Example production rules:
+//
+// rules_version = '2';
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     match /hamptonBluePoolsLeads/{document} {
+//       allow read, write: if request.auth != null;
+//     }
+//   }
+// }

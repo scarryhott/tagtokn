@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        pre {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Connection Test</h1>
+    <p>This page tests the connection to Firebase and verifies that data can be saved.</p>
+    
+    <div class="container">
+        <h2>Test 1: Firebase Connection</h2>
+        <button id="testConnection">Test Firebase Connection</button>
+        <div id="connectionStatus" class="status"></div>
+        
+        <h2>Test 2: Save Test Data</h2>
+        <button id="testSave">Save Test Data</button>
+        <div id="saveStatus" class="status"></div>
+        
+        <h2>Test 3: Load Data</h2>
+        <button id="testLoad">Load Test Data</button>
+        <div id="loadStatus" class="status"></div>
+        <pre id="dataOutput"></pre>
+    </div>
+
+    <!-- Firebase and app scripts -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            getDocs,
+            serverTimestamp 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqXXwSIuWvEbZpiKQNi7oZPuMXCXJ7vvo",
+            authDomain: "chatbot-d3c00.firebaseapp.com",
+            projectId: "chatbot-d3c00",
+            storageBucket: "chatbot-d3c00.firebasestorage.app",
+            messagingSenderId: "249683980392",
+            appId: "1:249683980392:web:b4ff8908c64e59f65d4bdd",
+            measurementId: "G-L4D6RK6VG6"
+        };
+
+        // Initialize Firebase
+        let app;
+        let db;
+        
+        async function initializeFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                return true;
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+                return false;
+            }
+        }
+
+        // Test 1: Check Firebase connection
+        document.getElementById('testConnection').addEventListener('click', async () => {
+            const status = document.getElementById('connectionStatus');
+            status.textContent = 'Testing connection...';
+            status.className = 'status';
+            status.style.display = 'block';
+            
+            try {
+                const connected = await initializeFirebase();
+                if (connected) {
+                    status.textContent = '✅ Successfully connected to Firebase!';
+                    status.className = 'status success';
+                } else {
+                    throw new Error('Failed to initialize Firebase');
+                }
+            } catch (error) {
+                status.textContent = `❌ Connection failed: ${error.message}`;
+                status.className = 'status error';
+                console.error('Connection test failed:', error);
+            }
+        });
+
+        // Test 2: Save test data
+        document.getElementById('testSave').addEventListener('click', async () => {
+            const status = document.getElementById('saveStatus');
+            status.textContent = 'Saving test data...';
+            status.className = 'status';
+            status.style.display = 'block';
+            
+            if (!db) {
+                await initializeFirebase();
+            }
+            
+            try {
+                const testData = {
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    phone: '1234567890',
+                    message: 'This is a test message',
+                    service: 'Pool Maintenance',
+                    location: 'Southampton',
+                    timestamp: serverTimestamp(),
+                    test: true
+                };
+                
+                const docRef = await addDoc(collection(db, 'testLeads'), testData);
+                status.innerHTML = `✅ Test data saved successfully!<br>Document ID: ${docRef.id}`;
+                status.className = 'status success';
+            } catch (error) {
+                status.textContent = `❌ Failed to save test data: ${error.message}`;
+                status.className = 'status error';
+                console.error('Save test failed:', error);
+            }
+        });
+
+        // Test 3: Load test data
+        document.getElementById('testLoad').addEventListener('click', async () => {
+            const status = document.getElementById('loadStatus');
+            const output = document.getElementById('dataOutput');
+            status.textContent = 'Loading test data...';
+            status.className = 'status';
+            status.style.display = 'block';
+            
+            if (!db) {
+                await initializeFirebase();
+            }
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, 'testLeads'));
+                const data = [];
+                
+                querySnapshot.forEach((doc) => {
+                    data.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                if (data.length > 0) {
+                    status.textContent = `✅ Successfully loaded ${data.length} test records`;
+                    status.className = 'status success';
+                    output.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    status.textContent = 'ℹ️ No test data found. Try saving test data first.';
+                    status.className = 'status';
+                    output.textContent = '';
+                }
+            } catch (error) {
+                status.textContent = `❌ Failed to load test data: ${error.message}`;
+                status.className = 'status error';
+                console.error('Load test failed:', error);
+                output.textContent = '';
+            }
+        });
+    </script>
+</body>
+</html>

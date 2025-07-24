@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hampton Blue Pools - Pool & Spa Services</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="notifications.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Firebase Integration Scripts -->
+    <script type="module" src="firebase-config.js"></script>
+    <script src="sheets-integration.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">🏊‍♂️</div>
+                    <h1>Hampton Blue Pools</h1>
+                </div>
+                <p class="tagline">Your Local Pool & Spa Experts</p>
+            </div>
+        </div>
+        
+        <!-- Topic Navigation Tabs -->
+        <div class="topic-tabs" id="topicTabs" style="display: none;">
+            <div class="tab-container">
+                <div class="tab" data-topic="WHERE">
+                    <span class="tab-icon">📍</span>
+                    <span class="tab-title">Where</span>
+                    <span class="tab-status"></span>
+                </div>
+                <div class="tab" data-topic="WHEN">
+                    <span class="tab-icon">⏰</span>
+                    <span class="tab-title">When</span>
+                    <span class="tab-status"></span>
+                </div>
+                <div class="tab" data-topic="WHAT">
+                    <span class="tab-icon">🔧</span>
+                    <span class="tab-title">What</span>
+                    <span class="tab-status"></span>
+                </div>
+                <div class="tab" data-topic="WHY">
+                    <span class="tab-icon">💡</span>
+                    <span class="tab-title">Why</span>
+                    <span class="tab-status"></span>
+                </div>
+                <div class="tab" data-topic="WHO">
+                    <span class="tab-icon">👤</span>
+                    <span class="tab-title">Who</span>
+                    <span class="tab-status"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be added dynamically by JavaScript -->
+        </div>
+
+        <!-- Topic Information Panel -->
+        <div class="topic-info-panel" id="topicInfoPanel" style="display: none;">
+            <div class="topic-header">
+                <h3 id="topicTitle"></h3>
+                <button class="close-topic-btn" id="closeTopicBtn">×</button>
+            </div>
+            <div class="topic-content">
+                <p id="topicInfo"></p>
+                <div class="topic-responses" id="topicResponses"></div>
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="Type your message here..." autocomplete="off">
+                <button id="sendButton">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="chatbot.js"></script>
+</body>
+</html>
