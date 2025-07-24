@@ -821,7 +821,11 @@ new CustomChatbot();`;
     }
     
     generatePreviewPage(chatbot) {
-        const websiteUrl = chatbot.website || chatbot.url || 'https://example.com';
+        const websiteUrl = chatbot.websiteUrl || chatbot.website || chatbot.url || 'https://example.com';
+        
+        // Debug: Log the chatbot data to see what fields are available
+        console.log('Preview chatbot data:', chatbot);
+        console.log('Using website URL:', websiteUrl);
         
         return `<!DOCTYPE html>
 <html lang="en">
