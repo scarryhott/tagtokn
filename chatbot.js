@@ -6,12 +6,12 @@ class WWWWWAIChatbot {
         this.quickReplies = [];
         // Firebase Configuration - Customizable for any business
         this.firebaseConfig = config?.firebaseConfig || {
-            apiKey: "YOUR_FIREBASE_API_KEY",
-            authDomain: "your-project.firebaseapp.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef123456"
+            apiKey: "AIzaSyBqXXwSIuWvEbZpiKQNi7oZPuMXCXJ7vvo",
+            authDomain: "chatbot-d3c00.firebaseapp.com",
+            projectId: "chatbot-d3c00",
+            storageBucket: "chatbot-d3c00.firebasestorage.app",
+            messagingSenderId: "249683980392",
+            appId: "1:249683980392:web:b4ff8908c64e59f65d4bdd"
         };
         this.conversation = [];
         this.leadData = {
@@ -28,6 +28,22 @@ class WWWWWAIChatbot {
             timestamp: new Date().toISOString()
         };
         this.currentTopicIndex = 0;
+        this.conversationComplete = false;
+        
+        // WWWWW.AI Universal Business Context - Customizable for any service (Define FIRST)
+        this.businessInfo = {
+            name: config?.businessName || 'Your Business',
+            location: config?.location || 'Your Location',
+            services: config?.services || 'Professional Services',
+            experience: config?.experience || 'Experienced professionals',
+            specialties: config?.specialties || 'Quality service, competitive pricing',
+            serviceAreas: config?.serviceAreas || 'Local area',
+            industry: config?.industry || 'service',
+            phone: config?.phone || '',
+            email: config?.email || '',
+            website: config?.website || ''
+        };
+        
         // Topic definitions for 5 W's conversation flow - Customizable for any service
         this.topics = [
             { 
@@ -71,22 +87,8 @@ class WWWWWAIChatbot {
                 responses: []
             }
         ];
-        this.conversationComplete = false;
-        // WWWWW.AI Universal Business Context - Customizable for any service
-        this.businessInfo = {
-            name: config?.businessName || 'Your Business',
-            location: config?.location || 'Your Location',
-            services: config?.services || 'Professional Services',
-            experience: config?.experience || 'Experienced professionals',
-            specialties: config?.specialties || 'Quality service, competitive pricing',
-            serviceAreas: config?.serviceAreas || 'Local area',
-            industry: config?.industry || 'service',
-            phone: config?.phone || '',
-            email: config?.email || '',
-            website: config?.website || ''
-        };
         // Gemini AI Configuration - Enhanced with flexible follow-up rules
-        this.GEMINI_API_KEY = config?.geminiApiKey || 'YOUR_GEMINI_API_KEY';
+        this.GEMINI_API_KEY = config?.geminiApiKey || 'AIzaSyDB4_JVNACxlh0fu3a3UWm9XO5kIxvwDfg';
         this.GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.GEMINI_API_KEY}`;
         
         // Enhanced conversation settings
@@ -468,9 +470,9 @@ class WWWWWAIChatbot {
             ];
         } else if (lowerQuery.includes('area') || lowerQuery.includes('location') || lowerQuery.includes('serve')) {
             results = [
-                'Primary Coverage: Hamptons, Southampton, East Hampton, Westhampton',
-                'Extended Service: All of Suffolk County, NY',
-                'Local Expertise: Lifelong Hampton locals with area knowledge'
+                `Primary Coverage: ${this.businessInfo.location} and surrounding areas`,
+                `Extended Service: ${this.businessInfo.serviceAreas}`,
+                `Local Expertise: ${this.businessInfo.experience} with area knowledge`
             ];
         } else if (lowerQuery.includes('price') || lowerQuery.includes('cost') || lowerQuery.includes('estimate')) {
             results = [
@@ -480,7 +482,7 @@ class WWWWWAIChatbot {
             ];
         } else if (lowerQuery.includes('experience') || lowerQuery.includes('years') || lowerQuery.includes('family')) {
             results = [
-                'Family-Owned Business: Operated by lifelong Hampton locals',
+                `Family-Owned Business: ${this.businessInfo.experience}`,
                 '25+ Years Combined Experience: Deep pool and spa industry knowledge',
                 'Same-Day Attention: Pride in responsive customer service'
             ];
@@ -495,7 +497,7 @@ class WWWWWAIChatbot {
             results = [
                 'Same-Day Service: Quick response to customer calls',
                 'Eco-Friendly Focus: Salt water and copper ion systems',
-                'Local Expertise: 25+ years serving the Hamptons'
+                `Local Expertise: ${this.businessInfo.experience} serving ${this.businessInfo.location}`
             ];
         }
         
@@ -685,7 +687,7 @@ class WWWWWAIChatbot {
         let topicInfo = '';
         switch(topic.id) {
             case 'WHERE':
-                topicInfo = "We serve all areas of the Hamptons including Southampton, East Hampton, Westhampton, and Suffolk County with same-day service.";
+                topicInfo = `We serve all areas of ${this.businessInfo.location} and surrounding areas with same-day service.`;
                 break;
             case 'WHEN':
                 topicInfo = "We offer flexible scheduling including same-day service, weekly maintenance, seasonal openings/closings, and emergency repairs.";
@@ -746,7 +748,7 @@ class WWWWWAIChatbot {
         let question = '';
         switch(currentTopic.id) {
             case 'WHERE':
-                question = "Which area of the Hamptons are you in?";
+                question = `Which area of ${this.businessInfo.location} are you in?`;
                 break;
             case 'WHEN':
                 question = "When are you looking to have this service done?";
@@ -1145,7 +1147,7 @@ class WWWWWAIChatbot {
     }
     
     generateConversationSummary() {
-        let summary = "📍 **Where:** " + (this.conversationState.location || "Hampton area") + "\n";
+        let summary = "📍 **Where:** " + (this.conversationState.location || this.businessInfo.location) + "\n";
         summary += "⏰ **When:** " + (this.conversationState.timing || "To be determined") + "\n";
         summary += "🔧 **What:** " + (this.conversationState.serviceNeeded || "Pool/spa services") + "\n";
         
@@ -1539,7 +1541,7 @@ class WWWWWAIChatbot {
         
         // Generate topic-specific conversation starter
         const topicStarters = {
-            'where': "Let's talk about our service areas in the Hamptons. What would you like to know about where we work?",
+            'where': `Let's talk about our service areas in ${this.businessInfo.location}. What would you like to know about where we work?`,
             'when': "I'd love to discuss timing for your pool service. What questions do you have about scheduling?",
             'what': "Let's explore our pool and spa services. What specific services interest you most?",
             'why': "I can explain our eco-friendly approach and specialties. What challenges are you facing with your pool?",
@@ -1755,5 +1757,5 @@ class WWWWWAIChatbot {
 
 // Initialize the chatbot when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    new HamptonBluePoolsChatbot();
+    new WWWWWAIChatbot();
 });
