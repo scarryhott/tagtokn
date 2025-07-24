@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hampton Blue Pools - Pool & Spa Services</title>
+    <title>WWWWW.AI - Universal Service Chatbot</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="notifications.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -16,10 +16,10 @@
         <div class="chat-header">
             <div class="header-content">
                 <div class="logo">
-                    <div class="logo-icon">🏊‍♂️</div>
-                    <h1>Hampton Blue Pools</h1>
+                    <div class="logo-icon" id="businessIcon">🤖</div>
+                    <h1 id="businessName">WWWWW.AI</h1>
                 </div>
-                <p class="tagline">Your Local Pool & Spa Experts</p>
+                <p class="tagline" id="businessTagline">Universal Service Chatbot Platform</p>
             </div>
         </div>
         
@@ -84,5 +84,58 @@
     </div>
 
     <script src="chatbot.js"></script>
+    <script>
+        // WWWWW.AI Configuration - Customize for any business
+        const chatbotConfig = {
+            // Business Information
+            businessName: 'Your Business Name',
+            location: 'Your City, State',
+            services: 'Your Professional Services',
+            experience: 'Years of experience',
+            specialties: 'Your specialties and unique value proposition',
+            serviceAreas: 'Your service areas',
+            industry: 'your industry type',
+            phone: 'Your phone number',
+            email: 'Your email',
+            website: 'https://yourbusiness.com',
+            
+            // Custom Questions (5 W's)
+            whereQuestion: 'What area are you located in?',
+            whereInfo: 'We serve [your service areas]',
+            whenQuestion: 'When do you need service?',
+            whenInfo: 'We offer flexible scheduling',
+            whatQuestion: 'What service do you need?',
+            whatInfo: 'We offer [your services]',
+            whyQuestion: 'Tell me more about your specific needs?',
+            whyInfo: 'We specialize in [your specialties]',
+            whoQuestion: 'How should we contact you?',
+            whoInfo: 'We can reach out via phone, email, or text',
+            
+            // API Keys (Keep secure in production)
+            geminiApiKey: 'YOUR_GEMINI_API_KEY',
+            firebaseConfig: {
+                apiKey: "YOUR_FIREBASE_API_KEY",
+                authDomain: "your-project.firebaseapp.com",
+                projectId: "your-project-id",
+                storageBucket: "your-project.appspot.com",
+                messagingSenderId: "123456789",
+                appId: "1:123456789:web:abcdef123456"
+            }
+        };
+        
+        // Initialize WWWWW.AI Chatbot
+        let chatbot;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update UI with business info
+            if (chatbotConfig.businessName !== 'Your Business Name') {
+                document.getElementById('businessName').textContent = chatbotConfig.businessName;
+                document.getElementById('businessTagline').textContent = `${chatbotConfig.services} - ${chatbotConfig.location}`;
+                document.title = `${chatbotConfig.businessName} - AI Assistant`;
+            }
+            
+            // Initialize chatbot with configuration
+            chatbot = new WWWWWAIChatbot(chatbotConfig);
+        });
+    </script>
 </body>
 </html>

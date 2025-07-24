@@ -1,9 +1,18 @@
-class HamptonBluePoolsChatbot {
-    constructor() {
+class WWWWWAIChatbot {
+    constructor(config = {}) {
         this.chatMessages = document.getElementById('chatMessages');
         this.userInput = document.getElementById('messageInput'); // Fixed: HTML has messageInput, not userInput
         this.sendButton = document.getElementById('sendButton');
         this.quickReplies = [];
+        // Firebase Configuration - Customizable for any business
+        this.firebaseConfig = config?.firebaseConfig || {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
         this.conversation = [];
         this.leadData = {
             name: '',
@@ -19,52 +28,65 @@ class HamptonBluePoolsChatbot {
             timestamp: new Date().toISOString()
         };
         this.currentTopicIndex = 0;
+        // Topic definitions for 5 W's conversation flow - Customizable for any service
         this.topics = [
             { 
                 id: 'WHERE', 
-                title: 'Service Areas',
-                question: 'Which area of the Hamptons are you in?', 
-                info: 'We serve all Hamptons areas including Southampton, East Hampton, Westhampton, and Suffolk County.',
+                title: 'Location',
+                question: config?.whereQuestion || 'What area are you located in?', 
+                info: config?.whereInfo || `We serve ${this.businessInfo.serviceAreas}.`,
                 done: false,
                 responses: []
             },
             { 
                 id: 'WHEN', 
-                title: 'Timing & Scheduling',
-                question: 'When are you looking to have this service done?', 
-                info: 'We offer flexible scheduling with same-day attention to customer calls. Services available year-round.',
+                title: 'Timing',
+                question: config?.whenQuestion || 'When do you need service?', 
+                info: config?.whenInfo || 'We offer flexible scheduling to meet your needs.',
                 done: false,
                 responses: []
             },
             { 
                 id: 'WHAT', 
-                title: 'Services & Solutions',
-                question: 'What service are you interested in?', 
-                info: 'We offer pool maintenance, equipment installation, repairs, eco-friendly systems, and seasonal services.',
+                title: 'Service Needed',
+                question: config?.whatQuestion || 'What service do you need?', 
+                info: config?.whatInfo || `We offer ${this.businessInfo.services}.`,
                 done: false,
                 responses: []
             },
             { 
                 id: 'WHY', 
                 title: 'Specific Needs',
-                question: 'Could you tell me more about what you need help with?', 
-                info: 'We specialize in eco-friendly solutions, salt water systems, and energy-efficient equipment.',
+                question: config?.whyQuestion || 'Could you tell me more about what you need help with?', 
+                info: config?.whyInfo || `We specialize in ${this.businessInfo.specialties}.`,
                 done: false,
                 responses: []
             },
             { 
                 id: 'WHO', 
                 title: 'Contact Preferences',
-                question: 'How should we contact you?', 
-                info: 'We can reach out via phone, email, or text - whatever works best for you.',
+                question: config?.whoQuestion || 'How should we contact you?', 
+                info: config?.whoInfo || 'We can reach out via phone, email, or text - whatever works best for you.',
                 done: false,
                 responses: []
             }
         ];
         this.conversationComplete = false;
-        
+        // WWWWW.AI Universal Business Context - Customizable for any service
+        this.businessInfo = {
+            name: config?.businessName || 'Your Business',
+            location: config?.location || 'Your Location',
+            services: config?.services || 'Professional Services',
+            experience: config?.experience || 'Experienced professionals',
+            specialties: config?.specialties || 'Quality service, competitive pricing',
+            serviceAreas: config?.serviceAreas || 'Local area',
+            industry: config?.industry || 'service',
+            phone: config?.phone || '',
+            email: config?.email || '',
+            website: config?.website || ''
+        };
         // Gemini AI Configuration - Enhanced with flexible follow-up rules
-        this.GEMINI_API_KEY = 'AIzaSyDB4_JVNACxlh0fu3a3UWm9XO5kIxvwDfg';
+        this.GEMINI_API_KEY = config?.geminiApiKey || 'YOUR_GEMINI_API_KEY';
         this.GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.GEMINI_API_KEY}`;
         
         // Enhanced conversation settings
@@ -110,21 +132,21 @@ class HamptonBluePoolsChatbot {
         
         // Business context for Gemini
         this.businessContext = `
-        You are a chatbot for Hampton Blue Pools, a family-owned pool and spa service company in the Hamptons, NY with 25+ years experience.
+        You are a chatbot for ${this.businessInfo.name}, a ${this.businessInfo.industry} company in ${this.businessInfo.location} with ${this.businessInfo.experience} experience.
         
-        WEBSITE DATABASE: https://hamptonbluepools.com/
+        WEBSITE DATABASE: ${this.businessInfo.website}
         You can reference information from their website including services, pricing, coverage areas, and company details.
         
         BUSINESS INFO:
-        - Services: Pool/spa maintenance, seasonal openings/closings, equipment installation, repairs, eco-friendly systems
-        - Values: Same-day attention, competitive pricing, eco-friendly approach, local expertise
-        - Coverage: Hamptons, Southampton, East Hampton, Westhampton, Suffolk County
-        - Certifications: ENERGY STAR certified installers
-        - Specialties: Salt water systems, copper ion systems, non-chlorine solutions
-        - Experience: 25+ years, family-owned by lifelong Hampton locals
+        - Services: ${this.businessInfo.services}
+        - Values: ${this.businessInfo.specialties}
+        - Coverage: ${this.businessInfo.serviceAreas}
+        - Certifications: ${this.businessInfo.certifications}
+        - Specialties: ${this.businessInfo.specialties}
+        - Experience: ${this.businessInfo.experience}
         
         CONVERSATION STRUCTURE - Follow this structured approach for the 5 W's:
-        1. WHERE - Location (which Hamptons area)
+        1. WHERE - Location (which area)
         2. WHEN - Timing (service timeline)  
         3. WHAT - Service needed
         4. WHY - Specific queries/needs
@@ -181,27 +203,23 @@ class HamptonBluePoolsChatbot {
         - Keep responses under 50 words maximum
         `;
         
-        // Website content cache for faster responses
+        // Website content cache for faster responses - Customizable for any business
         this.websiteContent = {
-            services: [
-                'Pool & Spa General Maintenance',
-                'Pool & Spa Weekly Maintenance', 
-                'Seasonal Openings and Closings',
-                'Pool & Spa Acid Washing',
-                'Repairs and Restorations',
-                'Equipment Installation',
-                'Salt Water Pool Systems',
-                'Copper Ion Systems',
-                'Gunite Installation',
-                'Pressure Testing/Leak Detection',
-                'Winter Pool Service/Pump Down'
+            services: config?.servicesList || [
+                'Professional Service 1',
+                'Professional Service 2', 
+                'Consultation Services',
+                'Maintenance Services',
+                'Installation Services',
+                'Repair Services',
+                'Custom Solutions'
             ],
-            areas: ['Hamptons', 'Southampton', 'East Hampton', 'Westhampton', 'Suffolk County'],
-            specialties: ['Eco-friendly systems', 'ENERGY STAR certified', 'Same-day service', 'Local expertise'],
-            pricing: 'Competitive prices with personalized estimates',
-            experience: '25+ years combined experience',
-            certifications: 'ENERGY STAR Certified Pool Pump and Electric Heater Installers',
-            values: 'Same-day attention to customer calls, personal service, eco-friendly approach'
+            areas: config?.serviceAreas?.split(', ') || [this.businessInfo.serviceAreas],
+            specialties: config?.specialtiesList || [this.businessInfo.specialties],
+            pricing: config?.pricing || 'Competitive prices with personalized estimates',
+            experience: this.businessInfo.experience,
+            certifications: config?.certifications || 'Licensed and insured professionals',
+            values: config?.values || 'Quality service, competitive pricing, customer satisfaction'
         };
         
         // Database configuration
@@ -212,12 +230,12 @@ class HamptonBluePoolsChatbot {
     
     // Generate unique session ID
     generateSessionId() {
-        return 'hbp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        return 'wwwwwai_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
     
     // Initialize local database (localStorage for demo, can be replaced with real DB)
     initializeDatabase() {
-        const dbName = 'hamptonBluePoolsLeads';
+        const dbName = 'wwwwwaiLeads';
         if (!localStorage.getItem(dbName)) {
             localStorage.setItem(dbName, JSON.stringify([]));
         }
@@ -524,7 +542,7 @@ class HamptonBluePoolsChatbot {
     async startConversation() {
         // Add welcome message
         this.addBotMessage(
-            "👋 Hi! I'm here to help you learn about Hampton Blue Pools and understand your pool service needs. " +
+            `👋 Hi! I'm here to help you learn about ${this.businessInfo.name} and understand your service needs. ` +
             "I'll ask you a few questions to see how we can help."
         );
         
@@ -828,7 +846,7 @@ class HamptonBluePoolsChatbot {
             
             // Thank you message
             this.addBotMessage(
-                "Perfect! I have all the information I need. One of our Hampton Blue Pools experts will be in touch shortly to discuss your needs.",
+                `Perfect! I have all the information I need. One of our ${this.businessInfo.name} experts will be in touch shortly to discuss your needs.`,
                 ['Thank you', 'I have another question']
             );
             
@@ -1094,7 +1112,7 @@ class HamptonBluePoolsChatbot {
         // Fallback to rule-based responses if Gemini fails
         if (this.conversationState.currentFlow === 'initial') {
             this.addBotMessage(
-                "Hi! I help with Hampton Blue Pools info. How can I assist?",
+                `Hi! I help with ${this.businessInfo.name} info. How can I assist?`,
                 [
                     { text: "Pool services", response: "Tell me about services" },
                     { text: "Get help", response: "I need pool help" },
@@ -1117,7 +1135,7 @@ class HamptonBluePoolsChatbot {
     provideSummaryAndNextSteps() {
         const summary = this.generateConversationSummary();
         this.addBotMessage(
-            `Perfect! Let me summarize what we've discussed:\n\n${summary}\n\n**Next Steps:**\nOur team will reach out to you via ${this.conversationState.contactInfo.preferred || 'your preferred method'} to discuss your specific needs and provide a personalized estimate.\n\n**Why choose Hampton Blue Pools?**\n✅ 25+ years of local expertise\n✅ Same-day attention to calls\n✅ Eco-friendly solutions\n✅ Competitive pricing\n✅ ENERGY STAR certified\n\nIs there anything else you'd like to know before we connect you with our team?`,
+            `Perfect! Let me summarize what we've discussed:\n\n${summary}\n\n**Next Steps:**\nOur team will reach out to you via ${this.conversationState.contactInfo.preferred || 'your preferred method'} to discuss your specific needs and provide a personalized estimate.\n\n**Why choose ${this.businessInfo.name}?**\n✅ ${this.businessInfo.experience}\n✅ ${this.businessInfo.specialties}\n✅ Quality service and competitive pricing\n✅ Licensed and insured professionals\n\nIs there anything else you'd like to know before we connect you with our team?`,
             [
                 { text: "That covers everything", response: "That covers everything, thanks!" },
                 { text: "I have another question", response: "I have one more question" },
@@ -1370,7 +1388,7 @@ class HamptonBluePoolsChatbot {
         const typingDiv = document.createElement('div');
         typingDiv.className = 'typing-indicator';
         typingDiv.innerHTML = `
-            <span>Hampton Blue Pools is typing</span>
+            <span>${this.businessInfo.name} is typing</span>
             <div class="typing-dots">
                 <div class="typing-dot"></div>
                 <div class="typing-dot"></div>
