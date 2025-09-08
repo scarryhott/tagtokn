@@ -17,7 +17,7 @@
   },
   "hosting": {
     "target": "tagtokn-com",
-    "public": "build",
+    "public": "my-app/build",
     "ignore": [
       "firebase.json",
       "**/.*",
