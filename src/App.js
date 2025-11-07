@@ -310,8 +310,6 @@ const TokenomicsUI = () => {
   const [prizePool, setPrizePool] = useState(0);
   const [userRaffleWinningsCount, setUserRaffleWinningsCount] = useState(0);
   const [userRaffleWinningsAmount, setUserRaffleWinningsAmount] = useState(0); 
-  const [raffleTickets, setRaffleTickets] = useState(0);
-  const [nextRaffleTimestamp, setNextRaffleTimestamp] = useState(0);
   const [winningInfluencer, setWinningInfluencer] = useState(null);
   const [showRaffleModal, setShowRaffleModal] = useState(false);
   const [raffleTimer, setRaffleTimer] = useState(null);
@@ -357,7 +355,6 @@ const TokenomicsUI = () => {
   const [connectedInstagramAccount, setConnectedInstagramAccount] = useState(null); // Stores connected username
   const [showInstagramConnectModal, setShowInstagramConnectModal] = useState(false);
   // Instagram connect input state
-  const [instagramConnectInput, setInstagramConnectInput] = useState('');
   const [instagramConnectMessage, setInstagramConnectMessage] = useState('');
   const [showInstagramLinkModal, setShowInstagramLinkModal] = useState(false);
   const [instagramPostLinkInput, setInstagramPostLinkInput] = useState('');
@@ -1052,7 +1049,7 @@ const TokenomicsUI = () => {
 
     setRedeemMessage(`Successfully redeemed physical token for ${influencers.find(inf => inf.id === tokenToRedeem.influencerId)?.name}!`);
     setTimeout(() => setRedeemMessage(''), 3000);
-  }, [issuedPhysicalTokens, userTokens, influencers, globalStats, setUserTokens, setIssuedPhysicalTokens, setGlobalStats, setInfluencers, calculateInfluencerPrice]); // Dependencies for useCallback
+  }, [issuedPhysicalTokens, influencers, globalStats, setUserTokens, setIssuedPhysicalTokens, setGlobalStats, setInfluencers, calculateInfluencerPrice]); // Dependencies for useCallback
 
 
   // New function to handle creating a new influencer profile
@@ -2623,12 +2620,10 @@ const CreateInfluencerModal = ({ onClose, onCreateInfluencer, connectedInstagram
 };
 
 const App = () => {
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, () => {
       setLoading(false);
     });
     return () => unsubscribe();
