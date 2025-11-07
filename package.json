@@ -19,6 +19,19 @@
     "domexception": "^4.0.0",
     "abab": "^3.0.0"
   },
+  "overrides": {
+    "@inquirer/prompts": "^7.9.0",
+    "@svgr/plugin-svgo": "^8.1.0",
+    "@svgr/webpack": "8.1.0",
+    "compression": "1.8.1",
+    "css-select": "^5.1.0",
+    "nth-check": "^2.1.1",
+    "on-headers": "1.1.0",
+    "resolve-url-loader": "^5.0.0",
+    "svgo": "^3.3.2",
+    "tmp": "^0.2.5",
+    "webpack-dev-server": "^5.2.1"
+  },
   "dependencies": {
     "@firebase/auth": "^1.10.6",
     "@firebase/firestore": "^4.7.17",
@@ -26,13 +39,13 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.9.0",
+    "axios": "^1.13.2",
     "cors": "^2.8.5",
     "firebase": "^11.9.0",
-    "firebase-admin": "^11.11.1",
+    "firebase-admin": "^13.6.0",
     "http-proxy-middleware": "^3.0.5",
     "lucide-react": "^0.513.0",
-    "next": "^14.2.29",
+    "next": "^14.2.33",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -49,7 +62,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "vercel-build": "npm install --legacy-peer-deps && npm run build",
-    "postinstall": "npm dedupe"
+    "postinstall": "npm dedupe && patch-package"
   },
   "eslintConfig": {
     "extends": [
@@ -72,8 +85,9 @@
   "devDependencies": {
     "@eslint/js": "^9.28.0",
     "autoprefixer": "^10.4.19",
-    "firebase-tools": "^14.6.0",
-    "playwright": "^1.52.0",
+    "firebase-tools": "^14.24.0",
+    "patch-package": "^8.0.1",
+    "playwright": "^1.56.1",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1"
   }

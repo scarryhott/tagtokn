@@ -215,7 +215,7 @@ const TokenomicsUI = () => {
   });
 
   // Function to calculate an influencer's token price based on accumulated values and effective supply
-  const calculateInfluencerPrice = (influencer, currentGlobalStats) => {
+  const calculateInfluencerPrice = useCallback((influencer, currentGlobalStats) => {
     // effectiveSupply = marketplace bought tokens + (earned tokens * earned token value)
     // Use a minimum earnedCoinValue to prevent division by zero if totalEarned is 0 globally
     const earnedValueForCalc = currentGlobalStats.earnedCoinValue > 0 ? currentGlobalStats.earnedCoinValue : 0.01;
@@ -228,7 +228,7 @@ const TokenomicsUI = () => {
     // Price = (total money effectively put into the token's value pool - total fees generated) / effective supply
     const netValue = influencer.tokenPoolValue - influencer.totalFeesGenerated;
     return Math.max(0.01, netValue / effectiveSupply); // Ensure price doesn't go below a minimum
-  };
+  }, []);
 
   // Initialize influencers state, setting initial accumulated values to 0 for dynamic calculation
   const [influencers, setInfluencers] = useState(() => {
@@ -442,7 +442,7 @@ const TokenomicsUI = () => {
     }, 3000); // Update every 3 seconds
 
     return () => clearInterval(interval); // Cleanup on component unmount
-  }, [globalStats]); // Re-run if globalStats (especially earnedCoinValue for ratio panel) changes
+  }, [globalStats, calculateInfluencerPrice]); // Re-run if globalStats (especially earnedCoinValue for ratio panel) changes
 
   // Handler for search input change
   const handleSearchChange = (e) => {
@@ -830,7 +830,6 @@ const TokenomicsUI = () => {
 
     setUserTokens(newOwnedTokens); // Update user's inventory
     setConnectedInstagramAccount(null);
-    setInstagramConnectInput('');
     setInstagramConnectMessage('Instagram account disconnected. All earned tokens removed.');
   };
 
@@ -1119,7 +1118,6 @@ const TokenomicsUI = () => {
         targetTimestamp = Date.now() + RAFFLE_INTERVAL_MS;
         localStorage.setItem('nextRaffleTimestamp', targetTimestamp.toString());
       }
-      setNextRaffleTimestamp(targetTimestamp);
       setRaffleTimer(calculateTimeRemaining(targetTimestamp));
     };
 
@@ -1132,7 +1130,6 @@ const TokenomicsUI = () => {
           runDailyRaffle();
           const newTargetTimestamp = Date.now() + RAFFLE_INTERVAL_MS;
           localStorage.setItem('nextRaffleTimestamp', newTargetTimestamp.toString());
-          setNextRaffleTimestamp(newTargetTimestamp);
           return calculateTimeRemaining(newTargetTimestamp);
         }
         return prevTime - 1;
@@ -1262,7 +1259,7 @@ const TokenomicsUI = () => {
               <div className="text-center">
                 <p className="text-gray-400 mb-4">Connect your Instagram account to earn tokens by linking posts.</p>
                 <button
-                  onClick={() => { setInstagramConnectInput(''); setInstagramConnectMessage(''); setShowInstagramConnectModal(true); }}
+                  onClick={() => { setInstagramConnectMessage(''); setShowInstagramConnectModal(true); }}
                   className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 py-2 px-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 mx-auto"
                 >
                   <Instagram className="h-4 w-4" />
