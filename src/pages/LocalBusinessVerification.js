@@ -12,8 +12,10 @@ import { auth, onAuthStateChanged } from '../firebase';
 import {
   submitLocalBusinessApplication,
   subscribeToLocalBusinesses,
-  updateLocalBusinessStatus
+  updateLocalBusinessStatus,
+  updateLocalBusiness
 } from '../services/localBusinessService';
+import { uploadBusinessDocument } from '../services/storageService';
 
 const emptyFormState = {
   businessName: '',
@@ -55,6 +57,8 @@ const formatTimestamp = (timestamp) => {
   });
 };
 
+const MAX_DOCUMENT_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
+
 const LocalBusinessVerification = () => {
   const [formData, setFormData] = useState(emptyFormState);
   const [currentUser, setCurrentUser] = useState(() => auth.currentUser);
@@ -63,6 +67,9 @@ const LocalBusinessVerification = () => {
   const [feedback, setFeedback] = useState(null);
   const [notesByBusinessId, setNotesByBusinessId] = useState({});
   const [statusAction, setStatusAction] = useState({ id: null, nextStatus: null });
+  const [documentsFile, setDocumentsFile] = useState(null);
+  const [documentUploadProgress, setDocumentUploadProgress] = useState(0);
+  const [fileInputKey, setFileInputKey] = useState(() => Date.now());
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
@@ -117,6 +124,28 @@ const LocalBusinessVerification = () => {
     }));
   };
 
+  const handleDocumentFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setDocumentsFile(null);
+      setDocumentUploadProgress(0);
+      return;
+    }
+
+    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+      setFeedback({
+        type: 'error',
+        message: 'File is too large. Please upload a document smaller than 15MB.'
+      });
+      event.target.value = '';
+      return;
+    }
+
+    setFeedback(null);
+    setDocumentsFile(file);
+    setDocumentUploadProgress(0);
+  };
+
   const validateForm = () => {
     const requiredFields = [
       { key: 'businessName', label: 'Business name' },
@@ -149,6 +178,7 @@ const LocalBusinessVerification = () => {
     }
 
     setSubmitting(true);
+    let createdBusinessId = null;
     const payload = {
       businessName: formData.businessName.trim(),
       category: formData.category.trim(),
@@ -181,12 +211,28 @@ const LocalBusinessVerification = () => {
     };
 
     try {
-      await submitLocalBusinessApplication(payload, currentUser);
+      createdBusinessId = await submitLocalBusinessApplication(payload, currentUser);
+
+      if (documentsFile && createdBusinessId) {
+        const { downloadURL, path } = await uploadBusinessDocument(
+          createdBusinessId,
+          documentsFile,
+          setDocumentUploadProgress
+        );
+        await updateLocalBusiness(createdBusinessId, {
+          documentsUrl: downloadURL,
+          documentPath: path
+        });
+      }
+
       setFeedback({
         type: 'success',
         message: 'Business submitted for verification. We will review it shortly.'
       });
       setFormData(emptyFormState);
+      setDocumentsFile(null);
+      setDocumentUploadProgress(0);
+      setFileInputKey(Date.now());
     } catch (error) {
       console.error('Error submitting business', error);
       setFeedback({
@@ -195,6 +241,7 @@ const LocalBusinessVerification = () => {
       });
     } finally {
       setSubmitting(false);
+      setDocumentUploadProgress(0);
     }
   };
 
@@ -486,6 +533,30 @@ const LocalBusinessVerification = () => {
                   placeholder="Drive/Dropbox links"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-600">Upload supporting proof</label>
+              <input
+                key={fileInputKey}
+                type="file"
+                accept="application/pdf,image/*"
+                onChange={handleDocumentFileChange}
+                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none file:mr-4 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+              />
+              <p className="mt-2 text-xs text-gray-500">
+                Attach permits, community photos, or any proof (PDF or image, up to 15MB).
+              </p>
+              {documentsFile && (
+                <div className="mt-2 text-xs text-gray-600">
+                  <p>Selected: {documentsFile.name}</p>
+                  {documentUploadProgress > 0 && (
+                    <p className="mt-1">
+                      Upload progress: {documentUploadProgress}%
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">

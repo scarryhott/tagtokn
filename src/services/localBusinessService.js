@@ -49,6 +49,15 @@ export const subscribeToLocalBusinesses = (callback) => {
   });
 };
 
+export const updateLocalBusiness = async (businessId, data) => {
+  if (!businessId) throw new Error('businessId is required');
+  const businessRef = doc(db, COLLECTION_NAME, businessId);
+  await updateDoc(businessRef, {
+    ...data,
+    updatedAt: serverTimestamp()
+  });
+};
+
 /**
  * Update the verification status for a business.
  * @param {string} businessId - Firestore document id.

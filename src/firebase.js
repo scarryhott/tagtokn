@@ -11,6 +11,7 @@ import {
   onAuthStateChanged 
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // Your web app's Firebase configuration
@@ -28,6 +29,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
+const storage = getStorage(app);
 
 // Initialize providers
 const googleProvider = new GoogleAuthProvider();
@@ -196,6 +198,7 @@ const updateUserData = async (userId, data) => {
 export {
   auth,
   db,
+  storage,
   functions,
   httpsCallable,
   // Auth methods

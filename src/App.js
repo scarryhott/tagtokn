@@ -33,6 +33,7 @@ import InstagramCallback from './pages/InstagramCallback';
 import InstagramLogin from './components/InstagramLogin';
 import Dashboard from './pages/Dashboard';
 import LocalBusinessVerification from './pages/LocalBusinessVerification';
+import TagToknTokenPage from './pages/TagToknTokenPage';
 
 // Alias TrendingUp to TrendingUpIcon for backward compatibility
 const TrendingUpIcon = TrendingUp;
@@ -105,6 +106,14 @@ const Navigation = () => {
           title="Local Businesses"
         >
           <Store size={24} />
+        </button>
+
+        <button
+          onClick={() => navigate('/tagtokn-token')}
+          className={`p-2 rounded-lg ${isActive('/tagtokn-token') ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          title="TagTokn Token"
+        >
+          <DollarSign size={24} />
         </button>
       </div>
       
@@ -2655,6 +2664,7 @@ const App = () => {
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
           <Route path="/instagram-feed" element={<InstagramFeedPage />} />
           <Route path="/local-business" element={<LocalBusinessVerification />} />
+          <Route path="/tagtokn-token" element={<TagToknTokenPage />} />
           <Route path="/" element={<TokenomicsUI />} />
         </Routes>
       </main>
