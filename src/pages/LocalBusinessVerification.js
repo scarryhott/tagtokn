@@ -13,13 +13,20 @@ import {
   submitLocalBusinessApplication,
   subscribeToLocalBusinesses,
   updateLocalBusinessStatus,
-  updateLocalBusiness
+  updateLocalBusiness,
+  updateBusinessTreasury,
+  requestTagtoknLiquidity
 } from '../services/localBusinessService';
 import { uploadBusinessDocument } from '../services/storageService';
 import {
   createTokenTransaction,
   subscribeToTransactionsByBusiness
 } from '../services/tokenTransactionService';
+import {
+  subscribeToMarketMakerConfig,
+  upsertMarketMakerConfig
+} from '../services/marketMakerService';
+import { subscribeToTagtoknToken } from '../services/tagtoknTokenService';
 
 const emptyFormState = {
   businessName: '',
@@ -103,12 +110,37 @@ const LocalBusinessVerification = () => {
   const [marketBandInputs, setMarketBandInputs] = useState({});
   const [bandInputDirty, setBandInputDirty] = useState({});
   const [bandStatus, setBandStatus] = useState({});
+  const [bandSensitivityInputs, setBandSensitivityInputs] = useState({});
+  const [bandSensitivityDirty, setBandSensitivityDirty] = useState({});
+  const [marketMakerConfigs, setMarketMakerConfigs] = useState({});
+  const [treasuryInputs, setTreasuryInputs] = useState({});
+  const [treasuryStatus, setTreasuryStatus] = useState({});
+  const [liquidityRequestForms, setLiquidityRequestForms] = useState({});
+  const [liquidityStatus, setLiquidityStatus] = useState({});
   const [transactionForms, setTransactionForms] = useState({});
   const [transactionStatus, setTransactionStatus] = useState({});
   const [transactionHistory, setTransactionHistory] = useState({});
+  const [earnBuyRatio, setEarnBuyRatio] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToTagtoknToken((tokenDoc) => {
+      if (!tokenDoc) {
+        setEarnBuyRatio(0);
+        return;
+      }
+      if (!tokenDoc.totalBought && tokenDoc.totalEarned) {
+        setEarnBuyRatio(Number.POSITIVE_INFINITY);
+      } else if (!tokenDoc.totalBought) {
+        setEarnBuyRatio(0);
+      } else {
+        setEarnBuyRatio(tokenDoc.totalEarned / tokenDoc.totalBought);
+      }
+    });
     return unsubscribe;
   }, []);
 
@@ -155,10 +187,38 @@ const LocalBusinessVerification = () => {
   }, [businesses, bandInputDirty]);
 
   useEffect(() => {
+    setTreasuryInputs((prev) => {
+      const next = {};
+      businesses.forEach((biz) => {
+        next[biz.id] = {
+          selfBalance: biz.treasury?.selfBalance ?? 0,
+          communityBalance: biz.treasury?.communityBalance ?? 0,
+          tagtoknCredit: biz.treasury?.tagtoknCredit ?? 0,
+          autoMarketMake: biz.treasury?.autoMarketMake ?? false
+        };
+      });
+      return next;
+    });
+  }, [businesses]);
+
+  useEffect(() => {
     setTransactionForms((prev) => {
       const next = {};
       businesses.forEach((biz) => {
         next[biz.id] = prev[biz.id] ?? createEmptyTransactionForm();
+      });
+      return next;
+    });
+  }, [businesses]);
+
+  useEffect(() => {
+    setLiquidityRequestForms((prev) => {
+      const next = {};
+      businesses.forEach((biz) => {
+        next[biz.id] = prev[biz.id] ?? {
+          amount: '',
+          broadcastToCommunity: false
+        };
       });
       return next;
     });
@@ -184,6 +244,34 @@ const LocalBusinessVerification = () => {
       });
     };
   }, [businesses]);
+
+  useEffect(() => {
+    const unsubscribers = businesses
+      .filter((biz) => biz.id)
+      .map((biz) =>
+        subscribeToMarketMakerConfig(biz.id, (config) => {
+          setMarketMakerConfigs((prev) => ({
+            ...prev,
+            [biz.id]: config
+          }));
+
+          if (!bandSensitivityDirty[biz.id] && config?.bandSensitivity !== undefined) {
+            setBandSensitivityInputs((prev) => ({
+              ...prev,
+              [biz.id]: config.bandSensitivity
+            }));
+          }
+        })
+      );
+
+    return () => {
+      unsubscribers.forEach((unsubscribe) => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      });
+    };
+  }, [businesses, bandSensitivityDirty]);
 
   const summary = useMemo(() => {
     return businesses.reduce(
@@ -231,6 +319,158 @@ const LocalBusinessVerification = () => {
     setFeedback(null);
     setDocumentsFile(file);
     setDocumentUploadProgress(0);
+  };
+
+  const handleSensitivityChange = (businessId, value) => {
+    const numericValue = Math.max(0, Math.min(1, parseFloat(value) || 0));
+    setBandSensitivityInputs((prev) => ({
+      ...prev,
+      [businessId]: numericValue
+    }));
+    setBandSensitivityDirty((prev) => ({
+      ...prev,
+      [businessId]: true
+    }));
+  };
+
+  const handleFundingSourceChange = (businessId, source) => {
+    setMarketMakerConfigs((prev) => ({
+      ...prev,
+      [businessId]: {
+        ...(prev[businessId] || {}),
+        fundingSource: source
+      }
+    }));
+  };
+
+  const handleToggleAutoMarketMake = async (business) => {
+    const currentTreasury = treasuryInputs[business.id] || {
+      selfBalance: 0,
+      communityBalance: 0,
+      tagtoknCredit: 0,
+      autoMarketMake: false
+    };
+    const nextValue = !currentTreasury.autoMarketMake;
+    try {
+      await updateBusinessTreasury(business.id, {
+        ...currentTreasury,
+        autoMarketMake: nextValue
+      });
+      setTreasuryInputs((prev) => ({
+        ...prev,
+        [business.id]: {
+          ...prev[business.id],
+          autoMarketMake: nextValue
+        }
+      }));
+      setTreasuryStatus((prev) => ({
+        ...prev,
+        [business.id]: {
+          type: 'success',
+          message: `Auto market making ${nextValue ? 'enabled' : 'disabled'}.`
+        }
+      }));
+      setMarketMakerConfigs((prev) => ({
+        ...prev,
+        [business.id]: {
+          ...prev[business.id],
+          autoEnabled: nextValue
+        }
+      }));
+    } catch (error) {
+      console.error('Error toggling auto market making', error);
+      setTreasuryStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Unable to update auto setting.' }
+      }));
+    }
+  };
+
+  const handleTreasuryInputChange = (businessId, field, value) => {
+    setTreasuryInputs((prev) => ({
+      ...prev,
+      [businessId]: {
+        ...prev[businessId],
+        [field]: value
+      }
+    }));
+    setTreasuryStatus((prev) => ({
+      ...prev,
+      [businessId]: null
+    }));
+  };
+
+  const handleSaveTreasury = async (business) => {
+    const inputs = treasuryInputs[business.id];
+    if (!inputs) return;
+    const sanitized = {
+      selfBalance: parseFloat(inputs.selfBalance) || 0,
+      communityBalance: parseFloat(inputs.communityBalance) || 0,
+      tagtoknCredit: parseFloat(inputs.tagtoknCredit) || 0,
+      autoMarketMake: !!inputs.autoMarketMake
+    };
+    try {
+      await updateBusinessTreasury(business.id, sanitized);
+      setTreasuryStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'success', message: 'Treasury updated.' }
+      }));
+    } catch (error) {
+      console.error('Error saving treasury', error);
+      setTreasuryStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Failed to save treasury.' }
+      }));
+    }
+  };
+
+  const handleLiquidityFormChange = (businessId, field, value) => {
+    const normalizedValue = field === 'broadcastToCommunity' ? !!value : value;
+    setLiquidityRequestForms((prev) => ({
+      ...prev,
+      [businessId]: {
+        ...prev[businessId],
+        [field]: normalizedValue
+      }
+    }));
+    setLiquidityStatus((prev) => ({
+      ...prev,
+      [businessId]: null
+    }));
+  };
+
+  const handleRequestLiquidity = async (business) => {
+    const form = liquidityRequestForms[business.id];
+    if (!form) return;
+    const amount = parseFloat(form.amount);
+    if (Number.isNaN(amount) || amount <= 0) {
+      setLiquidityStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Enter a positive amount.' }
+      }));
+      return;
+    }
+    try {
+      await requestTagtoknLiquidity({
+        businessId: business.id,
+        amount,
+        broadcastToCommunity: !!form.broadcastToCommunity
+      });
+      setLiquidityStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'success', message: 'Liquidity request sent.' }
+      }));
+      setLiquidityRequestForms((prev) => ({
+        ...prev,
+        [business.id]: { amount: '', broadcastToCommunity: form.broadcastToCommunity }
+      }));
+    } catch (error) {
+      console.error('Error requesting liquidity', error);
+      setLiquidityStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Request failed.' }
+      }));
+    }
   };
 
   const handleBandInputChange = (businessId, field, value) => {
@@ -281,6 +521,14 @@ const LocalBusinessVerification = () => {
       return;
     }
 
+    const sensitivityInput =
+      bandSensitivityInputs[business.id] ??
+      marketMakerConfigs[business.id]?.bandSensitivity ??
+      0;
+    const normalizedRatio = Number.isFinite(earnBuyRatio) ? earnBuyRatio : 1;
+    const effectiveTolerance = tolerance * (1 + sensitivityInput * normalizedRatio);
+    const effectiveBandRange = calculateBandBounds(assetValue, effectiveTolerance);
+
     try {
       await updateLocalBusiness(business.id, {
         assetValue,
@@ -288,11 +536,29 @@ const LocalBusinessVerification = () => {
         bandLower: bandRange.lower,
         bandUpper: bandRange.upper
       });
+
+      await upsertMarketMakerConfig(business.id, {
+        bandLower: bandRange.lower,
+        bandUpper: bandRange.upper,
+        baseTolerance: tolerance,
+        bandSensitivity: sensitivityInput,
+        effectiveTolerance,
+        effectiveBandLower: effectiveBandRange?.lower ?? bandRange.lower,
+        effectiveBandUpper: effectiveBandRange?.upper ?? bandRange.upper,
+        autoEnabled: marketMakerConfigs[business.id]?.autoEnabled ?? false,
+        fundingSource: marketMakerConfigs[business.id]?.fundingSource ?? 'self',
+        assetValue
+      });
+
       setBandStatus((prev) => ({
         ...prev,
         [business.id]: { type: 'success', message: 'Market band saved.' }
       }));
       setBandInputDirty((prev) => ({
+        ...prev,
+        [business.id]: false
+      }));
+      setBandSensitivityDirty((prev) => ({
         ...prev,
         [business.id]: false
       }));
@@ -865,6 +1131,33 @@ const LocalBusinessVerification = () => {
               const txForm = transactionForms[business.id] || createEmptyTransactionForm();
               const txStatus = transactionStatus[business.id];
               const txHistory = transactionHistory[business.id] || [];
+              const treasury = treasuryInputs[business.id] || {
+                selfBalance: 0,
+                communityBalance: 0,
+                tagtoknCredit: 0,
+                autoMarketMake: false
+              };
+              const treasuryMessage = treasuryStatus[business.id];
+              const liquidityForm = liquidityRequestForms[business.id] || {
+                amount: '',
+                broadcastToCommunity: false
+              };
+              const liquidityMessage = liquidityStatus[business.id];
+              const marketMaker = marketMakerConfigs[business.id] || {};
+              const sensitivityValue =
+                bandSensitivityInputs[business.id] ??
+                marketMaker.bandSensitivity ??
+                0;
+              const normalizedRatio = Number.isFinite(earnBuyRatio) ? earnBuyRatio : 1;
+              const toleranceValue = parseFloat(bandInputs.tolerance) || DEFAULT_BAND_TOLERANCE;
+              const effectiveTolerance =
+                toleranceValue * (1 + sensitivityValue * normalizedRatio);
+              const effectiveBandRange = calculateBandBounds(
+                bandInputs.assetValue,
+                effectiveTolerance
+              );
+              const fundingSource = marketMaker.fundingSource ?? 'self';
+              const autoEnabled = marketMaker.autoEnabled ?? treasury.autoMarketMake ?? false;
 
               return (
                 <div
@@ -989,6 +1282,118 @@ const LocalBusinessVerification = () => {
                   </button>
                 </div>
 
+                <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-gray-700">Treasury lanes</p>
+                    {treasuryMessage && (
+                      <span
+                        className={`text-xs font-semibold ${
+                          treasuryMessage.type === 'error' ? 'text-red-500' : 'text-emerald-600'
+                        }`}
+                      >
+                        {treasuryMessage.message}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    {[
+                      { label: 'Self-funded', field: 'selfBalance' },
+                      {
+                        label: 'Community-funded',
+                        field: 'communityBalance'
+                      },
+                      { label: 'TagTokn credit', field: 'tagtoknCredit' }
+                    ].map(({ label, field }) => (
+                      <div key={field}>
+                        <label className="text-xs uppercase text-gray-500">{label}</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={treasury[field]}
+                          onChange={(event) =>
+                            handleTreasuryInputChange(business.id, field, event.target.value)
+                          }
+                          className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          placeholder="0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleAutoMarketMake(business)}
+                      className={`rounded-2xl px-4 py-2 text-sm font-semibold ${
+                        autoEnabled
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {autoEnabled ? 'Automatic market making ON' : 'Enable automatic'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveTreasury(business)}
+                      className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                    >
+                      Save treasury
+                    </button>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-dashed border-gray-200 p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs uppercase text-gray-500">Request TagTokn liquidity</p>
+                      {liquidityMessage && (
+                        <span
+                          className={`text-xs font-semibold ${
+                            liquidityMessage.type === 'error'
+                              ? 'text-red-500'
+                              : 'text-blue-600'
+                          }`}
+                        >
+                          {liquidityMessage.message}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={liquidityForm.amount}
+                        onChange={(event) =>
+                          handleLiquidityFormChange(business.id, 'amount', event.target.value)
+                        }
+                        className="rounded-2xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                        placeholder="Amount needed"
+                      />
+                      <label className="flex items-center gap-2 text-xs text-gray-600">
+                        <input
+                          type="checkbox"
+                          checked={liquidityForm.broadcastToCommunity}
+                          onChange={(event) =>
+                            handleLiquidityFormChange(
+                              business.id,
+                              'broadcastToCommunity',
+                              event.target.checked
+                            )
+                          }
+                          className="h-4 w-4 accent-blue-600"
+                        />
+                        Broadcast to community backers
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRequestLiquidity(business)}
+                      className="mt-3 w-full rounded-2xl bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+                    >
+                      Ask TagTokn (2.5% fee)
+                    </button>
+                  </div>
+                </div>
+
                 <div className="mt-6 rounded-2xl border border-emerald-100 bg-white p-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-gray-700">Market bands</p>
@@ -1036,6 +1441,73 @@ const LocalBusinessVerification = () => {
                       <p>Sell above: {bandRange ? `$${bandRange.upper.toLocaleString()}` : '—'}</p>
                     </div>
                   </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <div className="md:col-span-2">
+                      <label className="text-xs uppercase text-gray-500">
+                        Band sensitivity ({Math.round((sensitivityValue || 0) * 100)}%)
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={sensitivityValue}
+                        onChange={(event) =>
+                          handleSensitivityChange(business.id, event.target.value)
+                        }
+                        className="mt-2 w-full accent-purple-600"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Links tolerance to Earn/Buy ratio ({Number.isFinite(earnBuyRatio) ? earnBuyRatio.toFixed(2) : '∞'}).
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-purple-50 p-3 text-sm text-purple-700">
+                      <p>
+                        Effective tolerance:{' '}
+                        {Number.isFinite(effectiveTolerance)
+                          ? `${effectiveTolerance.toFixed(2)}%`
+                          : '—'}
+                      </p>
+                      <p>
+                        Effective buy:{" "}
+                        {effectiveBandRange ? `$${effectiveBandRange.lower.toLocaleString()}` : '—'}
+                      </p>
+                      <p>
+                        Effective sell:{" "}
+                        {effectiveBandRange ? `$${effectiveBandRange.upper.toLocaleString()}` : '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">Funding source</label>
+                      <select
+                        value={fundingSource}
+                        onChange={(event) =>
+                          handleFundingSourceChange(business.id, event.target.value)
+                        }
+                        className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-emerald-500 focus:outline-none"
+                      >
+                        <option value="self">Self treasury</option>
+                        <option value="community">Community box</option>
+                        <option value="tagtokn">TagTokn backstop</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleAutoMarketMake(business)}
+                        className={`rounded-2xl px-4 py-2 text-sm font-semibold ${
+                          autoEnabled ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        {autoEnabled ? 'Auto active' : 'Auto off'}
+                      </button>
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => handleSaveBandStrategy(business)}
                     className="mt-4 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"

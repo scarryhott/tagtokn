@@ -8,7 +8,7 @@ import {
   serverTimestamp,
   updateDoc
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, functions, httpsCallable } from '../firebase';
 
 const COLLECTION_NAME = 'localBusinesses';
 
@@ -26,6 +26,12 @@ export const submitLocalBusinessApplication = async (payload, currentUser = null
     ownerUid: currentUser?.uid ?? null,
     ownerEmail: currentUser?.email ?? null,
     ownerDisplayName: currentUser?.displayName ?? null,
+    treasury: {
+      selfBalance: 0,
+      communityBalance: 0,
+      tagtoknCredit: 0,
+      autoMarketMake: false
+    },
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
@@ -56,6 +62,48 @@ export const updateLocalBusiness = async (businessId, data) => {
     ...data,
     updatedAt: serverTimestamp()
   });
+};
+
+export const updateBusinessTreasury = async (businessId, treasuryPatch) => {
+  if (!businessId) throw new Error('businessId is required');
+  const businessRef = doc(db, COLLECTION_NAME, businessId);
+  await updateDoc(businessRef, {
+    treasury: {
+      selfBalance: treasuryPatch.selfBalance ?? 0,
+      communityBalance: treasuryPatch.communityBalance ?? 0,
+      tagtoknCredit: treasuryPatch.tagtoknCredit ?? 0,
+      autoMarketMake:
+        typeof treasuryPatch.autoMarketMake === 'boolean'
+          ? treasuryPatch.autoMarketMake
+          : false
+    },
+    updatedAt: serverTimestamp()
+  });
+};
+
+export const requestTagtoknLiquidity = async ({
+  businessId,
+  amount,
+  broadcastToCommunity = false
+}) => {
+  if (!businessId) throw new Error('businessId is required');
+  if (!amount || Number(amount) <= 0) throw new Error('Amount must be greater than zero.');
+
+  try {
+    const callable = httpsCallable(functions, 'requestTagtoknLiquidity');
+    const response = await callable({
+      businessId,
+      amount,
+      broadcastToCommunity
+    });
+    return response?.data;
+  } catch (error) {
+    console.warn('Callable requestTagtoknLiquidity failed, falling back to local mock.', error);
+    return {
+      status: 'mocked',
+      message: 'Liquidity function not available in this environment.'
+    };
+  }
 };
 
 /**
