@@ -343,6 +343,27 @@ const LocalBusinessVerification = () => {
     }));
   };
 
+  const handlePayoutModeChange = (businessId, mode) => {
+    setMarketMakerConfigs((prev) => ({
+      ...prev,
+      [businessId]: {
+        ...(prev[businessId] || {}),
+        payoutMode: mode
+      }
+    }));
+  };
+
+  const handleSocialMultipleChange = (businessId, value) => {
+    const parsed = Math.max(1, parseFloat(value) || 1);
+    setMarketMakerConfigs((prev) => ({
+      ...prev,
+      [businessId]: {
+        ...(prev[businessId] || {}),
+        socialMultiple: parsed
+      }
+    }));
+  };
+
   const handleToggleAutoMarketMake = async (business) => {
     const currentTreasury = treasuryInputs[business.id] || {
       selfBalance: 0,
@@ -528,6 +549,18 @@ const LocalBusinessVerification = () => {
     const normalizedRatio = Number.isFinite(earnBuyRatio) ? earnBuyRatio : 1;
     const effectiveTolerance = tolerance * (1 + sensitivityInput * normalizedRatio);
     const effectiveBandRange = calculateBandBounds(assetValue, effectiveTolerance);
+    const payoutMode = marketMakerConfigs[business.id]?.payoutMode ?? 'cash';
+    const socialMultiple =
+      payoutMode === 'social'
+        ? Math.max(1, marketMakerConfigs[business.id]?.socialMultiple ?? 1)
+        : 1;
+    const socialBandRange =
+      payoutMode === 'social' && effectiveBandRange
+        ? {
+            lower: Number((effectiveBandRange.lower * socialMultiple).toFixed(2)),
+            upper: Number((effectiveBandRange.upper * socialMultiple).toFixed(2))
+          }
+        : null;
 
     try {
       await updateLocalBusiness(business.id, {
@@ -547,6 +580,10 @@ const LocalBusinessVerification = () => {
         effectiveBandUpper: effectiveBandRange?.upper ?? bandRange.upper,
         autoEnabled: marketMakerConfigs[business.id]?.autoEnabled ?? false,
         fundingSource: marketMakerConfigs[business.id]?.fundingSource ?? 'self',
+        payoutMode,
+        socialMultiple,
+        socialBandLower: socialBandRange?.lower ?? null,
+        socialBandUpper: socialBandRange?.upper ?? null,
         assetValue
       });
 
@@ -1158,6 +1195,18 @@ const LocalBusinessVerification = () => {
               );
               const fundingSource = marketMaker.fundingSource ?? 'self';
               const autoEnabled = marketMaker.autoEnabled ?? treasury.autoMarketMake ?? false;
+              const payoutMode = marketMaker.payoutMode ?? 'cash';
+              const socialMultiple =
+                payoutMode === 'social'
+                  ? marketMaker.socialMultiple ?? 1
+                  : 1;
+              const socialBandRange =
+                payoutMode === 'social' && effectiveBandRange
+                  ? {
+                      lower: Number((effectiveBandRange.lower * socialMultiple).toFixed(2)),
+                      upper: Number((effectiveBandRange.upper * socialMultiple).toFixed(2))
+                    }
+                  : null;
 
               return (
                 <div
@@ -1507,6 +1556,65 @@ const LocalBusinessVerification = () => {
                       </button>
                     </div>
                   </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">Payout preference</label>
+                      <div className="mt-2 grid gap-2">
+                        {[
+                          { value: 'cash', label: 'Pay in cash / products' },
+                          { value: 'social', label: 'Social-only (mint value)' }
+                        ].map((option) => (
+                          <label
+                            key={option.value}
+                            className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold ${
+                              payoutMode === option.value
+                                ? 'border-purple-500 bg-purple-50 text-purple-700'
+                                : 'border-gray-200 text-gray-600'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name={`payout-${business.id}`}
+                              value={option.value}
+                              checked={payoutMode === option.value}
+                              onChange={(event) =>
+                                handlePayoutModeChange(business.id, event.target.value)
+                              }
+                            />
+                            {option.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">
+                        Social multiple
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="0.1"
+                        disabled={payoutMode !== 'social'}
+                        value={payoutMode === 'social' ? socialMultiple : 1}
+                        onChange={(event) =>
+                          handleSocialMultipleChange(business.id, event.target.value)
+                        }
+                        className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-purple-500 focus:outline-none disabled:bg-gray-100"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        How much higher the coin trades vs underlying dollars when paying with social value.
+                      </p>
+                    </div>
+                  </div>
+
+                  {socialBandRange && (
+                    <div className="mt-3 rounded-2xl bg-indigo-50 p-3 text-sm text-indigo-700">
+                      <p>Social multiple applied: x{socialMultiple.toFixed(2)}</p>
+                      <p>Suggested buy (social): ${socialBandRange.lower.toLocaleString()}</p>
+                      <p>Suggested sell (social): ${socialBandRange.upper.toLocaleString()}</p>
+                    </div>
+                  )}
 
                   <button
                     onClick={() => handleSaveBandStrategy(business)}
