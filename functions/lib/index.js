@@ -49,7 +49,13 @@ const instagram_1 = require("./auth/instagram");
 Object.defineProperty(exports, "generateOAuthState", { enumerable: true, get: function () { return instagram_1.generateOAuthState; } });
 Object.defineProperty(exports, "exchangeInstagramCode", { enumerable: true, get: function () { return instagram_1.exchangeInstagramCode; } });
 // Configure CORS
-const corsHandler = (0, cors_1.default)({ origin: ['https://tagtokn.com', 'http://localhost:3000'] });
+const corsHandler = (0, cors_1.default)({
+    origin: [
+        'https://app.tagtokn.com',
+        'https://tagtokn.com',
+        'http://localhost:3000'
+    ]
+});
 const platformTokenRef = db.collection('platformTokens').doc('tagtokn');
 // Create a custom token for the specified UID
 exports.createCustomToken = functions.https.onRequest((req, res) => {

@@ -12,7 +12,13 @@ type CallableContext = functions.https.CallableContext;
 import { generateOAuthState, exchangeInstagramCode } from './auth/instagram';
 
 // Configure CORS
-const corsHandler = cors({ origin: ['https://tagtokn.com', 'http://localhost:3000'] });
+const corsHandler = cors({ 
+  origin: [
+    'https://app.tagtokn.com',
+    'https://tagtokn.com', 
+    'http://localhost:3000'
+  ] 
+});
 
 const platformTokenRef = db.collection('platformTokens').doc('tagtokn');
 
