@@ -1,10 +1,11 @@
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import cors from 'cors';
 
 // Initialize Firebase Admin SDK
-admin.initializeApp();
-const db = admin.firestore();
+const app = initializeApp();
+const db = getFirestore(app);
 const platformTokenRef = db.collection('platformTokens').doc('tagtokn');
 
 // Configure CORS

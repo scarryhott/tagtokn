@@ -13,7 +13,7 @@
       "*.test.js"
     ],
     "predeploy": [],
-    "runtime": "nodejs18"
+    "runtime": "nodejs20"
   },
   "hosting": {
     "target": "tagtokn-com",
