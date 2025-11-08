@@ -16,6 +16,10 @@ import {
   updateLocalBusiness
 } from '../services/localBusinessService';
 import { uploadBusinessDocument } from '../services/storageService';
+import {
+  createTokenTransaction,
+  subscribeToTransactionsByBusiness
+} from '../services/tokenTransactionService';
 
 const emptyFormState = {
   businessName: '',
@@ -57,6 +61,32 @@ const formatTimestamp = (timestamp) => {
   });
 };
 
+const DEFAULT_BAND_TOLERANCE = 10; // percent
+
+const calculateBandBounds = (assetValue, tolerancePercent) => {
+  const baseValue = parseFloat(assetValue);
+  const tolerance = parseFloat(tolerancePercent);
+
+  if (Number.isNaN(baseValue) || Number.isNaN(tolerance)) {
+    return null;
+  }
+
+  const fraction = tolerance / 100;
+  const lower = Number((baseValue * (1 - fraction)).toFixed(2));
+  const upper = Number((baseValue * (1 + fraction)).toFixed(2));
+  return { lower, upper };
+};
+
+const createEmptyTransactionForm = () => ({
+  channel: 'nfc',
+  tokenAmount: '',
+  productType: 'product',
+  itemName: '',
+  description: '',
+  eventDate: '',
+  socialPostUrl: ''
+});
+
 const MAX_DOCUMENT_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
 
 const LocalBusinessVerification = () => {
@@ -70,6 +100,12 @@ const LocalBusinessVerification = () => {
   const [documentsFile, setDocumentsFile] = useState(null);
   const [documentUploadProgress, setDocumentUploadProgress] = useState(0);
   const [fileInputKey, setFileInputKey] = useState(() => Date.now());
+  const [marketBandInputs, setMarketBandInputs] = useState({});
+  const [bandInputDirty, setBandInputDirty] = useState({});
+  const [bandStatus, setBandStatus] = useState({});
+  const [transactionForms, setTransactionForms] = useState({});
+  const [transactionStatus, setTransactionStatus] = useState({});
+  const [transactionHistory, setTransactionHistory] = useState({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
@@ -96,6 +132,57 @@ const LocalBusinessVerification = () => {
       });
       return changed ? updated : prev;
     });
+  }, [businesses]);
+
+  useEffect(() => {
+    setMarketBandInputs((prev) => {
+      const next = {};
+      businesses.forEach((biz) => {
+        if (bandInputDirty[biz.id]) {
+          next[biz.id] = prev[biz.id] ?? {
+            assetValue: biz.assetValue ?? '',
+            tolerance: biz.bandTolerance ?? DEFAULT_BAND_TOLERANCE
+          };
+        } else {
+          next[biz.id] = {
+            assetValue: biz.assetValue ?? '',
+            tolerance: biz.bandTolerance ?? DEFAULT_BAND_TOLERANCE
+          };
+        }
+      });
+      return next;
+    });
+  }, [businesses, bandInputDirty]);
+
+  useEffect(() => {
+    setTransactionForms((prev) => {
+      const next = {};
+      businesses.forEach((biz) => {
+        next[biz.id] = prev[biz.id] ?? createEmptyTransactionForm();
+      });
+      return next;
+    });
+  }, [businesses]);
+
+  useEffect(() => {
+    const unsubscribers = businesses
+      .filter((biz) => biz.id)
+      .map((biz) =>
+        subscribeToTransactionsByBusiness(biz.id, (transactions) => {
+          setTransactionHistory((prev) => ({
+            ...prev,
+            [biz.id]: transactions
+          }));
+        })
+      );
+
+    return () => {
+      unsubscribers.forEach((unsubscribe) => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      });
+    };
   }, [businesses]);
 
   const summary = useMemo(() => {
@@ -144,6 +231,151 @@ const LocalBusinessVerification = () => {
     setFeedback(null);
     setDocumentsFile(file);
     setDocumentUploadProgress(0);
+  };
+
+  const handleBandInputChange = (businessId, field, value) => {
+    setMarketBandInputs((prev) => ({
+      ...prev,
+      [businessId]: {
+        ...prev[businessId],
+        [field]: value
+      }
+    }));
+    setBandInputDirty((prev) => ({
+      ...prev,
+      [businessId]: true
+    }));
+    setBandStatus((prev) => ({
+      ...prev,
+      [businessId]: null
+    }));
+  };
+
+  const handleSaveBandStrategy = async (business) => {
+    const inputs = marketBandInputs[business.id] || {};
+    const assetValue = parseFloat(inputs.assetValue);
+    const tolerance = parseFloat(inputs.tolerance);
+
+    if (Number.isNaN(assetValue) || assetValue <= 0) {
+      setBandStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Enter a positive asset value.' }
+      }));
+      return;
+    }
+
+    if (Number.isNaN(tolerance) || tolerance <= 0) {
+      setBandStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Tolerance must be above zero.' }
+      }));
+      return;
+    }
+
+    const bandRange = calculateBandBounds(assetValue, tolerance);
+    if (!bandRange) {
+      setBandStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Unable to calculate band range.' }
+      }));
+      return;
+    }
+
+    try {
+      await updateLocalBusiness(business.id, {
+        assetValue,
+        bandTolerance: tolerance,
+        bandLower: bandRange.lower,
+        bandUpper: bandRange.upper
+      });
+      setBandStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'success', message: 'Market band saved.' }
+      }));
+      setBandInputDirty((prev) => ({
+        ...prev,
+        [business.id]: false
+      }));
+    } catch (error) {
+      console.error('Error saving market band', error);
+      setBandStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Failed to save bands. Try again.' }
+      }));
+    }
+  };
+
+  const handleTransactionFieldChange = (businessId, field, value) => {
+    setTransactionForms((prev) => ({
+      ...prev,
+      [businessId]: {
+        ...prev[businessId],
+        [field]: value
+      }
+    }));
+    setTransactionStatus((prev) => ({
+      ...prev,
+      [businessId]: null
+    }));
+  };
+
+  const handleTransactionSubmit = async (business) => {
+    const form = transactionForms[business.id];
+    const amount = parseFloat(form.tokenAmount);
+
+    if (Number.isNaN(amount) || amount <= 0) {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Enter a positive token amount.' }
+      }));
+      return;
+    }
+
+    if (!form.itemName.trim()) {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Provide a product, service, or event name.' }
+      }));
+      return;
+    }
+
+    if (form.productType === 'event' && !form.eventDate) {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Event transactions require a date.' }
+      }));
+      return;
+    }
+
+    try {
+      await createTokenTransaction({
+        businessId: business.id,
+        businessName: business.businessName,
+        channel: form.channel,
+        tokenAmount: amount,
+        productType: form.productType,
+        itemName: form.itemName.trim(),
+        description: form.description.trim(),
+        eventDate: form.eventDate || null,
+        socialPostUrl: form.socialPostUrl.trim()
+      });
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'success', message: 'Transaction recorded and NFTs minted.' }
+      }));
+
+      setTransactionForms((prev) => ({
+        ...prev,
+        [business.id]: createEmptyTransactionForm()
+      }));
+    } catch (error) {
+      console.error('Error recording transaction', error);
+      setTransactionStatus((prev) => ({
+        ...prev,
+        [business.id]: { type: 'error', message: 'Failed to record transaction.' }
+      }));
+    }
   };
 
   const validateForm = () => {
@@ -622,11 +854,23 @@ const LocalBusinessVerification = () => {
               </div>
             )}
 
-            {businesses.map((business) => (
-              <div
-                key={business.id}
-                className="rounded-3xl border border-gray-100 bg-gray-50/60 p-5 shadow-sm"
-              >
+            {businesses.map((business) => {
+              const bandInputs =
+                marketBandInputs[business.id] || {
+                  assetValue: '',
+                  tolerance: DEFAULT_BAND_TOLERANCE
+                };
+              const bandRange = calculateBandBounds(bandInputs.assetValue, bandInputs.tolerance);
+              const currentBandStatus = bandStatus[business.id];
+              const txForm = transactionForms[business.id] || createEmptyTransactionForm();
+              const txStatus = transactionStatus[business.id];
+              const txHistory = transactionHistory[business.id] || [];
+
+              return (
+                <div
+                  key={business.id}
+                  className="rounded-3xl border border-gray-100 bg-gray-50/60 p-5 shadow-sm"
+                >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
@@ -744,8 +988,214 @@ const LocalBusinessVerification = () => {
                     {isActionLoading(business.id, 'rejected') ? 'Saving...' : 'Reject'}
                   </button>
                 </div>
+
+                <div className="mt-6 rounded-2xl border border-emerald-100 bg-white p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-gray-700">Market bands</p>
+                    {currentBandStatus && (
+                      <span
+                        className={`text-xs font-semibold ${
+                          currentBandStatus.type === 'error' ? 'text-red-500' : 'text-emerald-600'
+                        }`}
+                      >
+                        {currentBandStatus.message}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">Asset value</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={bandInputs.assetValue}
+                        onChange={(event) =>
+                          handleBandInputChange(business.id, 'assetValue', event.target.value)
+                        }
+                        className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-emerald-500 focus:outline-none"
+                        placeholder="5000"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">Tolerance %</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        value={bandInputs.tolerance}
+                        onChange={(event) =>
+                          handleBandInputChange(business.id, 'tolerance', event.target.value)
+                        }
+                        className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-emerald-500 focus:outline-none"
+                        placeholder="10"
+                      />
+                    </div>
+                    <div className="rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-700">
+                      <p>Buy below: {bandRange ? `$${bandRange.lower.toLocaleString()}` : '—'}</p>
+                      <p>Sell above: {bandRange ? `$${bandRange.upper.toLocaleString()}` : '—'}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleSaveBandStrategy(business)}
+                    className="mt-4 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                  >
+                    Save bands
+                  </button>
+                </div>
+
+                <div className="mt-6 rounded-2xl border border-blue-100 bg-white p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-gray-700">
+                      Record NFC/online token transaction
+                    </p>
+                    {txStatus && (
+                      <span
+                        className={`text-xs font-semibold ${
+                          txStatus.type === 'error' ? 'text-red-500' : 'text-blue-600'
+                        }`}
+                      >
+                        {txStatus.message}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-2xl border border-gray-200 p-3">
+                      <label className="text-xs uppercase text-gray-500">Channel</label>
+                      <div className="mt-2 flex gap-3">
+                        {['nfc', 'online'].map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => handleTransactionFieldChange(business.id, 'channel', option)}
+                            className={`flex-1 rounded-2xl border px-3 py-2 text-sm font-semibold ${
+                              txForm.channel === option
+                                ? 'border-blue-500 bg-blue-50 text-blue-600'
+                                : 'border-gray-200 text-gray-500'
+                            }`}
+                          >
+                            {option.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">Token amount</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={txForm.tokenAmount}
+                        onChange={(event) =>
+                          handleTransactionFieldChange(business.id, 'tokenAmount', event.target.value)
+                        }
+                        className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                        placeholder="25"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">Product type</label>
+                      <select
+                        value={txForm.productType}
+                        onChange={(event) =>
+                          handleTransactionFieldChange(business.id, 'productType', event.target.value)
+                        }
+                        className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                      >
+                        <option value="product">Product</option>
+                        <option value="service">Service</option>
+                        <option value="event">Event</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">Name</label>
+                      <input
+                        value={txForm.itemName}
+                        onChange={(event) =>
+                          handleTransactionFieldChange(business.id, 'itemName', event.target.value)
+                        }
+                        className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                        placeholder="Sunset dinner"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">Event date</label>
+                      <input
+                        type="date"
+                        value={txForm.eventDate}
+                        onChange={(event) =>
+                          handleTransactionFieldChange(business.id, 'eventDate', event.target.value)
+                        }
+                        className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs uppercase text-gray-500">Tagged social post</label>
+                      <input
+                        value={txForm.socialPostUrl}
+                        onChange={(event) =>
+                          handleTransactionFieldChange(business.id, 'socialPostUrl', event.target.value)
+                        }
+                        className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                        placeholder="https://instagram.com/p/..."
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="text-xs uppercase text-gray-500">Notes / Description</label>
+                    <textarea
+                      value={txForm.description}
+                      onChange={(event) =>
+                        handleTransactionFieldChange(business.id, 'description', event.target.value)
+                      }
+                      rows={2}
+                      className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                      placeholder="What was redeemed or delivered?"
+                    />
+                  </div>
+                  <button
+                    onClick={() => handleTransactionSubmit(business)}
+                    className="mt-4 w-full rounded-2xl bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+                  >
+                    Record transaction & mint NFTs
+                  </button>
+
+                  {txHistory.length > 0 && (
+                    <div className="mt-4 rounded-2xl bg-gray-50 p-3">
+                      <p className="text-xs uppercase text-gray-500">Recent mints</p>
+                      <div className="mt-2 space-y-2">
+                        {txHistory.slice(0, 3).map((tx) => (
+                          <div key={tx.id} className="rounded-2xl bg-white p-3 text-xs text-gray-600">
+                            <p className="font-semibold text-gray-800">
+                              {tx.itemName} · {tx.productType} · {tx.channel.toUpperCase()}
+                            </p>
+                            <p>Tokens: {tx.tokenAmount}</p>
+                            {tx.socialPostUrl && (
+                              <a
+                                href={tx.socialPostUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-500"
+                              >
+                                Tagged post
+                              </a>
+                            )}
+                            <p className="mt-1 text-gray-500">
+                              Buyer NFT: {tx.buyerNft?.id || '—'} · Seller NFT: {tx.sellerNft?.id || '—'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </section>
