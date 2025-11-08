@@ -38,17 +38,23 @@ const admin = __importStar(require("firebase-admin"));
 const functions = __importStar(require("firebase-functions"));
 const crypto = __importStar(require("crypto"));
 const corsModule = __importStar(require("cors"));
+const allowedOrigins = [
+    'https://app.tagtokn.com',
+    'https://tagtokn.com',
+    'http://localhost:3000'
+];
 // Configure CORS
 const corsOptions = {
-    origin: [
-        'https://app.tagtokn.com',
-        'https://tagtokn.com',
-        'http://localhost:3000'
-    ],
+    origin: allowedOrigins,
     methods: ['POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type']
+    allowedHeaders: ['Content-Type'],
+    credentials: true,
+    optionsSuccessStatus: 204
 };
 const corsHandler = corsModule.default(corsOptions);
+const handleCorsPreflight = (req, res) => corsHandler(req, res, () => {
+    res.status(204).send('');
+});
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
     admin.initializeApp();
@@ -60,12 +66,7 @@ const db = admin.firestore();
 exports.generateOAuthState = functions.https.onRequest((req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        res.set('Access-Control-Allow-Origin', '*')
-            .set('Access-Control-Allow-Methods', 'POST, OPTIONS')
-            .set('Access-Control-Allow-Headers', 'Content-Type')
-            .status(204)
-            .send('');
-        return;
+        return handleCorsPreflight(req, res);
     }
     // Only allow POST requests
     if (req.method !== 'POST') {
@@ -115,12 +116,7 @@ exports.generateOAuthState = functions.https.onRequest((req, res) => {
 exports.exchangeInstagramCode = functions.https.onRequest((req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        res.set('Access-Control-Allow-Origin', '*')
-            .set('Access-Control-Allow-Methods', 'POST, OPTIONS')
-            .set('Access-Control-Allow-Headers', 'Content-Type')
-            .status(204)
-            .send('');
-        return;
+        return handleCorsPreflight(req, res);
     }
     // Only allow POST requests
     if (req.method !== 'POST') {
@@ -209,10 +205,19 @@ exports.exchangeInstagramCode = functions.https.onRequest((req, res) => {
                     lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
                 },
             }, { merge: true });
+            const customToken = await admin.auth().createCustomToken(stateData.uid);
             res.status(200).json({
                 success: true,
+                token: customToken,
                 userId: instagramUserId,
                 username: profile.username,
+                user: {
+                    uid: stateData.uid,
+                    instagramUserId,
+                    instagramUsername: profile.username,
+                    accountType: profile.account_type,
+                    mediaCount: profile.media_count
+                }
             });
         }
         catch (error) {
