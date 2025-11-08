@@ -1,20 +1,24 @@
 {
-  "functions": {
-    "source": "functions",
-    "codebase": "default",
-    "ignore": [
-      "node_modules",
-      ".git",
-      "firebase-debug.log",
-      "firebase-debug.*.log",
-      "*.local",
-      "**/node_modules/**",
-      "**/.*",
-      "*.test.js"
-    ],
-    "predeploy": [],
-    "runtime": "nodejs20"
-  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local",
+        "**/node_modules/**",
+        "**/.*",
+        "*.test.js"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ],
+      "runtime": "nodejs20"
+    }
+  ],
   "hosting": {
     "target": "tagtokn-com",
     "public": "my-app/build",

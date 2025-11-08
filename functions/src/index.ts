@@ -1,19 +1,17 @@
 import * as functions from 'firebase-functions';
-import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import * as admin from 'firebase-admin';
 import cors from 'cors';
 
 // Initialize Firebase Admin SDK
-const app = initializeApp();
-const db = getFirestore(app);
-const platformTokenRef = db.collection('platformTokens').doc('tagtokn');
+admin.initializeApp();
+const db = admin.firestore();
+const FieldValue = admin.firestore.FieldValue;
+type CallableContext = functions.https.CallableContext;
 
 // Configure CORS
-const corsHandler = cors({
-  origin: ['https://tagtokn.com', 'http://localhost:3000'],
-  methods: ['POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-});
+const corsHandler = cors({ origin: ['https://tagtokn.com', 'http://localhost:3000'] });
+
+const platformTokenRef = db.collection('platformTokens').doc('tagtokn');
 
 // Create a custom token for the specified UID
 export const createCustomToken = functions.https.onRequest((req, res) => {
@@ -56,6 +54,7 @@ export const createCustomToken = functions.https.onRequest((req, res) => {
   });
 });
 
+// Type for the liquidity request payload
 interface LiquidityRequestPayload {
   businessId: string;
   amount: number;
@@ -63,7 +62,7 @@ interface LiquidityRequestPayload {
 }
 
 export const requestTagtoknLiquidity = functions.https.onCall(
-  async (data: LiquidityRequestPayload, context) => {
+  async (data: LiquidityRequestPayload, context: CallableContext) => {
     if (!context.auth) {
       throw new functions.https.HttpsError(
         'unauthenticated',
@@ -72,12 +71,14 @@ export const requestTagtoknLiquidity = functions.https.onCall(
     }
 
     const { businessId, amount, broadcastToCommunity } = data;
+    
     if (!businessId) {
       throw new functions.https.HttpsError(
         'invalid-argument',
         'businessId is required.'
       );
     }
+    
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       throw new functions.https.HttpsError(
@@ -133,22 +134,22 @@ export const requestTagtoknLiquidity = functions.https.onCall(
       }
 
       tx.update(platformTokenRef, {
-        treasuryUsd: admin.firestore.FieldValue.increment(-numericAmount),
-        rewardPoolUsd: admin.firestore.FieldValue.increment(feeAmount),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        treasuryUsd: FieldValue.increment(-numericAmount),
+        rewardPoolUsd: FieldValue.increment(feeAmount),
+        updatedAt: FieldValue.serverTimestamp(),
         lastLedgerEvent: {
           type: 'liquidity_loan',
           amount: numericAmount,
           feeAmount,
           businessId,
           approvedBy: context.auth?.uid ?? null,
-          occurredAt: admin.firestore.FieldValue.serverTimestamp()
+          occurredAt: FieldValue.serverTimestamp()
         }
       });
 
       tx.update(businessRef, {
-        'treasury.tagtoknCredit': admin.firestore.FieldValue.increment(netAmount),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        'treasury.tagtoknCredit': FieldValue.increment(netAmount),
+        updatedAt: FieldValue.serverTimestamp()
       });
 
       const loanRef = db.collection('liquidityLoans').doc();
@@ -160,7 +161,7 @@ export const requestTagtoknLiquidity = functions.https.onCall(
         feeAmount,
         status: 'approved',
         broadcastToCommunity: !!broadcastToCommunity,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
+        createdAt: FieldValue.serverTimestamp()
       });
 
       if (broadcastToCommunity) {
@@ -169,7 +170,7 @@ export const requestTagtoknLiquidity = functions.https.onCall(
           businessId,
           loanId: loanRef.id,
           amountNeeded: numericAmount,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
           status: 'open'
         });
       }
