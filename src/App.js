@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { 
   DollarSign, 
   Users, 
@@ -16,7 +16,8 @@ import {
   Home,
   Search,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Link as LinkIcon
 } from 'lucide-react'; 
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -1415,7 +1416,7 @@ const TokenomicsUI = () => {
                           className="rounded-lg mb-2 w-full max-w-[120px] h-[120px] object-cover"
                         />
                         <span className="text-xs text-purple-300 group-hover:text-purple-200 flex items-center gap-1">
-                          <Link className="h-3 w-3" /> View Post
+                          <LinkIcon className="h-3 w-3" /> View Post
                         </span>
                       </a>
                     )}
@@ -1484,7 +1485,7 @@ const TokenomicsUI = () => {
                           className="rounded-lg mb-2 w-full max-w-[120px] h-[120px] object-cover"
                         />
                         <span className="text-xs text-purple-300 group-hover:text-purple-200 flex items-center gap-1">
-                          <Link className="h-3 w-3" /> View Post
+                          <LinkIcon className="h-3 w-3" /> View Post
                         </span>
                       </a>
                     )}
@@ -1594,7 +1595,7 @@ const TokenomicsUI = () => {
                           onClick={(e) => e.stopPropagation()} // Prevent card click from propagating
                           className="flex items-center gap-1 text-sm text-gray-300 hover:text-pink-300 transition-colors"
                         >
-                          @{influencer.instagramHandle} <Link className="h-3 w-3" />
+                          @{influencer.instagramHandle} <LinkIcon className="h-3 w-3" />
                         </a>
                       )}
                       <div className="text-sm text-gray-400">{influencer.holders} holders</div>
@@ -2014,7 +2015,7 @@ const TokenDetailModal = ({ influencer, onClose, userTokens, issuedPhysicalToken
                 onClick={(e) => e.stopPropagation()} // Prevent card click from propagating
                 className="flex items-center gap-1 text-lg text-gray-300 hover:text-pink-300 transition-colors"
               >
-                @{influencer.instagramHandle} <Link className="h-5 w-5" />
+                @{influencer.instagramHandle} <LinkIcon className="h-5 w-5" />
               </a>
             )}
             <p className="text-gray-300 text-lg">Current Price: <span className="font-bold">${influencer.price.toFixed(4)}</span></p>
@@ -2142,7 +2143,7 @@ const TokenDetailModal = ({ influencer, onClose, userTokens, issuedPhysicalToken
                             rel="noopener noreferrer"
                             className="text-xs text-purple-300 hover:text-purple-200 flex items-center gap-1"
                         >
-                            <Link className="h-3 w-3" /> Post
+                            <LinkIcon className="h-3 w-3" /> Post
                         </a>
                     )}
                   </div>
