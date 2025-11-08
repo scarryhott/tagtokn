@@ -22,18 +22,39 @@
   "hosting": {
     "target": "tagtokn-com",
     "public": "my-app/build",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
+      {
+        "source": "/auth/instagram/callback",
+        "function": "exchangeInstagramCode"
+      },
+      {
+        "source": "/api/generateOAuthState",
+        "function": "generateOAuthState"
+      },
       {
         "source": "**",
         "destination": "/index.html"
       }
     ],
     "headers": [
+      {
+        "source": "/api/**",
+        "headers": [
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          },
+          {
+            "key": "Access-Control-Allow-Methods",
+            "value": "GET, POST, OPTIONS"
+          },
+          {
+            "key": "Access-Control-Allow-Headers",
+            "value": "Content-Type, Authorization"
+          }
+        ]
+      },
       {
         "source": "**/*.@(js|css|jpg|jpeg|png|gif|ico|webp|svg|woff|woff2|ttf|eot)",
         "headers": [

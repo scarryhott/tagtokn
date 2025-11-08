@@ -8,6 +8,9 @@ const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
 type CallableContext = functions.https.CallableContext;
 
+// Import OAuth functions
+import { generateOAuthState, exchangeInstagramCode } from './auth/instagram';
+
 // Configure CORS
 const corsHandler = cors({ origin: ['https://tagtokn.com', 'http://localhost:3000'] });
 
@@ -183,3 +186,6 @@ export const requestTagtoknLiquidity = functions.https.onCall(
     };
   }
 );
+
+// Export all functions
+export { generateOAuthState, exchangeInstagramCode };

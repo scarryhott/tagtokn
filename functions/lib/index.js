@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requestTagtoknLiquidity = exports.createCustomToken = void 0;
+exports.exchangeInstagramCode = exports.generateOAuthState = exports.requestTagtoknLiquidity = exports.createCustomToken = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const cors_1 = __importDefault(require("cors"));
@@ -44,6 +44,10 @@ const cors_1 = __importDefault(require("cors"));
 admin.initializeApp();
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
+// Import OAuth functions
+const instagram_1 = require("./auth/instagram");
+Object.defineProperty(exports, "generateOAuthState", { enumerable: true, get: function () { return instagram_1.generateOAuthState; } });
+Object.defineProperty(exports, "exchangeInstagramCode", { enumerable: true, get: function () { return instagram_1.exchangeInstagramCode; } });
 // Configure CORS
 const corsHandler = (0, cors_1.default)({ origin: ['https://tagtokn.com', 'http://localhost:3000'] });
 const platformTokenRef = db.collection('platformTokens').doc('tagtokn');
