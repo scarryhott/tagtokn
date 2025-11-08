@@ -98,6 +98,22 @@ export const requestTagtoknLiquidity = functions.https.onCall(
       );
     }
 
+    const businessData = businessSnap.data() || {};
+    const isAdmin = context.auth.token?.admin === true;
+    if (!isAdmin && businessData.ownerUid !== context.auth.uid) {
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'Only the verified business owner can request liquidity.'
+      );
+    }
+
+    if (!isAdmin && (businessData.status ?? 'pending') !== 'verified') {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Business must be verified before requesting liquidity.'
+      );
+    }
+
     await db.runTransaction(async (tx) => {
       const platformSnap = await tx.get(platformTokenRef);
       if (!platformSnap.exists) {

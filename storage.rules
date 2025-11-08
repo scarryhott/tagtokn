@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function businessOwner(businessId) {
+      return firestore.get(/databases/(default)/documents/localBusinesses/$(businessId)).data.ownerUid;
+    }
+
+    match /localBusinessDocs/{businessId}/{allPaths=**} {
+      allow read, write: if isSignedIn()
+        && (
+          isAdmin()
+          || businessOwner(businessId) == request.auth.uid
+        );
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

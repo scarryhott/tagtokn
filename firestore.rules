@@ -1,6 +1,33 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function businessDoc(businessId) {
+      return get(/databases/$(database)/documents/localBusinesses/$(businessId));
+    }
+
+    function businessExists(businessId) {
+      return businessDoc(businessId).exists();
+    }
+
+    function isBusinessOwner(businessId) {
+      return isSignedIn()
+        && businessExists(businessId)
+        && businessDoc(businessId).data.ownerUid == request.auth.uid;
+    }
+
+    function isVerifiedBusinessOwner(businessId) {
+      return isBusinessOwner(businessId)
+        && (businessDoc(businessId).data.status == 'verified');
+    }
+
     // Allow read/write for OAuth states (temporary storage)
     match /oauth_states/{stateId} {
       allow read, write: if true; // These are temporary and public
@@ -13,6 +40,56 @@ service cloud.firestore {
       match /instagram_media/{document=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+    }
+
+    // Local business submissions and verification data
+    match /localBusinesses/{businessId} {
+      allow create: if isSignedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow read: if isSignedIn();
+
+      allow update, delete: if isAdmin() || isBusinessOwner(businessId);
+    }
+
+    // Market maker configurations per business
+    match /marketMakers/{businessId} {
+      allow read: if isSignedIn() && (isBusinessOwner(businessId) || isAdmin());
+      allow write: if isAdmin() || isVerifiedBusinessOwner(businessId);
+    }
+
+    // Token transactions
+    match /tokenTransactions/{transactionId} {
+      allow read: if isSignedIn() &&
+        (
+          (resource.data.businessId != null && isBusinessOwner(resource.data.businessId))
+          || isAdmin()
+        );
+      allow create: if isSignedIn() &&
+        (
+          (request.resource.data.businessId != null
+            && isBusinessOwner(request.resource.data.businessId)
+            && isVerifiedBusinessOwner(request.resource.data.businessId))
+          || isAdmin()
+        );
+      allow update, delete: if false;
+    }
+
+    // Platform token document (read-only for authenticated users)
+    match /platformTokens/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /liquidityLoans/{loanId} {
+      allow read: if isAdmin()
+        || (resource.data.businessId != null && isBusinessOwner(resource.data.businessId));
+      allow write: if false;
+    }
+
+    match /communityFundingRequests/{requestId} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
   }
 }
