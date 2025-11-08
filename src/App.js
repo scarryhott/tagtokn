@@ -157,7 +157,8 @@ const TokenomicsUI = () => {
       holders: 0,
       instagramHandle: "emma_fashion", // New field for influencer's Instagram
       bio: "Fashion blogger sharing daily outfits and style tips.",
-      category: "Fashion"
+      category: "Fashion",
+      moneyMultiplier: 1
     },
     {
       id: 2,
@@ -173,7 +174,8 @@ const TokenomicsUI = () => {
       holders: 0,
       instagramHandle: "jake_lifts",
       bio: "Certified personal trainer. Helping you achieve your fitness goals.",
-      category: "Fitness"
+      category: "Fitness",
+      moneyMultiplier: 1
     },
     {
       id: 3,
@@ -189,7 +191,8 @@ const TokenomicsUI = () => {
       holders: 0,
       instagramHandle: "sarah_tech_reviews",
       bio: "Reviewing the latest gadgets and tech innovations.",
-      category: "Technology"
+      category: "Technology",
+      moneyMultiplier: 1
     },
     {
       id: 4,
@@ -205,7 +208,8 @@ const TokenomicsUI = () => {
       holders: 0,
       instagramHandle: "masterchef_eats",
       bio: "Culinary adventures and delicious recipes from my kitchen.",
-      category: "Food"
+      category: "Food",
+      moneyMultiplier: 1
     },
     {
       id: 5,
@@ -221,7 +225,8 @@ const TokenomicsUI = () => {
       holders: 0,
       instagramHandle: "wanderlust_explore",
       bio: "Exploring the world, one destination at a time. Travel tips and guides.",
-      category: "Travel"
+      category: "Travel",
+      moneyMultiplier: 1
     }
   ];
 
@@ -1100,7 +1105,10 @@ const TokenomicsUI = () => {
       tokenPoolValue: 0,
       totalFeesGenerated: 0,
       historicalPrices: [], // Initialize empty
-      historicalRatios: [] // Initialize empty
+      historicalRatios: [], // Initialize empty
+      moneyMultiplier: typeof newInfluencerData.moneyMultiplier === 'number' && newInfluencerData.moneyMultiplier > 0
+        ? newInfluencerData.moneyMultiplier
+        : 1
     };
 
     setInfluencers(prev => [...prev, newInfluencer]);
@@ -1561,6 +1569,8 @@ const TokenomicsUI = () => {
             const ratioStatus = getRatioStatus(influencer.ratio);
             // Count how many tokens of this influencer type the user owns
             const userOwnedCount = userTokens.filter(token => token.influencerId === influencer.id).length;
+            const moneyMultiplier = Math.max(0.1, Number(influencer.moneyMultiplier) || 1);
+            const holderDollarImpact = 1 / moneyMultiplier;
 
             return (
               <div
@@ -1610,6 +1620,17 @@ const TokenomicsUI = () => {
                   <div className="text-xs mt-1 opacity-80">
                     Platform avg: {globalStats.earnedToBoughtRatio.toFixed(2)}
                   </div>
+                </div>
+
+                {/* Money Multiplier Display */}
+                <div className="mb-4 rounded-xl bg-indigo-900/30 p-3 border border-indigo-500/20">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-300">Money Multiplier</span>
+                    <span className="font-bold text-indigo-200">x{moneyMultiplier.toFixed(2)}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Holders fund ${holderDollarImpact.toFixed(2)} per minted $1 (higher multiplier = more social value).
+                  </p>
                 </div>
 
                 {/* Token Stats */}
@@ -1935,6 +1956,8 @@ const TokenDetailModal = ({ influencer, onClose, userTokens, issuedPhysicalToken
   const [physicalTokenRedeemInput, setPhysicalTokenRedeemInput] = useState('');
   const [physicalTokenRedeemMessage, setPhysicalTokenRedeemMessage] = useState('');
   const [sortOwnedTokensBy, setSortOwnedTokensBy] = useState('date'); // Default sort for owned tokens
+  const moneyMultiplier = Math.max(0.1, Number(influencer.moneyMultiplier) || 1);
+  const holderDollarImpact = 1 / moneyMultiplier;
 
   // Filter user's owned tokens for this specific influencer
   const ownedTokensForInfluencer = userTokens.filter(token => token.influencerId === influencer.id);
@@ -1999,6 +2022,15 @@ const TokenDetailModal = ({ influencer, onClose, userTokens, issuedPhysicalToken
 
         {/* Scrollable content area */}
         <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 -mr-2">
+          <div className="bg-indigo-900/30 rounded-xl p-4 mb-6 border border-indigo-600/20">
+            <div className="flex items-center justify-between text-sm text-gray-300">
+              <span>Money Multiplier</span>
+              <span className="font-bold text-indigo-200">x{moneyMultiplier.toFixed(2)}</span>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Current holders fund ${holderDollarImpact.toFixed(2)} per minted $1 — higher multiplier leans into social value.
+            </p>
+          </div>
           {/* Token Stats in Detail */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-purple-900/30 rounded-xl p-3 text-center">
@@ -2221,6 +2253,7 @@ const InfluencerDashboardModal = ({ influencer, onClose, onUpdateInfluencer, onL
 
   const [physicalCardQuantity, setPhysicalCardQuantity] = useState('');
   const [physicalCardMessage, setPhysicalCardMessage] = useState('');
+  const [moneyMultiplier, setMoneyMultiplier] = useState(() => Math.max(0.1, Number(influencer.moneyMultiplier) || 1));
 
   // Update pricePerToken when influencer.price changes
   useEffect(() => {
@@ -2238,7 +2271,8 @@ const InfluencerDashboardModal = ({ influencer, onClose, onUpdateInfluencer, onL
       id: influencer.id,
       instagramHandle: instagramHandle.trim(),
       bio: bio.trim(),
-      category: category.trim()
+      category: category.trim(),
+      moneyMultiplier
     };
     onUpdateInfluencer(updatedDetails);
     setMessage('Influencer details updated successfully!');
@@ -2379,6 +2413,27 @@ const InfluencerDashboardModal = ({ influencer, onClose, onUpdateInfluencer, onL
                 placeholder="e.g., Fashion, Fitness, Tech"
               />
             </div>
+            <div className="mb-6">
+              <label className="block text-gray-300 text-sm font-bold mb-2">
+                Money Multiplier
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="3"
+                step="0.1"
+                value={moneyMultiplier}
+                onChange={(e) => setMoneyMultiplier(Math.max(0.1, parseFloat(e.target.value) || 1))}
+                className="w-full accent-emerald-400"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-2">
+                <span>x{moneyMultiplier.toFixed(2)}</span>
+                <span>Holders fund ${(1 / moneyMultiplier).toFixed(2)} / minted $1</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Increase this to lean on social value (less direct dollars from existing holders).
+              </p>
+            </div>
             <button
               onClick={handleSaveDetails}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 py-3 px-6 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2"
@@ -2511,6 +2566,7 @@ const CreateInfluencerModal = ({ onClose, onCreateInfluencer, connectedInstagram
   const [bio, setBio] = useState('');
   const [category, setCategory] = useState('');
   const [message, setMessage] = useState('');
+  const [moneyMultiplier, setMoneyMultiplier] = useState(1);
 
   useEffect(() => {
     // If connectedInstagramAccount changes while modal is open, update the field
@@ -2518,6 +2574,9 @@ const CreateInfluencerModal = ({ onClose, onCreateInfluencer, connectedInstagram
       setInstagramHandle(connectedInstagramAccount);
     }
   }, [connectedInstagramAccount]);
+
+  const displayMultiplier = Math.max(0.1, Number(moneyMultiplier) || 1);
+  const holderDollarImpact = 1 / displayMultiplier;
 
   const handleCreate = () => {
     // Check if an influencer with this Instagram handle already exists
@@ -2536,7 +2595,14 @@ const CreateInfluencerModal = ({ onClose, onCreateInfluencer, connectedInstagram
       return;
     }
 
-    onCreateInfluencer({ name, avatar, instagramHandle: instagramHandle.trim(), bio, category });
+    onCreateInfluencer({
+      name,
+      avatar,
+      instagramHandle: instagramHandle.trim(),
+      bio,
+      category,
+      moneyMultiplier: displayMultiplier
+    });
     setMessage('Influencer profile created successfully!');
     setTimeout(() => onClose(), 1500);
   };
@@ -2615,6 +2681,27 @@ const CreateInfluencerModal = ({ onClose, onCreateInfluencer, connectedInstagram
             className="w-full p-3 bg-black/40 border border-purple-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
             placeholder="e.g., Fashion, Fitness, Tech"
           />
+        </div>
+        <div className="mb-6">
+          <label className="block text-gray-300 text-sm font-bold mb-2">
+            Money Multiplier
+          </label>
+          <input
+            type="range"
+            min="0.5"
+            max="3"
+            step="0.1"
+            value={moneyMultiplier}
+            onChange={(e) => setMoneyMultiplier(parseFloat(e.target.value) || 1)}
+            className="w-full accent-emerald-400"
+          />
+          <div className="flex justify-between text-xs text-gray-400 mt-2">
+            <span>x{displayMultiplier.toFixed(2)}</span>
+            <span>Holders fund ${holderDollarImpact.toFixed(2)} / minted $1</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">
+            Higher multiplier = more social value, less direct dollars from current holders.
+          </p>
         </div>
         {message && <p className="text-red-400 text-sm mt-2 text-center">{message}</p>}
         <div className="flex justify-center gap-4">

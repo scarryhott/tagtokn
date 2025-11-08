@@ -121,6 +121,7 @@ const LocalBusinessVerification = () => {
   const [transactionStatus, setTransactionStatus] = useState({});
   const [transactionHistory, setTransactionHistory] = useState({});
   const [earnBuyRatio, setEarnBuyRatio] = useState(0);
+  const [businessStatusFilter, setBusinessStatusFilter] = useState('all');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
@@ -283,6 +284,15 @@ const LocalBusinessVerification = () => {
       { total: 0, pending: 0, verified: 0, rejected: 0 }
     );
   }, [businesses]);
+
+  const filteredBusinesses = useMemo(() => {
+    if (businessStatusFilter === 'all') {
+      return businesses;
+    }
+    return businesses.filter(
+      (biz) => (biz.status ?? 'pending') === businessStatusFilter
+    );
+  }, [businesses, businessStatusFilter]);
 
   const handleFormChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -1150,14 +1160,37 @@ const LocalBusinessVerification = () => {
             </div>
           </div>
 
+          <div className="mt-6 flex flex-wrap gap-3">
+            {[
+              { value: 'all', label: 'All', count: summary.total },
+              { value: 'pending', label: 'Pending', count: summary.pending },
+              { value: 'verified', label: 'Verified', count: summary.verified },
+              { value: 'rejected', label: 'Rejected', count: summary.rejected }
+            ].map((filter) => (
+              <button
+                key={filter.value}
+                onClick={() => setBusinessStatusFilter(filter.value)}
+                className={`rounded-2xl border px-4 py-2 text-sm font-semibold ${
+                  businessStatusFilter === filter.value
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-600'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                {filter.label} ({filter.count})
+              </button>
+            ))}
+          </div>
+
           <div className="mt-6 space-y-4">
-            {businesses.length === 0 && (
+            {filteredBusinesses.length === 0 && (
               <div className="rounded-2xl border border-dashed border-gray-200 px-4 py-12 text-center text-sm text-gray-500">
-                No submissions yet. Once businesses apply, they will appear here with their data.
+                {businessStatusFilter === 'all'
+                  ? 'No submissions yet. Once businesses apply, they will appear here with their data.'
+                  : 'No businesses in this status yet.'}
               </div>
             )}
 
-            {businesses.map((business) => {
+            {filteredBusinesses.map((business) => {
               const bandInputs =
                 marketBandInputs[business.id] || {
                   assetValue: '',
@@ -1207,6 +1240,7 @@ const LocalBusinessVerification = () => {
                       upper: Number((effectiveBandRange.upper * socialMultiple).toFixed(2))
                     }
                   : null;
+              const isVerifiedBusiness = (business.status ?? 'pending') === 'verified';
 
               return (
                 <div
@@ -1224,6 +1258,12 @@ const LocalBusinessVerification = () => {
                       >
                         {(business.status ?? 'pending').toUpperCase()}
                       </span>
+                      {isVerifiedBusiness && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/10 px-3 py-0.5 text-xs font-semibold text-emerald-700">
+                          <BadgeCheck className="h-3.5 w-3.5" />
+                          Verified Business
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500">
                       Added {formatTimestamp(business.createdAt)}
