@@ -1,23 +1,59 @@
 import { auth } from '../firebase';
 
+const DEFAULT_FUNCTIONS_BASE = 'https://tagtokn.com/api';
+
+const FUNCTIONS_BASE_URL = (process.env.REACT_APP_FUNCTIONS_BASE_URL || DEFAULT_FUNCTIONS_BASE).replace(/\/$/, '');
+
+const buildFunctionsUrl = (path) => {
+  const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${FUNCTIONS_BASE_URL}${sanitizedPath}`;
+};
+
+const parseJsonResponse = async (response) => {
+  const bodyText = await response.text();
+
+  if (!bodyText) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(bodyText);
+  } catch (error) {
+    const preview = bodyText.slice(0, 200);
+    throw new Error(
+      `Expected JSON from ${response.url || 'backend'}, but received: ${preview}`
+    );
+  }
+};
+
+const callInstagramFunction = async (path, payload) => {
+  const response = await fetch(buildFunctionsUrl(path), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+
+  const data = await parseJsonResponse(response);
+
+  if (!response.ok) {
+    throw new Error(data.error || data.details || `Request failed with status ${response.status}`);
+  }
+
+  return data;
+};
+
 const generateInstagramAuthUrl = async (uid) => {
   try {
-    console.log('Requesting OAuth state from Vercel function...');
-    const response = await fetch('https://tagtokn.vercel.app/api/generateOAuthState', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ uid }),
-    });
+    console.log('Requesting OAuth state from backend function...');
+    const { state } = await callInstagramFunction('/generateOAuthState', { uid });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to generate OAuth state');
+    if (!state) {
+      throw new Error('Backend did not return an OAuth state.');
     }
 
-    const { state } = await response.json();
     console.log('Generated OAuth state:', state);
 
     const params = new URLSearchParams({
@@ -37,21 +73,7 @@ const generateInstagramAuthUrl = async (uid) => {
 
 export const exchangeCodeForToken = async (code, state) => {
   try {
-    const response = await fetch('https://tagtokn.vercel.app/api/exchangeInstagramCode', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ code, state }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to exchange code for token');
-    }
-
-    return await response.json();
+    return await callInstagramFunction('/exchangeInstagramCode', { code, state });
   } catch (error) {
     console.error('Error exchanging code for token:', error);
     throw error;
@@ -73,7 +95,7 @@ export const connectInstagram = async () => {
       return Promise.reject(new Error('User not authenticated'));
     }
     
-    // Generate the Instagram OAuth URL using Vercel function
+    // Generate the Instagram OAuth URL using our backend function
     const authUrl = await generateInstagramAuthUrl(user.uid);
     
     if (!authUrl) {

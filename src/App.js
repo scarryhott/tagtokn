@@ -34,6 +34,7 @@ import InstagramLogin from './components/InstagramLogin';
 import Dashboard from './pages/Dashboard';
 import LocalBusinessVerification from './pages/LocalBusinessVerification';
 import TagToknTokenPage from './pages/TagToknTokenPage';
+import Login from './components/auth/Login';
 
 // Alias TrendingUp to TrendingUpIcon for backward compatibility
 const TrendingUpIcon = TrendingUp;
@@ -2746,6 +2747,7 @@ const App = () => {
       <Navigation />
       <main className="flex-1 ml-20 p-6 overflow-auto">
         <Routes>
+          <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/connect/instagram" element={<InstagramLogin />} />
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
