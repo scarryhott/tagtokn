@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   DollarSign, 
   Users, 
@@ -32,6 +32,7 @@ import InstagramFeedPage from './pages/InstagramFeedPage';
 import InstagramCallback from './pages/InstagramCallback';
 import InstagramLogin from './components/InstagramLogin';
 import Dashboard from './pages/Dashboard';
+import LocalBusinessVerification from './pages/LocalBusinessVerification';
 
 // Alias TrendingUp to TrendingUpIcon for backward compatibility
 const TrendingUpIcon = TrendingUp;
@@ -41,7 +42,9 @@ const COMMISSION_RATE = 0.02; // 2%
 
 const Navigation = () => {
   const navigate = useNavigate();
-  const [activeTab] = useState('dashboard');
+  const location = useLocation();
+  const activePath = location.pathname;
+  const isActive = (...paths) => paths.includes(activePath);
   const [user, setUser] = useState(null);
   // userData and setUserData are used in the component
   const [, setUserData] = useState(null);
@@ -82,18 +85,26 @@ const Navigation = () => {
       <div className="flex flex-col items-center space-y-8 flex-grow">
         <button
           onClick={() => navigate('/')}
-          className={`p-2 rounded-lg ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          className={`p-2 rounded-lg ${isActive('/', '/dashboard') ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
           title="Dashboard"
         >
           <Home size={24} />
         </button>
         
         <button
-          onClick={() => navigate('/instagram')}
-          className={`p-2 rounded-lg ${activeTab === 'instagram' ? 'bg-pink-100 text-pink-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          onClick={() => navigate('/instagram-feed')}
+          className={`p-2 rounded-lg ${isActive('/instagram-feed') ? 'bg-pink-100 text-pink-600' : 'text-gray-600 hover:bg-gray-100'}`}
           title="Instagram Feed"
         >
           <Instagram size={24} />
+        </button>
+
+        <button
+          onClick={() => navigate('/local-business')}
+          className={`p-2 rounded-lg ${isActive('/local-business') ? 'bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-100'}`}
+          title="Local Businesses"
+        >
+          <Store size={24} />
         </button>
       </div>
       
@@ -2643,6 +2654,7 @@ const App = () => {
           <Route path="/connect/instagram" element={<InstagramLogin />} />
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
           <Route path="/instagram-feed" element={<InstagramFeedPage />} />
+          <Route path="/local-business" element={<LocalBusinessVerification />} />
           <Route path="/" element={<TokenomicsUI />} />
         </Routes>
       </main>
