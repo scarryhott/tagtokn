@@ -8,9 +8,17 @@ import {
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
   createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
   signOut as firebaseSignOut, 
-  onAuthStateChanged 
+  onAuthStateChanged
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  updateDoc, 
+  serverTimestamp,
+  enableIndexedDbPersistence
+} from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
@@ -31,52 +39,72 @@ const db = getFirestore(app);
 const functions = getFunctions(app);
 const storage = getStorage(app);
 
+// Enable offline persistence in production
+if (process.env.NODE_ENV === 'production') {
+  enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Offline persistence can only be enabled in one tab at a time.');
+    } else if (err.code === 'unimplemented') {
+      console.warn('The current browser doesn\'t support offline persistence.');
+    }
+  });
+}
+
 // Initialize providers
 const googleProvider = new GoogleAuthProvider();
 const githubProvider = new GithubAuthProvider();
 const twitterProvider = new TwitterAuthProvider();
 
-// Configure scopes if needed
+// Configure scopes
 googleProvider.addScope('profile');
 googleProvider.addScope('email');
 githubProvider.addScope('user:email');
 
 // Common function to handle user data after authentication
 const handleUserAuth = async (user, additionalData = {}) => {
-  const userRef = doc(db, 'users', user.uid);
-  const userDoc = await getDoc(userRef);
-  
-  const userData = {
-    uid: user.uid,
-    displayName: user.displayName || additionalData.displayName || '',
-    email: user.email || additionalData.email || '',
-    photoURL: user.photoURL || additionalData.photoURL || '',
-    // Instagram specific fields
-    instagram: additionalData.instagram || null,
-    instagramAccessToken: additionalData.instagramAccessToken || null,
-    instagramUserId: additionalData.instagramUserId || null,
-    instagramUsername: additionalData.instagramUsername || null,
-    // Timestamps
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    lastLoginAt: serverTimestamp(),
-    lastLogin: serverTimestamp(),
-    ...additionalData
-  };
-  
-  if (!userDoc.exists()) {
-    await setDoc(userRef, {
-      ...userData,
-      createdAt: serverTimestamp(),
-      tokens: []
-    });
-    return { user, isNewUser: true };
-  } else {
-    await updateDoc(userRef, {
-      ...userData,
-      lastLogin: serverTimestamp()
-    });
-    return { user, isNewUser: false };
+  if (!user || !auth || !db) {
+    console.error('Firebase not properly initialized');
+    return null;
+  }
+
+  try {
+    const userRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userRef);
+    
+    const userData = {
+      uid: user.uid,
+      displayName: user.displayName || additionalData.displayName || '',
+      email: user.email || additionalData.email || '',
+      photoURL: user.photoURL || additionalData.photoURL || '',
+      lastLoginAt: serverTimestamp(),
+      lastLogin: serverTimestamp(),
+      // Instagram specific fields
+      instagram: additionalData.instagram || null,
+      instagramAccessToken: additionalData.instagramAccessToken || null,
+      instagramUserId: additionalData.instagramUserId || null,
+      instagramUsername: additionalData.instagramUsername || null,
+      // Timestamps
+      updatedAt: serverTimestamp(),
+      ...additionalData
+    };
+
+    if (!userDoc.exists()) {
+      await setDoc(userRef, {
+        ...userData,
+        createdAt: serverTimestamp(),
+        tokens: []
+      });
+      return { user, isNewUser: true };
+    } else {
+      await updateDoc(userRef, {
+        ...userData,
+        lastLogin: serverTimestamp()
+      });
+      return { user, isNewUser: false };
+    }
+  } catch (error) {
+    console.error('Error in handleUserAuth:', error);
+    throw error;
   }
 };
 
@@ -196,25 +224,40 @@ const updateUserData = async (userId, data) => {
 
 // Export auth methods
 export {
+  // Core Firebase services
+  app,
   auth,
   db,
-  storage,
   functions,
-  httpsCallable,
+  storage,
+  
   // Auth methods
   signInWithGoogle,
   signInWithGitHub,
   signInWithTwitter,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOutUser as signOut,
-  // Other utilities
+  firebaseSignInWithEmailAndPassword as signInWithEmailAndPassword,
+  firebaseCreateUserWithEmailAndPassword as createUserWithEmailAndPassword,
+  firebaseSignOut as signOutUser,
+  
+  // User management
+  handleUserAuth,
   getCurrentUser,
   updateUserData,
   updateInstagramData,
   onAuthStateChanged,
+  
   // Providers
   googleProvider,
   githubProvider,
-  twitterProvider
+  twitterProvider,
+  
+  // Firestore utilities
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  
+  // Functions
+  httpsCallable
 };
