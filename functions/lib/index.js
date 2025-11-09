@@ -32,14 +32,11 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.exchangeInstagramCode = exports.generateOAuthState = exports.requestTagtoknLiquidity = exports.createCustomToken = void 0;
-const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
-const cors_1 = __importDefault(require("cors"));
+const corsModule = __importStar(require("cors"));
+const https_1 = require("firebase-functions/v2/https");
 // Initialize Firebase Admin SDK with service account
 const serviceAccount = {
     type: 'service_account',
@@ -65,21 +62,35 @@ const instagram_1 = require("./auth/instagram");
 Object.defineProperty(exports, "generateOAuthState", { enumerable: true, get: function () { return instagram_1.generateOAuthState; } });
 Object.defineProperty(exports, "exchangeInstagramCode", { enumerable: true, get: function () { return instagram_1.exchangeInstagramCode; } });
 // Configure CORS
-const corsHandler = (0, cors_1.default)({
+const corsOptions = {
     origin: [
         'https://app.tagtokn.com',
         'https://tagtokn.com',
+        'https://tagtokn.web.app',
         'http://localhost:3000'
-    ]
-});
+    ],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    optionsSuccessStatus: 204
+};
+const corsHandler = corsModule.default(corsOptions);
+const handleCorsPreflight = (req, res) => {
+    return corsHandler(req, res, () => {
+        res.status(204).send('');
+    });
+};
 const platformTokenRef = db.collection('platformTokens').doc('tagtokn');
 // Create a custom token for the specified UID
-exports.createCustomToken = functions.https.onRequest((req, res) => {
+exports.createCustomToken = (0, https_1.onRequest)((req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        return corsHandler(req, res, () => {
-            res.status(204).send('');
-        });
+        return handleCorsPreflight(req, res);
+    }
+    // Only allow POST requests
+    if (req.method !== 'POST') {
+        res.status(405).send('Method Not Allowed');
+        return;
     }
     // Apply CORS to the request
     return corsHandler(req, res, async () => {
@@ -109,18 +120,17 @@ exports.createCustomToken = functions.https.onRequest((req, res) => {
         }
     });
 });
-exports.requestTagtoknLiquidity = functions.https.onCall(async (data, context) => {
-    var _a, _b;
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Authentication is required to request liquidity.');
+exports.requestTagtoknLiquidity = (0, https_1.onCall)(async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'Authentication is required to request liquidity.');
     }
-    const { businessId, amount, broadcastToCommunity } = data;
+    const { businessId, amount, broadcastToCommunity } = request.data;
     if (!businessId) {
-        throw new functions.https.HttpsError('invalid-argument', 'businessId is required.');
+        throw new https_1.HttpsError('invalid-argument', 'businessId is required.');
     }
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-        throw new functions.https.HttpsError('invalid-argument', 'amount must be a positive number.');
+        throw new https_1.HttpsError('invalid-argument', 'amount must be a positive number.');
     }
     const feeRate = 0.025;
     const feeAmount = Number((numericAmount * feeRate).toFixed(2));
@@ -128,26 +138,25 @@ exports.requestTagtoknLiquidity = functions.https.onCall(async (data, context) =
     const businessRef = db.collection('localBusinesses').doc(businessId);
     const businessSnap = await businessRef.get();
     if (!businessSnap.exists) {
-        throw new functions.https.HttpsError('not-found', 'Business record does not exist.');
+        throw new https_1.HttpsError('not-found', 'Business record does not exist.');
     }
     const businessData = businessSnap.data() || {};
-    const isAdmin = ((_a = context.auth.token) === null || _a === void 0 ? void 0 : _a.admin) === true;
-    if (!isAdmin && businessData.ownerUid !== context.auth.uid) {
-        throw new functions.https.HttpsError('permission-denied', 'Only the verified business owner can request liquidity.');
+    const isAdmin = request.auth?.token?.admin === true;
+    if (!isAdmin && businessData.ownerUid !== request.auth?.uid) {
+        throw new https_1.HttpsError('permission-denied', 'Only the verified business owner can request liquidity.');
     }
-    if (!isAdmin && ((_b = businessData.status) !== null && _b !== void 0 ? _b : 'pending') !== 'verified') {
-        throw new functions.https.HttpsError('failed-precondition', 'Business must be verified before requesting liquidity.');
+    if (!isAdmin && (businessData.status ?? 'pending') !== 'verified') {
+        throw new https_1.HttpsError('failed-precondition', 'Business must be verified before requesting liquidity.');
     }
     await db.runTransaction(async (tx) => {
-        var _a, _b, _c, _d;
         const platformSnap = await tx.get(platformTokenRef);
         if (!platformSnap.exists) {
-            throw new functions.https.HttpsError('failed-precondition', 'Platform token document is missing.');
+            throw new https_1.HttpsError('failed-precondition', 'Platform token document is missing.');
         }
         const platformData = platformSnap.data() || {};
         const availableTreasury = Number(platformData.treasuryUsd) || 0;
         if (availableTreasury < numericAmount) {
-            throw new functions.https.HttpsError('failed-precondition', 'Insufficient platform liquidity to fulfill this request.');
+            throw new https_1.HttpsError('failed-precondition', 'Insufficient platform liquidity to fulfill this request.');
         }
         tx.update(platformTokenRef, {
             treasuryUsd: FieldValue.increment(-numericAmount),
@@ -158,7 +167,7 @@ exports.requestTagtoknLiquidity = functions.https.onCall(async (data, context) =
                 amount: numericAmount,
                 feeAmount,
                 businessId,
-                approvedBy: (_b = (_a = context.auth) === null || _a === void 0 ? void 0 : _a.uid) !== null && _b !== void 0 ? _b : null,
+                approvedBy: request.auth?.uid ?? null,
                 occurredAt: FieldValue.serverTimestamp()
             }
         });
@@ -169,7 +178,7 @@ exports.requestTagtoknLiquidity = functions.https.onCall(async (data, context) =
         const loanRef = db.collection('liquidityLoans').doc();
         tx.set(loanRef, {
             businessId,
-            requestedBy: (_d = (_c = context.auth) === null || _c === void 0 ? void 0 : _c.uid) !== null && _d !== void 0 ? _d : null,
+            requestedBy: request.auth?.uid ?? null,
             grossAmount: numericAmount,
             netAmount,
             feeAmount,

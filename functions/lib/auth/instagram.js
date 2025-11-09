@@ -35,9 +35,9 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.exchangeInstagramCode = exports.generateOAuthState = void 0;
 const admin = __importStar(require("firebase-admin"));
-const functions = __importStar(require("firebase-functions"));
 const crypto = __importStar(require("crypto"));
 const corsModule = __importStar(require("cors"));
+const https_1 = require("firebase-functions/v2/https");
 const allowedOrigins = [
     'https://app.tagtokn.com',
     'https://tagtokn.com',
@@ -53,9 +53,11 @@ const corsOptions = {
     optionsSuccessStatus: 204
 };
 const corsHandler = corsModule.default(corsOptions);
-const handleCorsPreflight = (req, res) => corsHandler(req, res, () => {
-    res.status(204).send('');
-});
+const handleCorsPreflight = (req, res) => {
+    return corsHandler(req, res, () => {
+        res.status(204).send('');
+    });
+};
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
     admin.initializeApp();
@@ -72,7 +74,7 @@ const db = admin.firestore();
 /**
  * Generates an OAuth state parameter and stores it in Firestore
  */
-exports.generateOAuthState = functions.https.onRequest((req, res) => {
+exports.generateOAuthState = (0, https_1.onRequest)((req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return handleCorsPreflight(req, res);
@@ -122,7 +124,7 @@ exports.generateOAuthState = functions.https.onRequest((req, res) => {
 /**
  * Exchanges an Instagram OAuth code for an access token
  */
-exports.exchangeInstagramCode = functions.https.onRequest((req, res) => {
+exports.exchangeInstagramCode = (0, https_1.onRequest)((req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return handleCorsPreflight(req, res);

@@ -1,7 +1,7 @@
-import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 import * as corsModule from 'cors';
 import { Request, Response } from 'express';
+import { onRequest, onCall, CallableRequest, HttpsError } from 'firebase-functions/v2/https';
 
 // Initialize Firebase Admin SDK with service account
 const serviceAccount = {
@@ -24,7 +24,6 @@ admin.initializeApp({
 });
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
-type CallableContext = functions.https.CallableContext;
 
 // Import OAuth functions
 import { generateOAuthState, exchangeInstagramCode } from './auth/instagram';
@@ -54,10 +53,10 @@ const handleCorsPreflight = (req: Request, res: Response) => {
 const platformTokenRef = db.collection('platformTokens').doc('tagtokn');
 
 // Create a custom token for the specified UID
-export const createCustomToken = functions.https.onRequest((req: Request, res: Response) => {
+export const createCustomToken = onRequest((req, res) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return handleCorsPreflight(req, res);
+    return handleCorsPreflight(req as Request, res as Response);
   }
 
   // Only allow POST requests
@@ -67,7 +66,7 @@ export const createCustomToken = functions.https.onRequest((req: Request, res: R
   }
 
   // Apply CORS to the request
-  return corsHandler(req, res, async () => {
+  return corsHandler(req as Request, res as Response, async () => {
     // Only accept POST requests
     if (req.method !== 'POST') {
       res.status(405).send('Method Not Allowed');
@@ -105,19 +104,19 @@ interface LiquidityRequestPayload {
   broadcastToCommunity?: boolean;
 }
 
-export const requestTagtoknLiquidity = functions.https.onCall(
-  async (data: LiquidityRequestPayload, context: CallableContext) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
+export const requestTagtoknLiquidity = onCall(
+  async (request: CallableRequest<LiquidityRequestPayload>) => {
+    if (!request.auth) {
+      throw new HttpsError(
         'unauthenticated',
         'Authentication is required to request liquidity.'
       );
     }
 
-    const { businessId, amount, broadcastToCommunity } = data;
+    const { businessId, amount, broadcastToCommunity } = request.data;
     
     if (!businessId) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         'businessId is required.'
       );
@@ -125,7 +124,7 @@ export const requestTagtoknLiquidity = functions.https.onCall(
     
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         'amount must be a positive number.'
       );
@@ -138,23 +137,23 @@ export const requestTagtoknLiquidity = functions.https.onCall(
     const businessRef = db.collection('localBusinesses').doc(businessId);
     const businessSnap = await businessRef.get();
     if (!businessSnap.exists) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'not-found',
         'Business record does not exist.'
       );
     }
 
     const businessData = businessSnap.data() || {};
-    const isAdmin = context.auth.token?.admin === true;
-    if (!isAdmin && businessData.ownerUid !== context.auth.uid) {
-      throw new functions.https.HttpsError(
+    const isAdmin = request.auth?.token?.admin === true;
+    if (!isAdmin && businessData.ownerUid !== request.auth?.uid) {
+      throw new HttpsError(
         'permission-denied',
         'Only the verified business owner can request liquidity.'
       );
     }
 
     if (!isAdmin && (businessData.status ?? 'pending') !== 'verified') {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'failed-precondition',
         'Business must be verified before requesting liquidity.'
       );
@@ -163,7 +162,7 @@ export const requestTagtoknLiquidity = functions.https.onCall(
     await db.runTransaction(async (tx) => {
       const platformSnap = await tx.get(platformTokenRef);
       if (!platformSnap.exists) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'failed-precondition',
           'Platform token document is missing.'
         );
@@ -171,7 +170,7 @@ export const requestTagtoknLiquidity = functions.https.onCall(
       const platformData = platformSnap.data() || {};
       const availableTreasury = Number(platformData.treasuryUsd) || 0;
       if (availableTreasury < numericAmount) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'failed-precondition',
           'Insufficient platform liquidity to fulfill this request.'
         );
@@ -186,7 +185,7 @@ export const requestTagtoknLiquidity = functions.https.onCall(
           amount: numericAmount,
           feeAmount,
           businessId,
-          approvedBy: context.auth?.uid ?? null,
+          approvedBy: request.auth?.uid ?? null,
           occurredAt: FieldValue.serverTimestamp()
         }
       });
@@ -199,7 +198,7 @@ export const requestTagtoknLiquidity = functions.https.onCall(
       const loanRef = db.collection('liquidityLoans').doc();
       tx.set(loanRef, {
         businessId,
-        requestedBy: context.auth?.uid ?? null,
+        requestedBy: request.auth?.uid ?? null,
         grossAmount: numericAmount,
         netAmount,
         feeAmount,

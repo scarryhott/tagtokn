@@ -1,8 +1,8 @@
 import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions/v2';
 import * as crypto from 'crypto';
 import * as corsModule from 'cors';
 import { Request, Response } from 'express';
+import { onRequest } from 'firebase-functions/v2/https';
 
 // Type for the request body
 type RequestWithBody = Request & {
@@ -59,7 +59,7 @@ interface OAuthState {
 /**
  * Generates an OAuth state parameter and stores it in Firestore
  */
-export const generateOAuthState = functions.https.onRequest((req: RequestWithBody, res: Response) => {
+export const generateOAuthState = onRequest((req: RequestWithBody, res: Response) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return handleCorsPreflight(req, res);
@@ -116,7 +116,7 @@ export const generateOAuthState = functions.https.onRequest((req: RequestWithBod
 /**
  * Exchanges an Instagram OAuth code for an access token
  */
-export const exchangeInstagramCode = functions.https.onRequest((req: RequestWithBody, res: Response) => {
+export const exchangeInstagramCode = onRequest((req: RequestWithBody, res: Response) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return handleCorsPreflight(req, res);
@@ -184,7 +184,7 @@ export const exchangeInstagramCode = functions.https.onRequest((req: RequestWith
         throw new Error(`Instagram API error: ${JSON.stringify(error)}`);
       }
 
-      const tokenData = await tokenResponse.json();
+      const tokenData = await tokenResponse.json() as { access_token: string; user_id: string };
       const { access_token: accessToken, user_id: instagramUserId } = tokenData;
 
       // Get long-lived access token
@@ -200,7 +200,7 @@ export const exchangeInstagramCode = functions.https.onRequest((req: RequestWith
         throw new Error(`Failed to get long-lived token: ${JSON.stringify(error)}`);
       }
 
-      const longLivedTokenData = await longLivedTokenResponse.json();
+      const longLivedTokenData = await longLivedTokenResponse.json() as { access_token: string; expires_in?: number };
       const longLivedToken = longLivedTokenData.access_token;
       const expiresIn = longLivedTokenData.expires_in || 5184000; // Default to 60 days if not provided
 
@@ -214,7 +214,7 @@ export const exchangeInstagramCode = functions.https.onRequest((req: RequestWith
         throw new Error(`Failed to get user profile: ${JSON.stringify(error)}`);
       }
 
-      const profile = await profileResponse.json();
+      const profile = await profileResponse.json() as { username: string; account_type: string; media_count: number };
 
       // Save the Instagram data to the user's document
       const userRef = db.collection('users').doc(stateData.uid);
