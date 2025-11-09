@@ -1,7 +1,6 @@
 import Cors from 'cors';
-import initMiddleware from '../../lib/init-middleware';
+import initMiddleware from '../lib/init-middleware';
 import admin from 'firebase-admin';
-import axios from 'axios';
 import crypto from 'crypto';
 
 // Allowed origins
@@ -75,90 +74,44 @@ async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { code, state } = req.body;
+  const { uid } = req.body;
   
-  if (!code || !state) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+  if (!uid) {
+    return res.status(400).json({ error: 'Missing user ID' });
   }
 
   try {
-    // 1. Verify state in Firestore using admin SDK
-    const stateDoc = await admin.firestore().collection('oauthStates').doc(state).get();
-    if (!stateDoc.exists) {
-      return res.status(400).json({ error: 'Invalid state' });
-    }
-    
-    const stateData = stateDoc.data();
-    
-    // Check if state is already used or expired
-    if (stateData.used) {
-      return res.status(400).json({ error: 'State already used' });
-    }
-    
-    if (stateData.expiresAt.toDate() < new Date()) {
-      return res.status(400).json({ error: 'State expired' });
-    }
+    const state = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiration
 
-    // Mark state as used
-    await stateDoc.ref.update({ 
-      used: true,
-      usedAt: admin.firestore.FieldValue.serverTimestamp() 
-    });
-    
-    const userId = stateData.uid;
-
-    // 2. Exchange code for Instagram access token
-    const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
-      params: {
-        client_id: process.env.REACT_APP_FACEBOOK_APP_ID,
-        client_secret: process.env.REACT_APP_FACEBOOK_APP_SECRET,
-        redirect_uri: 'https://tagtokn.com/auth/instagram/callback',
-        code,
-      },
+    // Store the state in Firestore using admin SDK (bypasses security rules)
+    await admin.firestore().collection('oauthStates').doc(state).set({
+      uid,
+      used: false,
+      expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    const { access_token: accessToken } = tokenResponse.data;
+    // Clean up expired states
+    const expiredStates = await admin
+      .firestore()
+      .collection('oauthStates')
+      .where('expiresAt', '<', admin.firestore.Timestamp.now())
+      .get();
 
-    // 3. Get Instagram user data
-    const userResponse = await axios.get('https://graph.instagram.com/me', {
-      params: {
-        fields: 'id,username',
-        access_token: accessToken,
-      },
+    const batch = admin.firestore().batch();
+    expiredStates.docs.forEach((doc) => {
+      batch.delete(doc.ref);
     });
+    await batch.commit();
 
-    const { id: instagramId, username } = userResponse.data;
-
-    // 4. Create or update user in Firestore
-    const userRef = admin.firestore().collection('users').doc(stateData.uid);
-    await userRef.set(
-      {
-        instagram: {
-          id: instagramId,
-          username,
-          accessToken,
-          connectedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-      },
-      { merge: true }
-    );
-
-    // 5. Create Firebase custom token
-    const token = await admin.auth().createCustomToken(stateData.uid);
-
-    return res.status(200).json({
-      success: true,
-      token,
-      user: {
-        instagramId,
-        username,
-      },
-    });
+    return res.status(200).json({ state });
   } catch (error) {
-    console.error('Error in Instagram code exchange:', error);
-    return res.status(500).json({
-      error: 'Failed to process Instagram authentication',
-      details: error.message,
+    console.error('Error generating OAuth state:', error);
+    return res.status(500).json({ 
+      error: 'Failed to generate OAuth state',
+      details: error.message 
     });
   }
 }
