@@ -1,14 +1,13 @@
 {
   "projects": {
     "default": "tagtokn",
-    "staging": "tagtokn",
-    "tagtokn-com": "tagtokn"
+    "tagtokn": "tagtokn"
   },
   "targets": {
     "tagtokn": {
       "hosting": {
-        "tagtokn-com": [
-          "tagtokn-com"
+        "tagtokn": [
+          "tagtokn"
         ]
       }
     }

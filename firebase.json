@@ -1,91 +1,17 @@
 {
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local",
-        "**/node_modules/**",
-        "**/.*",
-        "*.test.js"
-      ],
-      "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run build"
-      ],
-      "runtime": "nodejs20"
-    }
-  ],
   "hosting": {
-    "target": "tagtokn-com",
+    "target": "tagtokn",
     "public": "my-app/build",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/"],
     "rewrites": [
       {
         "source": "/auth/instagram/callback",
         "function": "exchangeInstagramCode"
       },
       {
-        "source": "/api/generateOAuthState",
-        "function": "generateOAuthState"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
-    ],
-    "headers": [
-      {
-        "source": "/api/**",
-        "headers": [
-          {
-            "key": "Access-Control-Allow-Origin",
-            "value": "https://tagtokn.com"
-          },
-          {
-            "key": "Access-Control-Allow-Methods",
-            "value": "GET, POST, PUT, DELETE, OPTIONS"
-          },
-          {
-            "key": "Access-Control-Allow-Headers",
-            "value": "Content-Type, Authorization"
-          },
-          {
-            "key": "Access-Control-Allow-Credentials",
-            "value": "true"
-          }
-        ]
-      },
-      {
-        "source": "**/*.@(js|css|jpg|jpeg|png|gif|ico|webp|svg|woff|woff2|ttf|eot)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=31536000"
-          }
-        ]
-      }
     ]
-  },
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
-  "storage": {
-    "rules": "storage.rules"
-  },
-  "emulators": {
-    "functions": {
-      "port": 5001
-    },
-    "hosting": {
-      "port": 5000
-    },
-    "ui": {
-      "enabled": true
-    }
   }
 }
