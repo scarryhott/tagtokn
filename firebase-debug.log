@@ -1,0 +1,477 @@
+[debug] [2025-11-09T16:39:14.369Z] ----------------------------------------------------------------------
+[debug] [2025-11-09T16:39:14.371Z] Command:       /Users/harryscott/.nvm/versions/node/v20.19.2/bin/node /Users/harryscott/.nvm/versions/node/v20.19.2/bin/firebase deploy --only functions,hosting
+[debug] [2025-11-09T16:39:14.371Z] CLI Version:   14.11.0
+[debug] [2025-11-09T16:39:14.371Z] Platform:      darwin
+[debug] [2025-11-09T16:39:14.371Z] Node Version:  v20.19.2
+[debug] [2025-11-09T16:39:14.371Z] Time:          Sun Nov 09 2025 11:39:14 GMT-0500 (Eastern Standard Time)
+[debug] [2025-11-09T16:39:14.371Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-09T16:39:14.491Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-09T16:39:14.491Z] > authorizing via signed-in user (harryclementscott@gmail.com)
+[debug] [2025-11-09T16:39:14.491Z] [iam] checking project tagtokn for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2025-11-09T16:39:14.492Z] Checked if tokens are valid: false, expires at: 1762651972889
+[debug] [2025-11-09T16:39:14.492Z] Checked if tokens are valid: false, expires at: 1762651972889
+[debug] [2025-11-09T16:39:14.492Z] > refreshing access token with scopes: []
+[debug] [2025-11-09T16:39:14.493Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-11-09T16:39:14.493Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-11-09T16:39:14.710Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-11-09T16:39:14.710Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-11-09T16:39:14.720Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions [none]
+[debug] [2025-11-09T16:39:14.720Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions x-goog-quota-user=projects/tagtokn
+[debug] [2025-11-09T16:39:14.720Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-11-09T16:39:15.166Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions 200
+[debug] [2025-11-09T16:39:15.166Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-11-09T16:39:15.166Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:15.166Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:15.166Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/tagtokn/serviceAccounts/tagtokn@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2025-11-09T16:39:15.166Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/tagtokn/serviceAccounts/tagtokn@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-11-09T16:39:15.430Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/tagtokn/serviceAccounts/tagtokn@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2025-11-09T16:39:15.431Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/tagtokn/serviceAccounts/tagtokn@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-11-09T16:39:15.431Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:15.431Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:15.431Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn [none]
+[debug] [2025-11-09T16:39:15.854Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn 200
+[debug] [2025-11-09T16:39:15.854Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn {"projectId":"tagtokn","projectNumber":"1087424771839","displayName":"TagTokn","name":"projects/tagtokn","resources":{"hostingSite":"tagtokn"},"state":"ACTIVE","etag":"1_ba13ee61-5e04-4979-ab59-89008fb1abb3"}
+[info] 
+[info] === Deploying to 'tagtokn'...
+[info] 
+[info] i  deploying functions, hosting 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run build
+[info] ✔  functions: Finished running predeploy script. 
+[debug] [2025-11-09T16:39:18.070Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.071Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.071Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn [none]
+[debug] [2025-11-09T16:39:18.222Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn 200
+[debug] [2025-11-09T16:39:18.222Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn {"projectNumber":"1087424771839","projectId":"tagtokn","lifecycleState":"ACTIVE","name":"TagTokn","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-06-05T12:27:16.738695Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2025-11-09T16:39:18.224Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.224Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.224Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn/adminSdkConfig [none]
+[debug] [2025-11-09T16:39:18.427Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn/adminSdkConfig 200
+[debug] [2025-11-09T16:39:18.427Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn/adminSdkConfig {"projectId":"tagtokn","storageBucket":"tagtokn.firebasestorage.app"}
+[debug] [2025-11-09T16:39:18.428Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.428Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.428Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs [none]
+[debug] [2025-11-09T16:39:18.816Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs 200
+[debug] [2025-11-09T16:39:18.816Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs {"configs":[{"name":"projects/tagtokn/configs/facebook"},{"name":"projects/tagtokn/configs/frontend"},{"name":"projects/tagtokn/configs/instagram"}]}
+[debug] [2025-11-09T16:39:18.816Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.816Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.816Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.816Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.816Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.816Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.817Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables [none]
+[debug] [2025-11-09T16:39:18.822Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables [none]
+[debug] [2025-11-09T16:39:18.824Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables [none]
+[debug] [2025-11-09T16:39:18.930Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables 200
+[debug] [2025-11-09T16:39:18.930Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables {"variables":[{"name":"projects/tagtokn/configs/facebook/variables/app_secret","updateTime":"2025-11-08T22:25:05.870678172Z"},{"name":"projects/tagtokn/configs/facebook/variables/app_id","updateTime":"2025-11-08T22:25:05.064917538Z"}]}
+[debug] [2025-11-09T16:39:18.931Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.931Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.931Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.931Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.931Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_secret [none]
+[debug] [2025-11-09T16:39:18.931Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_id [none]
+[debug] [2025-11-09T16:39:18.968Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables 200
+[debug] [2025-11-09T16:39:18.968Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables {"variables":[{"name":"projects/tagtokn/configs/instagram/variables/redirect_uri","updateTime":"2025-11-08T22:25:04.377034758Z"},{"name":"projects/tagtokn/configs/instagram/variables/client_id","updateTime":"2025-06-06T19:56:22.872073585Z"},{"name":"projects/tagtokn/configs/instagram/variables/client_secret","updateTime":"2025-06-06T19:56:22.873482012Z"}]}
+[debug] [2025-11-09T16:39:18.968Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.968Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.968Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.968Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.968Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.968Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.968Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/redirect_uri [none]
+[debug] [2025-11-09T16:39:18.968Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_id [none]
+[debug] [2025-11-09T16:39:18.970Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_secret [none]
+[debug] [2025-11-09T16:39:18.972Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables 200
+[debug] [2025-11-09T16:39:18.972Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables {"variables":[{"name":"projects/tagtokn/configs/frontend/variables/url","updateTime":"2025-06-06T19:56:22.873417007Z"}]}
+[debug] [2025-11-09T16:39:18.972Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.972Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:18.973Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables/url [none]
+[debug] [2025-11-09T16:39:19.091Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables/url 200
+[debug] [2025-11-09T16:39:19.091Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables/url {"name":"projects/tagtokn/configs/frontend/variables/url","updateTime":"2025-06-06T19:56:22.873417007Z","text":"https://tagtokn.com"}
+[debug] [2025-11-09T16:39:19.092Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/redirect_uri 200
+[debug] [2025-11-09T16:39:19.092Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/redirect_uri {"name":"projects/tagtokn/configs/instagram/variables/redirect_uri","updateTime":"2025-11-08T22:25:04.377034758Z","text":"https://tagtokn.com/auth/instagram/callback"}
+[debug] [2025-11-09T16:39:19.092Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_id 200
+[debug] [2025-11-09T16:39:19.092Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_id {"name":"projects/tagtokn/configs/facebook/variables/app_id","updateTime":"2025-11-08T22:25:05.064917538Z","text":"608108222327479"}
+[debug] [2025-11-09T16:39:19.269Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_secret 200
+[debug] [2025-11-09T16:39:19.269Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_secret {"name":"projects/tagtokn/configs/facebook/variables/app_secret","updateTime":"2025-11-08T22:25:05.870678172Z","text":"940ff1d1f27b69fd9bf2ae2b23cbf8fd"}
+[debug] [2025-11-09T16:39:19.269Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_secret 200
+[debug] [2025-11-09T16:39:19.269Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_secret {"name":"projects/tagtokn/configs/instagram/variables/client_secret","updateTime":"2025-06-06T19:56:22.873482012Z","text":"4f2d907b6c2a6f48057ec7241acfc798"}
+[debug] [2025-11-09T16:39:19.270Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_id 200
+[debug] [2025-11-09T16:39:19.270Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_id {"name":"projects/tagtokn/configs/instagram/variables/client_id","updateTime":"2025-06-06T19:56:22.872073585Z","text":"1185900996667001"}
+[debug] [2025-11-09T16:39:19.270Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] ⚠  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2025-11-09T16:39:19.871Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "lint": "eslint . --config eslint.config.js",
+    "build": "tsc",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "@types/express": "^5.0.5",
+    "cors": "^2.8.5",
+    "firebase-admin": "^11.11.0",
+    "firebase-functions": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/node": "^18.15.11",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "eslint": "^8.9.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.25.4",
+    "typescript": "^5.0.0"
+  },
+  "private": true
+}
+[debug] [2025-11-09T16:39:19.871Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2025-11-09T16:39:19.872Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-11-09T16:39:19.880Z] Found firebase-functions binary at '/Users/harryscott/influtoken/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8872
+
+[debug] [2025-11-09T16:39:20.196Z] Got response from /__/functions.yaml {"endpoints":{"createCustomToken":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"httpsTrigger":{},"entryPoint":"createCustomToken"},"requestTagtoknLiquidity":{"platform":"gcfv1","labels":{},"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"callableTrigger":{},"entryPoint":"requestTagtoknLiquidity"},"generateOAuthState":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"httpsTrigger":{},"entryPoint":"generateOAuthState"},"exchangeInstagramCode":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"httpsTrigger":{},"entryPoint":"exchangeInstagramCode"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[debug] [2025-11-09T16:39:24.232Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-09T16:39:24.232Z] > authorizing via signed-in user (harryclementscott@gmail.com)
+[debug] [2025-11-09T16:39:24.232Z] [iam] checking project tagtokn for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[debug] [2025-11-09T16:39:24.233Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:24.233Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:24.233Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions [none]
+[debug] [2025-11-09T16:39:24.233Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions x-goog-quota-user=projects/tagtokn
+[debug] [2025-11-09T16:39:24.233Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2025-11-09T16:39:24.471Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions 200
+[debug] [2025-11-09T16:39:24.472Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2025-11-09T16:39:24.473Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:24.473Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:24.474Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/tagtokn/instances pageSize=100&pageToken=
+[debug] [2025-11-09T16:39:24.856Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/tagtokn/instances 200
+[debug] [2025-11-09T16:39:24.856Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/tagtokn/instances {}
+[info] i  functions: preparing functions directory for uploading... 
+[info] i  functions: packaged /Users/harryscott/influtoken/functions (83.56 KB) for uploading 
+[debug] [2025-11-09T16:39:24.890Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:24.890Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:24.890Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/-/functions [none]
+[debug] [2025-11-09T16:39:25.432Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/-/functions 200
+[debug] [2025-11-09T16:39:25.433Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/-/functions {"functions":[{"name":"projects/tagtokn/locations/us-central1/functions/generateOAuthState","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/generateOAuthState","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"generateOAuthState","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-11-09T00:36:34.159Z","versionId":"5","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"6ef72377c560d5d3cb76b6642d5ac8987b34257c"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/1e915b32-6909-43d3-8fc3-ad3205d467d5.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/generateOAuthState"},"runtime":"nodejs20","ingressSettings":"ALLOW_ALL","buildId":"f2ca3d32-f447-4f95-a453-cc1305320a56","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/f2ca3d32-f447-4f95-a453-cc1305320a56","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/createCustomToken","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/createCustomToken","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"createCustomToken","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-11-08T22:41:44.298Z","versionId":"14","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"55d79234d503d7debeddfe39de16c35d47c8e7bb"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/90e3c648-4309-4afe-b07d-6ad471e70e3b.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/createCustomToken"},"runtime":"nodejs20","ingressSettings":"ALLOW_ALL","buildId":"f09d4d8a-cb86-4ac6-8bd2-2dadd74fb19b","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/f09d4d8a-cb86-4ac6-8bd2-2dadd74fb19b","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/requestTagtoknLiquidity","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/requestTagtoknLiquidity","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"requestTagtoknLiquidity","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-11-08T22:46:48.744Z","versionId":"5","labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"55d79234d503d7debeddfe39de16c35d47c8e7bb"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/9ff4fb00-4b47-4151-ba8c-567934aa059f.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/requestTagtoknLiquidity"},"runtime":"nodejs20","ingressSettings":"ALLOW_ALL","buildId":"74f77013-2187-41ba-ad14-8b19cf045822","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/74f77013-2187-41ba-ad14-8b19cf045822","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/exchangeInstagramCode","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/exchangeInstagramCode","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"exchangeInstagramCode","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-11-08T23:45:00.662Z","versionId":"4","labels":{"firebase-functions-hash":"9500dbce249a57af40b2c15815b710d733ca84db","deployment-tool":"cli-firebase"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/e4afb43e-f194-4afc-8bef-e77a3e5ad923.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/exchangeInstagramCode"},"runtime":"nodejs20","ingressSettings":"ALLOW_ALL","buildId":"baaf9971-982e-4ee2-be2e-168698dbc06b","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/baaf9971-982e-4ee2-be2e-168698dbc06b","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/startInstagramAuth","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/startInstagramAuth","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"startInstagramAuth","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-06-08T20:37:40.454Z","versionId":"11","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"29c818c2a2c4ef6e003c83d0df64de5de04ba762"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/d2d802dc-2f14-436c-8764-cfd016d07e33.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/startInstagramAuth"},"runtime":"nodejs18","ingressSettings":"ALLOW_ALL","buildId":"6822d2b3-73e1-4510-b38b-7652ca74e83c","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/6822d2b3-73e1-4510-b38b-7652ca74e83c","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/instagramCallback","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/instagramCallback","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"instagramCallback","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-06-08T20:37:40.138Z","versionId":"10","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"29c818c2a2c4ef6e003c83d0df64de5de04ba762"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/d2d802dc-2f14-436c-8764-cfd016d07e33.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/instagramCallback"},"runtime":"nodejs18","ingressSettings":"ALLOW_ALL","buildId":"6822d2b3-73e1-4510-b38b-7652ca74e83c","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/6822d2b3-73e1-4510-b38b-7652ca74e83c","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true}]}
+[debug] [2025-11-09T16:39:25.447Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:25.448Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:25.449Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/tagtokn/locations/-/functions filter=environment%3D%22GEN_2%22
+[debug] [2025-11-09T16:39:25.946Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/tagtokn/locations/-/functions 200
+[debug] [2025-11-09T16:39:25.946Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/tagtokn/locations/-/functions {}
+[debug] [2025-11-09T16:39:25.950Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:25.950Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:25.950Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn [none]
+[debug] [2025-11-09T16:39:26.058Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn 200
+[debug] [2025-11-09T16:39:26.058Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn {"projectNumber":"1087424771839","projectId":"tagtokn","lifecycleState":"ACTIVE","name":"TagTokn","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-06-05T12:27:16.738695Z"}
+[debug] [2025-11-09T16:39:26.061Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:26.061Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:26.061Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/tagtokn-com/versions [none]
+[debug] [2025-11-09T16:39:26.061Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/tagtokn-com/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2025-11-09T16:39:26.803Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/tagtokn-com/versions 200
+[debug] [2025-11-09T16:39:26.803Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/tagtokn-com/versions {"name":"projects/1087424771839/sites/tagtokn-com/versions/5a2f0cd174cd3225","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2025-11-09T16:39:26.804Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:26.804Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:26.804Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/tagtokn/billingInfo [none]
+[debug] [2025-11-09T16:39:26.973Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/tagtokn/billingInfo 200
+[debug] [2025-11-09T16:39:26.973Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/tagtokn/billingInfo {"name":"projects/tagtokn/billingInfo","projectId":"tagtokn","billingAccountName":"billingAccounts/010360-6D2411-FDE6A9","billingEnabled":true}
+[debug] [2025-11-09T16:39:26.974Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:26.974Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:26.974Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/us-central1/functions:generateUploadUrl [none]
+[debug] [2025-11-09T16:39:26.974Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/us-central1/functions:generateUploadUrl {}
+[debug] [2025-11-09T16:39:27.426Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/us-central1/functions:generateUploadUrl 200
+[debug] [2025-11-09T16:39:27.426Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/us-central1/functions:generateUploadUrl {"uploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/1cd6860f-8297-4a56-bd51-1bc9a171b70d.zip?GoogleAccessId=service-1087424771839@gcf-admin-robot.iam.gserviceaccount.com&Expires=1762708167&Signature=di8arWqS0TlthQ6J9u9CD7ojPq2of1ixKuYVNny8GGaI%2BTpfx7TtLh8uBeax8G8LEK2Jz%2FBUt7Ar5M3IyaSBXjjjT%2FzndQX7Q3tuloEGhRETM%2FyLUhRF9zkHMIBv7FuAiki6LT%2FXIuyTV9uz15SKHg0qqawUnqIdIOkBEXrv3RR1uvF3j3swOryWrfmbupiySUIYsmAPVxXkiPWNOxqeXKC%2F9FRUypXkjQLDjoNXxS%2FVv4U6NC%2BK9SbF0k6v%2BpclhNru98OhJd%2B7O0qy6EfWAaEUNiOuDbiv6Sl5gAc8IegteFTeCw2Icm9pbF56nSTew6ziR8Kf3oufzG0qYsCDEA%3D%3D"}
+[debug] [2025-11-09T16:39:27.427Z] >>> [apiv2][query] PUT https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/1cd6860f-8297-4a56-bd51-1bc9a171b70d.zip GoogleAccessId=service-1087424771839%40gcf-admin-robot.iam.gserviceaccount.com&Expires=1762708167&Signature=di8arWqS0TlthQ6J9u9CD7ojPq2of1ixKuYVNny8GGaI%2BTpfx7TtLh8uBeax8G8LEK2Jz%2FBUt7Ar5M3IyaSBXjjjT%2FzndQX7Q3tuloEGhRETM%2FyLUhRF9zkHMIBv7FuAiki6LT%2FXIuyTV9uz15SKHg0qqawUnqIdIOkBEXrv3RR1uvF3j3swOryWrfmbupiySUIYsmAPVxXkiPWNOxqeXKC%2F9FRUypXkjQLDjoNXxS%2FVv4U6NC%2BK9SbF0k6v%2BpclhNru98OhJd%2B7O0qy6EfWAaEUNiOuDbiv6Sl5gAc8IegteFTeCw2Icm9pbF56nSTew6ziR8Kf3oufzG0qYsCDEA%3D%3D
+[debug] [2025-11-09T16:39:27.427Z] >>> [apiv2][body] PUT https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/1cd6860f-8297-4a56-bd51-1bc9a171b70d.zip [stream]
+[debug] [2025-11-09T16:39:27.688Z] <<< [apiv2][status] PUT https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/1cd6860f-8297-4a56-bd51-1bc9a171b70d.zip 200
+[debug] [2025-11-09T16:39:27.688Z] <<< [apiv2][body] PUT https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/1cd6860f-8297-4a56-bd51-1bc9a171b70d.zip [omitted]
+[info] ✔  functions: functions folder uploaded successfully 
+[info] i  hosting[tagtokn-com]: beginning deploy... 
+[info] i  hosting[tagtokn-com]: found 12 files in my-app/build 
+[debug] [2025-11-09T16:39:27.705Z] [hosting] uploading with 200 concurrency
+[debug] [2025-11-09T16:39:27.751Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.752Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.753Z] [hosting] hash cache [bXktYXBwL2J1aWxk] stored for 12 files
+[debug] [2025-11-09T16:39:27.753Z] [hosting][hash queue][FINAL] {"max":42,"min":3,"avg":7.166666666666667,"active":0,"complete":12,"success":12,"errored":0,"retried":0,"total":12,"elapsed":45}
+[debug] [2025-11-09T16:39:27.753Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/1087424771839/sites/tagtokn-com/versions/5a2f0cd174cd3225:populateFiles [none]
+[debug] [2025-11-09T16:39:27.753Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/1087424771839/sites/tagtokn-com/versions/5a2f0cd174cd3225:populateFiles {"files":{"/robots.txt":"391d14b3c2f8c9143a27a28c7399585142228d4d1bdbe2c87ac946de411fa9a2","/manifest.json":"4e1d3adad9ce7e17c0d13fac197f1c27091906f4ecf3909c9f51247bff345118","/index.html":"542815840035cd90da69e192a603707972f8a59f5fe65d4c4cb0f6637e37f61d","/asset-manifest.json":"7ce248f6dae1d5608d8760092d0c6621fa9f074312c05ac1cb76b7729861fdcc","/logo192.png":"f66564670b5bfe49f3f04a5b63107bae60f4a7736f1d3b83aa0115f7acf45150","/favicon.ico":"1463be9bedc82e16f9364eec7a1f5152cbe56229401381eed65c1496cb884407","/logo512.png":"2356e0b814e58a349935c8de17226873d615d088a867d591fef48a64c80c9a2f","/404.html":"b6abfbdc894d37c260154e281499dc6415bb6ad76b32f01ef94dee93aa897ac4","/static/js/main.312ec573.js.LICENSE.txt":"bdc15c73abe4ea1a0934f237b3b170b6eb3dcd8e238de2bcd67ec9ce7af78ad8","/static/js/206.628223f5.chunk.js":"ea4fba9bf903118ebcc80a84f8e63d76078856094b0a313a1e0badd8bb67f16b","/static/css/main.910bf435.css":"f0af095697ff1727ecf9dfd4c3c6bdbe335de32c827eb5d2f1c191b0b6ab585d","/static/js/main.312ec573.js":"aaf56885789c40a2f4898c830077f78a30a22146c109be720ca99a6077f2485a"}}
+[debug] [2025-11-09T16:39:27.899Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/1087424771839/sites/tagtokn-com/versions/5a2f0cd174cd3225:populateFiles 200
+[debug] [2025-11-09T16:39:27.900Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/1087424771839/sites/tagtokn-com/versions/5a2f0cd174cd3225:populateFiles {"uploadRequiredHashes":["7ce248f6dae1d5608d8760092d0c6621fa9f074312c05ac1cb76b7729861fdcc","bdc15c73abe4ea1a0934f237b3b170b6eb3dcd8e238de2bcd67ec9ce7af78ad8","542815840035cd90da69e192a603707972f8a59f5fe65d4c4cb0f6637e37f61d","aaf56885789c40a2f4898c830077f78a30a22146c109be720ca99a6077f2485a","f0af095697ff1727ecf9dfd4c3c6bdbe335de32c827eb5d2f1c191b0b6ab585d"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files"}
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:39:27.900Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/7ce248f6dae1d5608d8760092d0c6621fa9f074312c05ac1cb76b7729861fdcc [none]
+[debug] [2025-11-09T16:39:27.900Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/7ce248f6dae1d5608d8760092d0c6621fa9f074312c05ac1cb76b7729861fdcc [stream]
+[debug] [2025-11-09T16:39:27.901Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/bdc15c73abe4ea1a0934f237b3b170b6eb3dcd8e238de2bcd67ec9ce7af78ad8 [none]
+[debug] [2025-11-09T16:39:27.901Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/bdc15c73abe4ea1a0934f237b3b170b6eb3dcd8e238de2bcd67ec9ce7af78ad8 [stream]
+[debug] [2025-11-09T16:39:27.901Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/542815840035cd90da69e192a603707972f8a59f5fe65d4c4cb0f6637e37f61d [none]
+[debug] [2025-11-09T16:39:27.901Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/542815840035cd90da69e192a603707972f8a59f5fe65d4c4cb0f6637e37f61d [stream]
+[debug] [2025-11-09T16:39:27.901Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/aaf56885789c40a2f4898c830077f78a30a22146c109be720ca99a6077f2485a [none]
+[debug] [2025-11-09T16:39:27.902Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/aaf56885789c40a2f4898c830077f78a30a22146c109be720ca99a6077f2485a [stream]
+[debug] [2025-11-09T16:39:27.902Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/f0af095697ff1727ecf9dfd4c3c6bdbe335de32c827eb5d2f1c191b0b6ab585d [none]
+[debug] [2025-11-09T16:39:27.902Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/f0af095697ff1727ecf9dfd4c3c6bdbe335de32c827eb5d2f1c191b0b6ab585d [stream]
+[debug] [2025-11-09T16:39:27.902Z] [hosting][populate queue][FINAL] {"max":149,"min":149,"avg":149,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":151}
+[debug] [2025-11-09T16:39:27.902Z] [hosting] uploads queued: 5
+[debug] [2025-11-09T16:39:28.458Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/f0af095697ff1727ecf9dfd4c3c6bdbe335de32c827eb5d2f1c191b0b6ab585d 200
+[debug] [2025-11-09T16:39:28.458Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/f0af095697ff1727ecf9dfd4c3c6bdbe335de32c827eb5d2f1c191b0b6ab585d [stream]
+[debug] [2025-11-09T16:39:28.595Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/542815840035cd90da69e192a603707972f8a59f5fe65d4c4cb0f6637e37f61d 200
+[debug] [2025-11-09T16:39:28.595Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/542815840035cd90da69e192a603707972f8a59f5fe65d4c4cb0f6637e37f61d [stream]
+[debug] [2025-11-09T16:39:28.600Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/bdc15c73abe4ea1a0934f237b3b170b6eb3dcd8e238de2bcd67ec9ce7af78ad8 200
+[debug] [2025-11-09T16:39:28.600Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/bdc15c73abe4ea1a0934f237b3b170b6eb3dcd8e238de2bcd67ec9ce7af78ad8 [stream]
+[debug] [2025-11-09T16:39:28.813Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/aaf56885789c40a2f4898c830077f78a30a22146c109be720ca99a6077f2485a 200
+[debug] [2025-11-09T16:39:28.814Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/aaf56885789c40a2f4898c830077f78a30a22146c109be720ca99a6077f2485a [stream]
+[debug] [2025-11-09T16:39:28.943Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/7ce248f6dae1d5608d8760092d0c6621fa9f074312c05ac1cb76b7729861fdcc 200
+[debug] [2025-11-09T16:39:28.943Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/5a2f0cd174cd3225/files/7ce248f6dae1d5608d8760092d0c6621fa9f074312c05ac1cb76b7729861fdcc [stream]
+[debug] [2025-11-09T16:39:28.943Z] [hosting][upload queue][FINAL] {"max":1043,"min":558,"avg":782,"active":0,"complete":5,"success":5,"errored":0,"retried":0,"total":5,"elapsed":1043}
+[info] ✔  hosting[tagtokn-com]: file upload complete 
+[debug] [2025-11-09T16:39:28.943Z] [hosting] deploy completed after 1253ms
+[info] 
+The following functions are found in your project but do not exist in your local source code:
+	instagramCallback(us-central1)
+	startInstagramAuth(us-central1)
+
+If you are renaming a function or changing its region, it is recommended that you create the new function first before deleting the old one to prevent event loss. For more info, visit https://firebase.google.com/docs/functions/manage-functions#modify
+
+[debug] [2025-11-09T16:43:03.962Z] ----------------------------------------------------------------------
+[debug] [2025-11-09T16:43:03.970Z] Command:       /Users/harryscott/.nvm/versions/node/v20.19.2/bin/node /Users/harryscott/.nvm/versions/node/v20.19.2/bin/firebase deploy --only functions,hosting
+[debug] [2025-11-09T16:43:03.970Z] CLI Version:   14.11.0
+[debug] [2025-11-09T16:43:03.970Z] Platform:      darwin
+[debug] [2025-11-09T16:43:03.970Z] Node Version:  v20.19.2
+[debug] [2025-11-09T16:43:03.970Z] Time:          Sun Nov 09 2025 11:43:03 GMT-0500 (Eastern Standard Time)
+[debug] [2025-11-09T16:43:03.970Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-09T16:43:04.070Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-09T16:43:04.070Z] > authorizing via signed-in user (harryclementscott@gmail.com)
+[debug] [2025-11-09T16:43:04.070Z] [iam] checking project tagtokn for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2025-11-09T16:43:04.071Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:04.071Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:04.071Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions [none]
+[debug] [2025-11-09T16:43:04.071Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions x-goog-quota-user=projects/tagtokn
+[debug] [2025-11-09T16:43:04.071Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-11-09T16:43:04.322Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions 200
+[debug] [2025-11-09T16:43:04.322Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-11-09T16:43:04.322Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:04.322Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:04.322Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/tagtokn/serviceAccounts/tagtokn@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2025-11-09T16:43:04.322Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/tagtokn/serviceAccounts/tagtokn@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-11-09T16:43:04.547Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/tagtokn/serviceAccounts/tagtokn@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2025-11-09T16:43:04.547Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/tagtokn/serviceAccounts/tagtokn@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-11-09T16:43:04.547Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:04.547Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:04.547Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn [none]
+[debug] [2025-11-09T16:43:04.758Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn 200
+[debug] [2025-11-09T16:43:04.758Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn {"projectId":"tagtokn","projectNumber":"1087424771839","displayName":"TagTokn","name":"projects/tagtokn","resources":{"hostingSite":"tagtokn"},"state":"ACTIVE","etag":"1_ba13ee61-5e04-4979-ab59-89008fb1abb3"}
+[info] 
+[info] === Deploying to 'tagtokn'...
+[info] 
+[info] i  deploying functions, hosting 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run build
+[info] ✔  functions: Finished running predeploy script. 
+[debug] [2025-11-09T16:43:05.907Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:05.907Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:05.907Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn [none]
+[debug] [2025-11-09T16:43:06.046Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn 200
+[debug] [2025-11-09T16:43:06.053Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn {"projectNumber":"1087424771839","projectId":"tagtokn","lifecycleState":"ACTIVE","name":"TagTokn","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-06-05T12:27:16.738695Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2025-11-09T16:43:06.055Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.055Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.055Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn/adminSdkConfig [none]
+[debug] [2025-11-09T16:43:06.316Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn/adminSdkConfig 200
+[debug] [2025-11-09T16:43:06.316Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/tagtokn/adminSdkConfig {"projectId":"tagtokn","storageBucket":"tagtokn.firebasestorage.app"}
+[debug] [2025-11-09T16:43:06.316Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.316Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.316Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs [none]
+[debug] [2025-11-09T16:43:06.475Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs 200
+[debug] [2025-11-09T16:43:06.475Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs {"configs":[{"name":"projects/tagtokn/configs/frontend"},{"name":"projects/tagtokn/configs/instagram"},{"name":"projects/tagtokn/configs/facebook"}]}
+[debug] [2025-11-09T16:43:06.475Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.475Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.475Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.475Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.475Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.475Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.475Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables [none]
+[debug] [2025-11-09T16:43:06.475Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables [none]
+[debug] [2025-11-09T16:43:06.476Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables [none]
+[debug] [2025-11-09T16:43:06.589Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables 200
+[debug] [2025-11-09T16:43:06.589Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables {"variables":[{"name":"projects/tagtokn/configs/frontend/variables/url","updateTime":"2025-06-06T19:56:22.873417007Z"}]}
+[debug] [2025-11-09T16:43:06.589Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.589Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.589Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables/url [none]
+[debug] [2025-11-09T16:43:06.615Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables 200
+[debug] [2025-11-09T16:43:06.615Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables {"variables":[{"name":"projects/tagtokn/configs/facebook/variables/app_id","updateTime":"2025-11-08T22:25:05.064917538Z"},{"name":"projects/tagtokn/configs/facebook/variables/app_secret","updateTime":"2025-11-08T22:25:05.870678172Z"}]}
+[debug] [2025-11-09T16:43:06.615Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.615Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.615Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.615Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.615Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_id [none]
+[debug] [2025-11-09T16:43:06.615Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_secret [none]
+[debug] [2025-11-09T16:43:06.623Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables 200
+[debug] [2025-11-09T16:43:06.623Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables {"variables":[{"name":"projects/tagtokn/configs/instagram/variables/client_id","updateTime":"2025-06-06T19:56:22.872073585Z"},{"name":"projects/tagtokn/configs/instagram/variables/client_secret","updateTime":"2025-06-06T19:56:22.873482012Z"},{"name":"projects/tagtokn/configs/instagram/variables/redirect_uri","updateTime":"2025-11-08T22:25:04.377034758Z"}]}
+[debug] [2025-11-09T16:43:06.623Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.623Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.623Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.623Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.623Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.623Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:06.623Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_id [none]
+[debug] [2025-11-09T16:43:06.623Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_secret [none]
+[debug] [2025-11-09T16:43:06.624Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/redirect_uri [none]
+[debug] [2025-11-09T16:43:06.699Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables/url 200
+[debug] [2025-11-09T16:43:06.699Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/frontend/variables/url {"name":"projects/tagtokn/configs/frontend/variables/url","updateTime":"2025-06-06T19:56:22.873417007Z","text":"https://tagtokn.com"}
+[debug] [2025-11-09T16:43:06.726Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_id 200
+[debug] [2025-11-09T16:43:06.726Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_id {"name":"projects/tagtokn/configs/facebook/variables/app_id","updateTime":"2025-11-08T22:25:05.064917538Z","text":"608108222327479"}
+[debug] [2025-11-09T16:43:06.726Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_id 200
+[debug] [2025-11-09T16:43:06.726Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_id {"name":"projects/tagtokn/configs/instagram/variables/client_id","updateTime":"2025-06-06T19:56:22.872073585Z","text":"1185900996667001"}
+[debug] [2025-11-09T16:43:06.743Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_secret 200
+[debug] [2025-11-09T16:43:06.743Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/facebook/variables/app_secret {"name":"projects/tagtokn/configs/facebook/variables/app_secret","updateTime":"2025-11-08T22:25:05.870678172Z","text":"940ff1d1f27b69fd9bf2ae2b23cbf8fd"}
+[debug] [2025-11-09T16:43:06.782Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_secret 200
+[debug] [2025-11-09T16:43:06.782Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/client_secret {"name":"projects/tagtokn/configs/instagram/variables/client_secret","updateTime":"2025-06-06T19:56:22.873482012Z","text":"4f2d907b6c2a6f48057ec7241acfc798"}
+[debug] [2025-11-09T16:43:06.782Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/redirect_uri 200
+[debug] [2025-11-09T16:43:06.782Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/tagtokn/configs/instagram/variables/redirect_uri {"name":"projects/tagtokn/configs/instagram/variables/redirect_uri","updateTime":"2025-11-08T22:25:04.377034758Z","text":"https://tagtokn.com/auth/instagram/callback"}
+[debug] [2025-11-09T16:43:06.783Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] ⚠  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2025-11-09T16:43:07.133Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "lint": "eslint . --config eslint.config.js",
+    "build": "tsc",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "@types/express": "^5.0.5",
+    "cors": "^2.8.5",
+    "firebase-admin": "^11.11.0",
+    "firebase-functions": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/node": "^18.15.11",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "eslint": "^8.9.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.25.4",
+    "typescript": "^5.0.0"
+  },
+  "private": true
+}
+[debug] [2025-11-09T16:43:07.133Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2025-11-09T16:43:07.134Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-11-09T16:43:07.138Z] Found firebase-functions binary at '/Users/harryscott/influtoken/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8419
+
+[debug] [2025-11-09T16:43:07.447Z] Got response from /__/functions.yaml {"endpoints":{"createCustomToken":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"httpsTrigger":{},"entryPoint":"createCustomToken"},"requestTagtoknLiquidity":{"platform":"gcfv1","labels":{},"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"callableTrigger":{},"entryPoint":"requestTagtoknLiquidity"},"generateOAuthState":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"httpsTrigger":{},"entryPoint":"generateOAuthState"},"exchangeInstagramCode":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"httpsTrigger":{},"entryPoint":"exchangeInstagramCode"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[info] i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[debug] [2025-11-09T16:43:11.477Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-09T16:43:11.477Z] > authorizing via signed-in user (harryclementscott@gmail.com)
+[debug] [2025-11-09T16:43:11.477Z] [iam] checking project tagtokn for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[debug] [2025-11-09T16:43:11.478Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:11.478Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:11.478Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions [none]
+[debug] [2025-11-09T16:43:11.478Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions x-goog-quota-user=projects/tagtokn
+[debug] [2025-11-09T16:43:11.478Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2025-11-09T16:43:11.666Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions 200
+[debug] [2025-11-09T16:43:11.667Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2025-11-09T16:43:11.669Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:11.669Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:11.670Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/tagtokn/instances pageSize=100&pageToken=
+[debug] [2025-11-09T16:43:12.050Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/tagtokn/instances 200
+[debug] [2025-11-09T16:43:12.051Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/tagtokn/instances {}
+[info] i  functions: preparing functions directory for uploading... 
+[info] i  functions: packaged /Users/harryscott/influtoken/functions (83.57 KB) for uploading 
+[debug] [2025-11-09T16:43:12.106Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:12.106Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:12.106Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/-/functions [none]
+[debug] [2025-11-09T16:43:12.592Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/-/functions 200
+[debug] [2025-11-09T16:43:12.592Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/-/functions {"functions":[{"name":"projects/tagtokn/locations/us-central1/functions/generateOAuthState","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/generateOAuthState","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"generateOAuthState","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-11-09T00:36:34.159Z","versionId":"5","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"6ef72377c560d5d3cb76b6642d5ac8987b34257c"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/1e915b32-6909-43d3-8fc3-ad3205d467d5.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/generateOAuthState"},"runtime":"nodejs20","ingressSettings":"ALLOW_ALL","buildId":"f2ca3d32-f447-4f95-a453-cc1305320a56","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/f2ca3d32-f447-4f95-a453-cc1305320a56","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/createCustomToken","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/createCustomToken","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"createCustomToken","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-11-08T22:41:44.298Z","versionId":"14","labels":{"firebase-functions-hash":"55d79234d503d7debeddfe39de16c35d47c8e7bb","deployment-tool":"cli-firebase"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/90e3c648-4309-4afe-b07d-6ad471e70e3b.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/createCustomToken"},"runtime":"nodejs20","ingressSettings":"ALLOW_ALL","buildId":"f09d4d8a-cb86-4ac6-8bd2-2dadd74fb19b","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/f09d4d8a-cb86-4ac6-8bd2-2dadd74fb19b","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/requestTagtoknLiquidity","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/requestTagtoknLiquidity","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"requestTagtoknLiquidity","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-11-08T22:46:48.744Z","versionId":"5","labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"55d79234d503d7debeddfe39de16c35d47c8e7bb"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/9ff4fb00-4b47-4151-ba8c-567934aa059f.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/requestTagtoknLiquidity"},"runtime":"nodejs20","ingressSettings":"ALLOW_ALL","buildId":"74f77013-2187-41ba-ad14-8b19cf045822","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/74f77013-2187-41ba-ad14-8b19cf045822","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/exchangeInstagramCode","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/exchangeInstagramCode","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"exchangeInstagramCode","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-11-08T23:45:00.662Z","versionId":"4","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"9500dbce249a57af40b2c15815b710d733ca84db"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/e4afb43e-f194-4afc-8bef-e77a3e5ad923.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/exchangeInstagramCode"},"runtime":"nodejs20","ingressSettings":"ALLOW_ALL","buildId":"baaf9971-982e-4ee2-be2e-168698dbc06b","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/baaf9971-982e-4ee2-be2e-168698dbc06b","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/startInstagramAuth","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/startInstagramAuth","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"startInstagramAuth","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-06-08T20:37:40.454Z","versionId":"11","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"29c818c2a2c4ef6e003c83d0df64de5de04ba762"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/d2d802dc-2f14-436c-8764-cfd016d07e33.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/startInstagramAuth"},"runtime":"nodejs18","ingressSettings":"ALLOW_ALL","buildId":"6822d2b3-73e1-4510-b38b-7652ca74e83c","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/6822d2b3-73e1-4510-b38b-7652ca74e83c","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true},{"name":"projects/tagtokn/locations/us-central1/functions/instagramCallback","httpsTrigger":{"url":"https://us-central1-tagtokn.cloudfunctions.net/instagramCallback","securityLevel":"SECURE_ALWAYS"},"status":"ACTIVE","entryPoint":"instagramCallback","timeout":"60s","availableMemoryMb":256,"serviceAccountEmail":"tagtokn@appspot.gserviceaccount.com","updateTime":"2025-06-08T20:37:40.138Z","versionId":"10","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"29c818c2a2c4ef6e003c83d0df64de5de04ba762"},"sourceUploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/d2d802dc-2f14-436c-8764-cfd016d07e33.zip","environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"tagtokn\",\"storageBucket\":\"tagtokn.firebasestorage.app\"}","GCLOUD_PROJECT":"tagtokn","EVENTARC_CLOUD_EVENT_SOURCE":"projects/tagtokn/locations/us-central1/functions/instagramCallback"},"runtime":"nodejs18","ingressSettings":"ALLOW_ALL","buildId":"6822d2b3-73e1-4510-b38b-7652ca74e83c","buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"buildName":"projects/1087424771839/locations/us-central1/builds/6822d2b3-73e1-4510-b38b-7652ca74e83c","dockerRegistry":"ARTIFACT_REGISTRY","automaticUpdatePolicy":{},"buildServiceAccount":"projects/tagtokn/serviceAccounts/1087424771839-compute@developer.gserviceaccount.com","satisfiesPzi":true}]}
+[debug] [2025-11-09T16:43:12.593Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:12.593Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:12.593Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/tagtokn/locations/-/functions filter=environment%3D%22GEN_2%22
+[debug] [2025-11-09T16:43:13.112Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/tagtokn/locations/-/functions 200
+[debug] [2025-11-09T16:43:13.112Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/tagtokn/locations/-/functions {}
+[debug] [2025-11-09T16:43:13.120Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:13.120Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:13.120Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn [none]
+[debug] [2025-11-09T16:43:13.317Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn 200
+[debug] [2025-11-09T16:43:13.318Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/tagtokn {"projectNumber":"1087424771839","projectId":"tagtokn","lifecycleState":"ACTIVE","name":"TagTokn","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-06-05T12:27:16.738695Z"}
+[debug] [2025-11-09T16:43:13.319Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:13.319Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:13.319Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/tagtokn-com/versions [none]
+[debug] [2025-11-09T16:43:13.319Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/tagtokn-com/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2025-11-09T16:43:13.831Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/tagtokn-com/versions 200
+[debug] [2025-11-09T16:43:13.831Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/tagtokn-com/versions {"name":"projects/1087424771839/sites/tagtokn-com/versions/f2ea35b75239ae5c","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2025-11-09T16:43:13.832Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:13.832Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:13.832Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/tagtokn/billingInfo [none]
+[debug] [2025-11-09T16:43:14.044Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/tagtokn/billingInfo 200
+[debug] [2025-11-09T16:43:14.044Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/tagtokn/billingInfo {"name":"projects/tagtokn/billingInfo","projectId":"tagtokn","billingAccountName":"billingAccounts/010360-6D2411-FDE6A9","billingEnabled":true}
+[debug] [2025-11-09T16:43:14.054Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:14.055Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:14.056Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/us-central1/functions:generateUploadUrl [none]
+[debug] [2025-11-09T16:43:14.056Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/us-central1/functions:generateUploadUrl {}
+[debug] [2025-11-09T16:43:14.621Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/us-central1/functions:generateUploadUrl 200
+[debug] [2025-11-09T16:43:14.621Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v1/projects/tagtokn/locations/us-central1/functions:generateUploadUrl {"uploadUrl":"https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/6a7a2e4b-8b30-4fed-a6f4-b93b785fb59f.zip?GoogleAccessId=service-1087424771839@gcf-admin-robot.iam.gserviceaccount.com&Expires=1762708394&Signature=bUIVZci5llT2A150jIUn0RxANoz8UL4ecBP6fi7vErqC%2BS8QPBj%2BVPZwvur6GR7zKGwFD5CE3N%2B4Zxdlv5hOkBTpLHeQCYij51aIQxFviRu6jO7QQV6T%2B3BccwBqx3IEwGG6d3VnWWkMK5LLaZbT08RjGi3oibb3MGTTQQCbprG06VFvIlfd4dmjKIEJUM9nc%2B1TZftXeX9FV%2FTZBwIP0lyQEF0JtiqYY8rjLz%2BeE8Kk3Za9TqdZAtrMcunkkNbpJS6sPBpG%2FyRh1yTZyKZuA5Q3vHpCHrJTFClhgoxPYq8wHbvk8EAIPNLwTANIBe%2FJAsoMLMtbyTKQ11sLZ37RAw%3D%3D"}
+[debug] [2025-11-09T16:43:14.624Z] >>> [apiv2][query] PUT https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/6a7a2e4b-8b30-4fed-a6f4-b93b785fb59f.zip GoogleAccessId=service-1087424771839%40gcf-admin-robot.iam.gserviceaccount.com&Expires=1762708394&Signature=bUIVZci5llT2A150jIUn0RxANoz8UL4ecBP6fi7vErqC%2BS8QPBj%2BVPZwvur6GR7zKGwFD5CE3N%2B4Zxdlv5hOkBTpLHeQCYij51aIQxFviRu6jO7QQV6T%2B3BccwBqx3IEwGG6d3VnWWkMK5LLaZbT08RjGi3oibb3MGTTQQCbprG06VFvIlfd4dmjKIEJUM9nc%2B1TZftXeX9FV%2FTZBwIP0lyQEF0JtiqYY8rjLz%2BeE8Kk3Za9TqdZAtrMcunkkNbpJS6sPBpG%2FyRh1yTZyKZuA5Q3vHpCHrJTFClhgoxPYq8wHbvk8EAIPNLwTANIBe%2FJAsoMLMtbyTKQ11sLZ37RAw%3D%3D
+[debug] [2025-11-09T16:43:14.624Z] >>> [apiv2][body] PUT https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/6a7a2e4b-8b30-4fed-a6f4-b93b785fb59f.zip [stream]
+[debug] [2025-11-09T16:43:14.836Z] <<< [apiv2][status] PUT https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/6a7a2e4b-8b30-4fed-a6f4-b93b785fb59f.zip 200
+[debug] [2025-11-09T16:43:14.836Z] <<< [apiv2][body] PUT https://storage.googleapis.com/uploads-1060744412197.us-central1.cloudfunctions.appspot.com/6a7a2e4b-8b30-4fed-a6f4-b93b785fb59f.zip [omitted]
+[info] ✔  functions: functions folder uploaded successfully 
+[info] i  hosting[tagtokn-com]: beginning deploy... 
+[info] i  hosting[tagtokn-com]: found 12 files in my-app/build 
+[debug] [2025-11-09T16:43:14.857Z] [hosting] uploading with 200 concurrency
+[debug] [2025-11-09T16:43:14.861Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:14.861Z] Checked if tokens are valid: true, expires at: 1762709953710
+[debug] [2025-11-09T16:43:14.862Z] [hosting] hash cache [bXktYXBwL2J1aWxk] stored for 12 files
+[debug] [2025-11-09T16:43:14.862Z] [hosting][hash queue][FINAL] {"max":0,"min":0,"avg":0,"active":0,"complete":12,"success":12,"errored":0,"retried":0,"total":12,"elapsed":3}
+[debug] [2025-11-09T16:43:14.862Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/1087424771839/sites/tagtokn-com/versions/f2ea35b75239ae5c:populateFiles [none]
+[debug] [2025-11-09T16:43:14.862Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/1087424771839/sites/tagtokn-com/versions/f2ea35b75239ae5c:populateFiles {"files":{"/robots.txt":"391d14b3c2f8c9143a27a28c7399585142228d4d1bdbe2c87ac946de411fa9a2","/manifest.json":"4e1d3adad9ce7e17c0d13fac197f1c27091906f4ecf3909c9f51247bff345118","/logo512.png":"2356e0b814e58a349935c8de17226873d615d088a867d591fef48a64c80c9a2f","/logo192.png":"f66564670b5bfe49f3f04a5b63107bae60f4a7736f1d3b83aa0115f7acf45150","/index.html":"542815840035cd90da69e192a603707972f8a59f5fe65d4c4cb0f6637e37f61d","/favicon.ico":"1463be9bedc82e16f9364eec7a1f5152cbe56229401381eed65c1496cb884407","/asset-manifest.json":"7ce248f6dae1d5608d8760092d0c6621fa9f074312c05ac1cb76b7729861fdcc","/404.html":"b6abfbdc894d37c260154e281499dc6415bb6ad76b32f01ef94dee93aa897ac4","/static/js/main.312ec573.js.LICENSE.txt":"bdc15c73abe4ea1a0934f237b3b170b6eb3dcd8e238de2bcd67ec9ce7af78ad8","/static/js/main.312ec573.js":"aaf56885789c40a2f4898c830077f78a30a22146c109be720ca99a6077f2485a","/static/js/206.628223f5.chunk.js":"ea4fba9bf903118ebcc80a84f8e63d76078856094b0a313a1e0badd8bb67f16b","/static/css/main.910bf435.css":"f0af095697ff1727ecf9dfd4c3c6bdbe335de32c827eb5d2f1c191b0b6ab585d"}}
+[debug] [2025-11-09T16:43:14.996Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/1087424771839/sites/tagtokn-com/versions/f2ea35b75239ae5c:populateFiles 200
+[debug] [2025-11-09T16:43:14.996Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/1087424771839/sites/tagtokn-com/versions/f2ea35b75239ae5c:populateFiles {"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/tagtokn-com/versions/f2ea35b75239ae5c/files"}
+[debug] [2025-11-09T16:43:14.997Z] [hosting][populate queue][FINAL] {"max":137,"min":137,"avg":137,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":137}
+[debug] [2025-11-09T16:43:14.997Z] [hosting] uploads queued: 0
+[debug] [2025-11-09T16:43:14.997Z] [hosting][upload queue][FINAL] {"max":0,"min":9999999999,"avg":0,"active":0,"complete":0,"success":0,"errored":0,"retried":0,"total":0,"elapsed":1762706594997}
+[info] ✔  hosting[tagtokn-com]: file upload complete 
+[debug] [2025-11-09T16:43:14.999Z] [hosting] deploy completed after 154ms
+[info] 
+The following functions are found in your project but do not exist in your local source code:
+	instagramCallback(us-central1)
+	startInstagramAuth(us-central1)
+
+If you are renaming a function or changing its region, it is recommended that you create the new function first before deleting the old one to prevent event loss. For more info, visit https://firebase.google.com/docs/functions/manage-functions#modify
+

@@ -10,15 +10,12 @@
         "installCommand": "npm install --legacy-peer-deps",
         "buildCommand": "npm run build"
       }
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
     }
   ],
-  "build": {
-    "env": {
-      "NODE_ENV": "production",
-      "GENERATE_SOURCEMAP": "false",
-      "NODE_OPTIONS": "--max_old_space_size=4096"
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
@@ -32,7 +29,11 @@
       }
     },
     {
-      "src": "/static/(.*)",
+      "src": "/auth/instagram/callback",
+      "dest": "/api/instagram/callback"
+    },
+    { 
+      "src": "/static/(.*)", 
       "dest": "/static/$1",
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"
@@ -43,11 +44,16 @@
       "dest": "/sockjs-node/$1"
     },
     {
-      "src": "^/(.*)",
+      "src": "/(.*)",
       "dest": "/index.html",
       "headers": {
         "Cache-Control": "public, max-age=0, must-revalidate"
       }
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "GENERATE_SOURCEMAP": "false",
+    "NODE_OPTIONS": "--max_old_space_size=4096"
+  }
 }

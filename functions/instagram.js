@@ -16,17 +16,26 @@ const INSTAGRAM_APP_SECRET = functions.config().instagram.app_secret;
 /**
  * Exchange authorization code for access token
  */
-exports.exchangeCodeForToken = functions.https.onRequest(async (req, res) => {
-  // Handle CORS preflight
-  res.set('Access-Control-Allow-Origin', '*');
-  if (req.method === 'OPTIONS') {
-    res.set('Access-Control-Allow-Methods', 'POST');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-    res.status(204).send('');
-    return;
-  }
+// CORS configuration
+const cors = require('cors')({ 
+  origin: [
+    'https://tagtokn.com',
+    'https://www.tagtokn.com',
+    'https://tagtokn.web.app',
+    'http://localhost:3000' // For local development
+  ],
+  credentials: true
+});
 
-  try {
+exports.exchangeCodeForToken = functions.https.onRequest((req, res) => {
+  // Handle CORS preflight
+  return cors(req, res, async () => {
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
+    try {
     const { code, redirect_uri } = req.body;
 
     if (!code || !redirect_uri) {

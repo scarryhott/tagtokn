@@ -1,23 +1,34 @@
 const express = require('express');
-const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
-const fs = require('fs');
+const dotenv = require('dotenv');
+const cors = require('cors');
 const admin = require('firebase-admin');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Load environment variables
+dotenv.config({ 
+  path: path.join(__dirname, '.env.production') 
+});
 
 // Initialize Express
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
-// Basic middleware
+// Security Middleware
+app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 
-// Simple test route - placed early in the middleware stack
-app.get('/test', (req, res) => {
-  console.log('Test route hit!');
-  res.send('Test route is working!');
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
 });
+app.use(limiter);
+
+// Serve static files from the React build
+app.use(express.static(path.join(__dirname, 'build')));
 
 // Initialize Firebase Admin
 try {
