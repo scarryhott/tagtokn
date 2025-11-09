@@ -15,8 +15,90 @@ dotenv.config({
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Content Security Policy aligned with hosted build headers
+const cspDirectives = {
+  defaultSrc: [
+    "'self'",
+    'https://*.firebaseio.com',
+    'https://*.googleapis.com',
+    'https://*.firebase.com',
+    'https://www.google.com',
+    'https://www.gstatic.com',
+    'data:',
+    'gap:',
+    'https://ssl.gstatic.com'
+  ],
+  scriptSrc: [
+    "'self'",
+    "'unsafe-inline'",
+    "'unsafe-eval'",
+    'https://*.firebase.com',
+    'https://www.gstatic.com',
+    'https://*.googleapis.com',
+    'https://www.google.com',
+    'https://www.google-analytics.com',
+    'https://*.firebaseio.com'
+  ],
+  styleSrc: [
+    "'self'",
+    "'unsafe-inline'",
+    'https://fonts.googleapis.com',
+    'https://www.google.com',
+    'https://www.gstatic.com'
+  ],
+  fontSrc: [
+    "'self'",
+    'data:',
+    'https://fonts.gstatic.com',
+    'https://www.gstatic.com'
+  ],
+  imgSrc: [
+    "'self'",
+    'data:',
+    'https:',
+    'http:'
+  ],
+  connectSrc: [
+    "'self'",
+    'https://*.googleapis.com',
+    'https://*.firebaseio.com',
+    'wss://*.firebaseio.com',
+    'https://*.firebase.com',
+    'https://www.googleapis.com',
+    'https://*.google.com',
+    'https://*.instagram.com',
+    'https://graph.instagram.com'
+  ],
+  frameSrc: [
+    "'self'",
+    'https://*.firebaseapp.com',
+    'https://*.google.com',
+    'https://*.facebook.com',
+    'https://*.instagram.com'
+  ],
+  mediaSrc: ['*', 'data:'],
+  objectSrc: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: [
+    "'self'",
+    'https://*.firebaseapp.com',
+    'https://*.firebase.com'
+  ],
+  workerSrc: ["'self'", 'blob:'],
+  childSrc: ["'self'", 'blob:'],
+  frameAncestors: ["'self'"],
+  'block-all-mixed-content': [],
+  'upgrade-insecure-requests': []
+};
+
 // Security Middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: cspDirectives
+  },
+  crossOriginEmbedderPolicy: false
+}));
 app.use(cors());
 app.use(express.json({ limit: '10kb' }));
 
