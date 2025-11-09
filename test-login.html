@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Tester</title>
+    <!-- Add Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <style>
+        .success {
+            color: green;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+        }
+        .error {
+            color: #d32f2f;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 4px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .instagram-btn {
+            background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .instagram-btn:hover {
+            opacity: 0.9;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            background-color: #f1f1f1;
+            margin-right: 5px;
+            border-radius: 4px 4px 0 0;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Tester</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('login')">Login</div>
+        <div class="tab" onclick="switchTab('protected')">Protected Route</div>
+    </div>
+    
+    <div class="container">
+        <!-- Login Form -->
+        <div id="login-tab" class="tab-content active">
+            <h2>Login</h2>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="text" id="email" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <div class="form-group">
+                <button type="button" onclick="login()">Login with Email</button>
+            </div>
+            
+            <div class="form-group" style="text-align: center; margin: 20px 0;">
+                <div style="border-bottom: 1px solid #ddd; margin: 20px 0; position: relative;">
+                    <span style="background: white; padding: 0 10px; position: relative; top: -10px;">OR</span>
+                </div>
+                <button type="button" class="instagram-btn" onclick="loginWithInstagram()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                    Continue with Instagram
+                </button>
+            </div>
+            <div id="login-result" class="result">Login result will appear here</div>
+        </div>
+        
+        <!-- Protected Route Tester -->
+        <div id="protected-tab" class="tab-content">
+            <h2>Test Protected Route</h2>
+            <div class="form-group">
+                <label for="auth-token">Auth Token (from login):</label>
+                <input type="text" id="auth-token" placeholder="Paste your auth token here">
+            </div>
+            <button onclick="testProtectedRoute()">Test Protected Route</button>
+            <div id="protected-result" class="result">Protected route response will appear here</div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:5000';
+        let authToken = '';
+        
+        // Instagram OAuth configuration
+        const INSTAGRAM_CLIENT_ID = 'YOUR_INSTAGRAM_APP_ID'; // Replace with your Instagram App ID
+        const INSTAGRAM_REDIRECT_URI = encodeURIComponent(window.location.origin + '/instagram-callback');
+        const INSTAGRAM_AUTH_URL = `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_CLIENT_ID}&redirect_uri=${INSTAGRAM_REDIRECT_URI}&scope=user_profile,user_media&response_type=code`;
+        
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Deactivate all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Activate the selected tab
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Find and activate the clicked tab
+            const tabs = document.querySelectorAll('.tab');
+            for (let tab of tabs) {
+                if (tab.textContent.toLowerCase().includes(tabName)) {
+                    tab.classList.add('active');
+                    break;
+                }
+            }
+        }
+
+        // Function to handle Instagram login
+        async function loginWithInstagram() {
+            try {
+                // First, ensure user is logged in with Firebase
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                if (!email || !password) {
+                    alert('Please enter your email and password first');
+                    return;
+                }
+                
+                // Log in with email/password first
+                await login();
+                
+                // Then redirect to Instagram OAuth
+                window.location.href = INSTAGRAM_AUTH_URL;
+                
+            } catch (error) {
+                console.error('Instagram login error:', error);
+                document.getElementById('login-result').innerHTML = 
+                    `<div class="error">Instagram login failed: ${error.message}</div>`;
+            }
+        }
+        
+        // Check for Instagram callback when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            
+            if (code) {
+                // This is an Instagram callback
+                document.getElementById('login-result').innerHTML = 
+                    '<p>Processing Instagram login...</p>';
+                
+                // Exchange the code for an access token
+                fetch(`${API_BASE_URL}/api/exchangeInstagramCode?code=${code}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            authToken = data.token || '';
+                            document.getElementById('login-result').innerHTML = 
+                                '<div class="success">Instagram login successful! Token received.</div>';
+                            // Store the token in the protected route input for testing
+                            document.getElementById('auth-token').value = authToken;
+                        } else {
+                            throw new Error(data.error || 'Failed to connect Instagram');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Instagram login error:', error);
+                        document.getElementById('login-result').innerHTML = 
+                            `<div class="error">Instagram login failed: ${error.message}</div>`;
+                    });
+            }
+        });
+        
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('login-result');
+            
+            if (!email || !password) {
+                resultDiv.textContent = 'Please enter both email and password';
+                resultDiv.style.color = 'red';
+                return;
+            }
+            
+            resultDiv.textContent = 'Logging in...';
+            resultDiv.style.color = 'black';
+            
+            try {
+                // Call our server's login endpoint
+                const response = await fetch(`${API_BASE_URL}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    authToken = data.token;
+                    
+                    resultDiv.innerHTML = `
+                        <strong>Login successful!</strong><br><br>
+                        <strong>User ID:</strong> ${data.uid || 'N/A'}<br>
+                        <strong>Email:</strong> ${data.email || email}<br>
+                        <strong>Token (first 20 chars):</strong> ${authToken ? authToken.substring(0, 20) + '...' : 'N/A'}
+                    `;
+                    resultDiv.style.color = 'green';
+                    
+                    // Update the auth token in the protected tab
+                    document.getElementById('auth-token').value = authToken || '';
+                    
+                    // Switch to the protected tab
+                    switchTab('protected');
+                } else {
+                    throw new Error(data.error || 'Login failed');
+                }
+                
+            } catch (error) {
+                let errorMessage = 'Error during login';
+                
+                if (error.message.includes('auth/invalid-credential')) {
+                    errorMessage = 'Invalid email or password';
+                } else if (error.message.includes('auth/user-not-found')) {
+                    errorMessage = 'No user found with this email';
+                } else if (error.message.includes('auth/wrong-password')) {
+                    errorMessage = 'Incorrect password';
+                } else if (error.message.includes('auth/too-many-requests')) {
+                    errorMessage = 'Too many failed attempts. Please try again later.';
+                } else {
+                    errorMessage = error.message || 'An unknown error occurred';
+                }
+                
+                resultDiv.textContent = errorMessage;
+                resultDiv.style.color = 'red';
+                console.error('Login error:', error);
+            }
+        }
+        
+        async function testProtectedRoute() {
+            const token = document.getElementById('auth-token').value || authToken;
+            const resultDiv = document.getElementById('protected-result');
+            
+            if (!token) {
+                resultDiv.textContent = 'Please login first to get an auth token';
+                resultDiv.style.color = 'red';
+                return;
+            }
+            
+            resultDiv.textContent = 'Testing protected route...';
+            resultDiv.style.color = 'black';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/protected', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent = 'Protected route accessed successfully!\n\n' + 
+                        JSON.stringify(data, null, 2);
+                    resultDiv.style.color = 'green';
+                } else {
+                    resultDiv.textContent = 'Access denied: ' + (data.error || 'Unknown error');
+                    resultDiv.style.color = 'red';
+                }
+            } catch (error) {
+                resultDiv.textContent = 'Error: ' + error.message;
+                resultDiv.style.color = 'red';
+            }
+        }
+    </script>
+</body>
+</html>
