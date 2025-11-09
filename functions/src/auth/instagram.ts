@@ -1,8 +1,13 @@
 import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions';
+import * as functions from 'firebase-functions/v2';
 import * as crypto from 'crypto';
 import * as corsModule from 'cors';
 import { Request, Response } from 'express';
+
+// Type for the request body
+type RequestWithBody = Request & {
+  body: any;
+};
 
 const allowedOrigins = [
   'https://app.tagtokn.com',
@@ -22,10 +27,11 @@ const corsOptions = {
 
 const corsHandler = corsModule.default(corsOptions);
 
-const handleCorsPreflight = (req: Request, res: Response) =>
-  corsHandler(req, res, () => {
+const handleCorsPreflight = (req: Request, res: Response) => {
+  return corsHandler(req, res, () => {
     res.status(204).send('');
   });
+};
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -53,7 +59,7 @@ interface OAuthState {
 /**
  * Generates an OAuth state parameter and stores it in Firestore
  */
-export const generateOAuthState = functions.https.onRequest((req: Request, res: Response) => {
+export const generateOAuthState = functions.https.onRequest((req: RequestWithBody, res: Response) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return handleCorsPreflight(req, res);
@@ -110,7 +116,7 @@ export const generateOAuthState = functions.https.onRequest((req: Request, res: 
 /**
  * Exchanges an Instagram OAuth code for an access token
  */
-export const exchangeInstagramCode = functions.https.onRequest((req: Request, res: Response) => {
+export const exchangeInstagramCode = functions.https.onRequest((req: RequestWithBody, res: Response) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return handleCorsPreflight(req, res);
