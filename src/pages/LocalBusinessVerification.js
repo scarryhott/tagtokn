@@ -8,7 +8,8 @@ import {
   Users,
   XCircle
 } from 'lucide-react';
-import { auth, onAuthStateChanged } from '../firebase';
+import { auth } from '../firebase';
+import { onAuthStateChanged as firebaseAuthStateChanged } from 'firebase/auth';
 import {
   submitLocalBusinessApplication,
   subscribeToLocalBusinesses,
@@ -124,8 +125,8 @@ const LocalBusinessVerification = () => {
   const [businessStatusFilter, setBusinessStatusFilter] = useState('all');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
-    return unsubscribe;
+    const unsubscribe = firebaseAuthStateChanged(auth, (user) => setCurrentUser(user));
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {

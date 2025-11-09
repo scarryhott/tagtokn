@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
+import { onAuthStateChanged as firebaseAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
@@ -14,7 +15,7 @@ export function AuthProvider({ children }) {
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsubscribe = firebaseAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
         // Fetch additional user data from Firestore

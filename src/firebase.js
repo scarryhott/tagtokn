@@ -32,23 +32,51 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:1087424771839:web:0d01bd2b5beeef78f87eca",
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const functions = getFunctions(app);
-const storage = getStorage(app);
+// Firebase service instances
+let _app;
+let _auth;
+let _db;
+let _functions;
+let _storage;
 
-// Enable offline persistence in production
-if (process.env.NODE_ENV === 'production') {
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Offline persistence can only be enabled in one tab at a time.');
-    } else if (err.code === 'unimplemented') {
-      console.warn('The current browser doesn\'t support offline persistence.');
+// Initialize Firebase with error handling
+const initFirebase = () => {
+  try {
+    if (!_app) {
+      _app = initializeApp(firebaseConfig);
+      _auth = getAuth(_app);
+      _db = getFirestore(_app);
+      _functions = getFunctions(_app);
+      _storage = getStorage(_app);
+
+      // Enable offline persistence in production
+      if (process.env.NODE_ENV === 'production') {
+        enableIndexedDbPersistence(_db).catch((err) => {
+          if (err.code === 'failed-precondition') {
+            console.warn('Offline persistence can only be enabled in one tab at a time.');
+          } else if (err.code === 'unimplemented') {
+            console.warn('The current browser doesn\'t support offline persistence.');
+          }
+        });
+      }
+      
+      console.log('Firebase initialized successfully');
     }
-  });
-}
+    return { 
+      app: _app, 
+      auth: _auth, 
+      db: _db, 
+      functions: _functions, 
+      storage: _storage 
+    };
+  } catch (error) {
+    console.error('Firebase initialization error:', error);
+    throw error;
+  }
+};
+
+// Initialize Firebase immediately
+const firebaseServices = initFirebase();
 
 // Initialize providers
 const googleProvider = new GoogleAuthProvider();
@@ -180,15 +208,37 @@ const signOutUser = async () => {
 // Function to get current user
 const getCurrentUser = () => {
   return new Promise((resolve, reject) => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        unsubscribe();
-        resolve(user);
-      },
-      reject
-    );
+    try {
+      // Ensure Firebase is initialized
+      const { auth: currentAuth } = initFirebase();
+      
+      if (!currentAuth) {
+        console.error('Firebase Auth not initialized');
+        return resolve(null);
+      }
+      
+      const unsubscribe = onAuthStateChanged(currentAuth, 
+        (user) => {
+          unsubscribe();
+          resolve(user);
+        },
+        (error) => {
+          console.error('Auth state error:', error);
+          unsubscribe();
+          reject(error);
+        }
+      );
+    } catch (error) {
+      console.error('Error in getCurrentUser:', error);
+      reject(error);
+    }
   });
+};
+
+// Export the onAuthStateChanged function
+export const onAuthStateChange = (callback) => {
+  const { auth: currentAuth } = initFirebase();
+  return onAuthStateChanged(currentAuth, callback);
 };
 
 // Function to update Instagram user data
@@ -223,28 +273,33 @@ const updateUserData = async (userId, data) => {
 };
 
 // Export auth methods
-export {
+const firebaseExports = {
   // Core Firebase services
-  app,
-  auth,
-  db,
-  functions,
-  storage,
+  initFirebase,
+  getApp: () => firebaseServices.app,
+  getAuth: () => firebaseServices.auth,
+  getDb: () => firebaseServices.db,
+  getFunctions: () => firebaseServices.functions,
+  getStorage: () => firebaseServices.storage,
+  
+  // Backward compatibility exports
+  db: firebaseServices.db,
+  auth: firebaseServices.auth,
   
   // Auth methods
   signInWithGoogle,
   signInWithGitHub,
   signInWithTwitter,
-  firebaseSignInWithEmailAndPassword as signInWithEmailAndPassword,
-  firebaseCreateUserWithEmailAndPassword as createUserWithEmailAndPassword,
-  firebaseSignOut as signOutUser,
+  signInWithEmailAndPassword: firebaseSignInWithEmailAndPassword,
+  createUserWithEmailAndPassword: firebaseCreateUserWithEmailAndPassword,
+  signOut: firebaseSignOut,
+  signOutUser: firebaseSignOut,
   
   // User management
   handleUserAuth,
   getCurrentUser,
   updateUserData,
   updateInstagramData,
-  onAuthStateChanged,
   
   // Providers
   googleProvider,
@@ -252,12 +307,17 @@ export {
   twitterProvider,
   
   // Firestore utilities
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
+  doc: (...args) => doc(initFirebase().db, ...args.slice(1)),
+  setDoc: (docRef, ...args) => setDoc(docRef, ...args),
+  getDoc: (docRef) => getDoc(docRef),
+  updateDoc: (docRef, ...args) => updateDoc(docRef, ...args),
+  serverTimestamp: () => serverTimestamp(),
   
   // Functions
-  httpsCallable
+  httpsCallable: (name, options) => {
+    const { functions: fns } = initFirebase();
+    return httpsCallable(fns, name, options);
+  }
 };
+
+export default firebaseExports;

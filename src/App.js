@@ -24,10 +24,11 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { 
   auth,
   signInWithGoogle,
-  onAuthStateChanged,
+  onAuthStateChange,
   signOut as firebaseSignOut,
   db
 } from './firebase';
+import { onAuthStateChanged as firebaseAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import InstagramFeedPage from './pages/InstagramFeedPage';
 import InstagramCallback from './pages/InstagramCallback';
@@ -53,7 +54,7 @@ const Navigation = () => {
   const [, setUserData] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChange(async (user) => {
       setUser(user);
       if (user) {
         try {
@@ -363,12 +364,13 @@ const TokenomicsUI = () => {
   
   // Listen for auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChange((user) => {
       setCurrentUser(user);
       setLoading(false);
     });
+    
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
   
   const handleSignOut = async () => {
     try {
@@ -2729,7 +2731,7 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, () => {
+    const unsubscribe = onAuthStateChange(() => {
       setLoading(false);
     });
     return () => unsubscribe();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged as firebaseAuthStateChanged } from 'firebase/auth';
 import InstagramFeed from '../components/InstagramFeed';
 import InstagramLogin from '../components/InstagramLogin';
 
@@ -11,13 +11,16 @@ const InstagramFeedPage = () => {
   const auth = getAuth();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = firebaseAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
+      if (!user) {
+        navigate('/login');
+      }
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, [navigate, auth]);
 
   const handleLoginSuccess = () => {
     // Refresh the page to show the feed

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { auth, onAuthStateChanged } from '../firebase';
+import { auth } from '../firebase';
+import { onAuthStateChanged as firebaseAuthStateChanged } from 'firebase/auth';
 import { Instagram } from 'lucide-react';
 
 const Dashboard = () => {
@@ -19,7 +20,7 @@ const Dashboard = () => {
     }
 
     // Set up auth state listener
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = firebaseAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser({
           uid: currentUser.uid,
