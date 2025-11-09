@@ -1,6 +1,8 @@
 {
   "projects": {
-    "default": "tagtokn"
+    "default": "tagtokn",
+    "staging": "tagtokn",
+    "tagtokn-com": "tagtokn"
   },
   "targets": {
     "tagtokn": {
