@@ -1,4 +1,4 @@
-import { auth } from '../firebase';
+import { auth, getCurrentUser } from '../firebase';
 
 const DEFAULT_FUNCTIONS_BASE = 'https://tagtokn.com/api';
 
@@ -84,15 +84,24 @@ export const exchangeCodeForToken = async (code, state) => {
 
 export const connectInstagram = async () => {
   try {
-    // Get the current user
-    const user = auth.currentUser;
+    // Get the current user or wait for auth state to resolve
+    let user = auth.currentUser;
+    if (!user) {
+      try {
+        user = await getCurrentUser();
+      } catch (authError) {
+        console.warn('Error waiting for Firebase auth state:', authError);
+      }
+    }
+
     if (!user) {
       console.log('No authenticated user, redirecting to login');
       // Store the current URL for redirection after login
       const currentUrl = window.location.href;
       sessionStorage.setItem('redirectAfterLogin', currentUrl);
-      window.location.href = `/login?redirect_uri=${encodeURIComponent(currentUrl)}`;
-      return Promise.reject(new Error('User not authenticated'));
+      const loginUrl = `/login?redirect_uri=${encodeURIComponent(currentUrl)}`;
+      window.location.assign(loginUrl);
+      return { redirectedToLogin: true };
     }
     
     // Generate the Instagram OAuth URL using our backend function
@@ -103,10 +112,11 @@ export const connectInstagram = async () => {
     }
     
     // Redirect to Instagram OAuth
-    window.location.href = authUrl;
+    window.location.assign(authUrl);
+    return { redirectedToInstagram: true };
   } catch (error) {
     console.error('Error initiating Instagram OAuth:', error);
-    throw new Error('Failed to start Instagram connection');
+    throw error instanceof Error ? error : new Error('Failed to start Instagram connection');
   }
 };
 
