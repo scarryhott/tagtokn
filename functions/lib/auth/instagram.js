@@ -41,6 +41,7 @@ const corsModule = __importStar(require("cors"));
 const allowedOrigins = [
     'https://app.tagtokn.com',
     'https://tagtokn.com',
+    'https://tagtokn.web.app',
     'http://localhost:3000'
 ];
 // Configure CORS

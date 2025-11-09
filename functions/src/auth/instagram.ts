@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 const allowedOrigins = [
   'https://app.tagtokn.com',
   'https://tagtokn.com',
+  'https://tagtokn.web.app',
   'http://localhost:3000'
 ];
 
