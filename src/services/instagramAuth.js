@@ -1,6 +1,6 @@
 import { auth, getCurrentUser } from '../firebase';
 
-const DEFAULT_FUNCTIONS_BASE = 'https://tagtokn.com/api';
+const DEFAULT_FUNCTIONS_BASE = 'https://us-central1-tagtokn.cloudfunctions.net';
 
 const FUNCTIONS_BASE_URL = (process.env.REACT_APP_FUNCTIONS_BASE_URL || DEFAULT_FUNCTIONS_BASE).replace(/\/$/, '');
 
