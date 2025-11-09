@@ -58,6 +58,14 @@ const handleCorsPreflight = (req, res) => corsHandler(req, res, () => {
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
     admin.initializeApp();
+    // Use the emulator in development
+    if (process.env.FUNCTIONS_EMULATOR === 'true') {
+        process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+        admin.firestore().settings({
+            host: 'localhost:8080',
+            ssl: false
+        });
+    }
 }
 const db = admin.firestore();
 /**
@@ -86,7 +94,7 @@ exports.generateOAuthState = functions.https.onRequest((req, res) => {
             const stateData = {
                 uid,
                 state,
-                createdAt: admin.firestore.Timestamp.now(),
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 used: false
             };
             // Store the state in Firestore with a 1-hour expiration

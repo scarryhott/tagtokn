@@ -29,6 +29,15 @@ const handleCorsPreflight = (req: Request, res: Response) =>
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   admin.initializeApp();
+  
+  // Use the emulator in development
+  if (process.env.FUNCTIONS_EMULATOR === 'true') {
+    process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+    admin.firestore().settings({
+      host: 'localhost:8080',
+      ssl: false
+    });
+  }
 }
 
 const db = admin.firestore();
@@ -36,7 +45,7 @@ const db = admin.firestore();
 interface OAuthState {
   uid: string;
   state: string;
-  createdAt: admin.firestore.Timestamp;
+  createdAt: admin.firestore.Timestamp | admin.firestore.FieldValue;
   used: boolean;
 }
 
@@ -66,12 +75,12 @@ export const generateOAuthState = functions.https.onRequest((req: Request, res: 
 
       // Generate a random state string
       const state = crypto.randomBytes(16).toString('hex');
-      const stateData: OAuthState = {
+      const stateData = {
         uid,
         state,
-        createdAt: admin.firestore.Timestamp.now(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
         used: false
-      };
+      } as OAuthState;
 
       // Store the state in Firestore with a 1-hour expiration
       await db.collection('oauthStates').doc(state).set(stateData, { merge: true });
