@@ -40,6 +40,18 @@ exports.handleFacebookCallback = exports.generateFacebookAuthUrl = void 0;
 const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
 const corsModule = __importStar(require("cors"));
+const dotenv = __importStar(require("dotenv"));
+const path = __importStar(require("path"));
+// Load environment variables from .env file
+const envPath = path.resolve(__dirname, '../../.env');
+console.log('Loading .env from:', envPath);
+dotenv.config({ path: envPath });
+// Log environment variables (masking sensitive data)
+console.log('Environment Variables:', {
+    FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID ? '***' + String(process.env.FACEBOOK_APP_ID).slice(-4) : 'MISSING',
+    FACEBOOK_REDIRECT_URI: process.env.FACEBOOK_REDIRECT_URI || 'MISSING',
+    NODE_ENV: process.env.NODE_ENV || 'development'
+});
 const functions = __importStar(require("firebase-functions"));
 const axios_1 = __importDefault(require("axios"));
 const allowedOrigins = [
@@ -79,9 +91,7 @@ if (!admin.apps.length) {
     }
 }
 const db = admin.firestore();
-/**
- * Generates an OAuth state parameter and stores it in Firestore
- */
+// In functions/src/auth/facebook.ts
 exports.generateFacebookAuthUrl = functions.https.onRequest((req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
@@ -94,31 +104,71 @@ exports.generateFacebookAuthUrl = functions.https.onRequest((req, res) => {
                 res.status(400).json({ error: 'User ID is required' });
                 return;
             }
+            // Get config values from environment variables
+            const clientId = process.env.FACEBOOK_APP_ID;
+            const redirectUri = process.env.FACEBOOK_REDIRECT_URI;
+            // Validate required configuration
+            if (!clientId || !redirectUri) {
+                console.error('Configuration Error:', {
+                    clientId: clientId ? 'SET' : 'MISSING',
+                    redirectUri: redirectUri ? 'SET' : 'MISSING',
+                    allEnvVars: Object.keys(process.env).filter(k => k.includes('FACEBOOK') ||
+                        k.includes('FIREBASE') ||
+                        k.includes('NODE_ENV'))
+                });
+                throw new Error('Missing required environment variables');
+            }
+            console.log('Using configuration:', {
+                clientId: '***' + String(clientId).slice(-4),
+                redirectUri: redirectUri
+            });
             // Generate a random state parameter
-            const state = crypto.randomBytes(16).toString('hex');
-            const stateRef = db.collection('oauth_states').doc(state);
-            // Store the state with user ID and expiration
-            await stateRef.set({
+            const state = crypto.randomBytes(32).toString('hex');
+            const stateRef = db.collection('oauth_states').doc();
+            const stateDocId = stateRef.id;
+            // Store the state with user ID and expiration (30 minutes from now)
+            const stateData = {
                 uid,
                 state,
+                docId: stateDocId,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
                 used: false
+            };
+            await stateRef.set(stateData);
+            console.log('Generated OAuth state:', {
+                state,
+                docId: stateDocId,
+                uid,
+                expiresAt: stateData.expiresAt.toISOString()
             });
             // Create Facebook OAuth URL
             const facebookAuthUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
-            facebookAuthUrl.searchParams.append('client_id', process.env.FACEBOOK_APP_ID || '');
-            facebookAuthUrl.searchParams.append('redirect_uri', process.env.FACEBOOK_REDIRECT_URI || '');
+            facebookAuthUrl.searchParams.append('client_id', clientId);
+            facebookAuthUrl.searchParams.append('redirect_uri', redirectUri);
             facebookAuthUrl.searchParams.append('state', state);
             facebookAuthUrl.searchParams.append('response_type', 'code');
-            facebookAuthUrl.searchParams.append('scope', 'public_profile,email');
+            facebookAuthUrl.searchParams.append('scope', 'public_profile,email,instagram_basic,pages_show_list,pages_read_engagement');
             facebookAuthUrl.searchParams.append('auth_type', 'rerequest');
-            res.json({ authUrl: facebookAuthUrl.toString(), state });
-            return;
+            const responseData = {
+                success: true,
+                authUrl: facebookAuthUrl.toString(),
+                state: state,
+                stateDocId: stateDocId
+            };
+            console.log('Generated Facebook Auth URL:', {
+                base: 'https://www.facebook.com/v19.0/dialog/oauth',
+                client_id: clientId ? '***' + String(clientId).slice(-4) : 'MISSING',
+                redirect_uri: redirectUri,
+                state_length: state.length,
+                state_prefix: state.substring(0, 8) + '...',
+                state_doc_id: stateDocId
+            });
+            res.json(responseData);
         }
         catch (error) {
             console.error('Error generating Facebook auth URL:', error);
-            res.status(500).json({ error: 'Failed to generate Facebook auth URL' });
-            return;
+            res.status(500).json({ error: 'Failed to generate authentication URL' });
         }
     });
 });

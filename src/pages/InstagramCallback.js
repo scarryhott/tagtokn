@@ -40,10 +40,15 @@ const InstagramCallback = () => {
       }
       
       if (!state) {
-        const errMsg = 'Missing state parameter in the callback URL';
-        console.error(errMsg);
+        const errMsg = 'Missing state parameter in the callback URL. Please try connecting your Instagram account again.';
+        console.error(errMsg, { urlParams: Object.fromEntries(searchParams.entries()) });
         setError(errMsg);
-        navigate('/login', { state: { error: errMsg } });
+        navigate('/login', { 
+          state: { 
+            error: 'Connection failed',
+            errorDescription: 'Missing required authentication parameters. Please try connecting your Instagram account again.'
+          } 
+        });
         return;
       }
 
@@ -68,6 +73,20 @@ const InstagramCallback = () => {
         }
       } catch (err) {
         console.error('Error in Instagram callback:', err);
+        
+        // Handle state parameter errors specifically
+        if (err.message.includes('state parameter') || err.message.includes('CSRF')) {
+          const errorMsg = 'Security validation failed. Please try connecting your Instagram account again.';
+          console.error('State validation error:', errorMsg);
+          setError(errorMsg);
+          navigate('/login', { 
+            state: { 
+              error: 'Security Check Failed',
+              errorDescription: 'The connection attempt could not be verified. This might be due to an expired session or a security issue. Please try again.'
+            } 
+          });
+          return;
+        }
         const errorMessage = err.message || 'An error occurred during authentication';
         setError(errorMessage);
         

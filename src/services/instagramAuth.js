@@ -48,17 +48,40 @@ const requestFacebookAuthSession = async (uid) => {
     console.log('Requesting Facebook OAuth session from backend function...');
     const response = await callInstagramFunction('/generateFacebookAuthUrl', { uid });
     
-    // Store the server-generated state in session storage
-    if (response && response.state) {
-      sessionStorage.setItem('oauth_state', response.state);
-    }
-
-    if (!authUrl || !state) {
+    if (!response || !response.authUrl || !response.state || !response.stateDocId) {
+      console.error('Invalid response from server:', response);
       throw new Error('Backend did not return a valid Facebook auth session.');
     }
-
-    console.log('Received Facebook auth session for state:', state);
-    return { authUrl, state };
+    
+    const { authUrl, state, stateDocId } = response;
+    
+    // Store the state information in session storage
+    const stateData = {
+      state,
+      stateDocId,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + (29 * 60 * 1000) // 29 minutes from now (slightly less than server's 30m)
+    };
+    
+    // Store the current URL to redirect back after successful auth
+    const currentUrl = window.location.href;
+    
+    // Store all data in session storage
+    sessionStorage.setItem('oauth_state', JSON.stringify(stateData));
+    sessionStorage.setItem('preOAuthUrl', currentUrl);
+    
+    console.log('Stored OAuth state:', {
+      state: state.substring(0, 8) + '...',
+      stateDocId,
+      expiresAt: new Date(stateData.expiresAt).toISOString(),
+      currentUrl
+    });
+    
+    return { 
+      authUrl, 
+      state,
+      stateDocId
+    };
   } catch (error) {
     console.error('Error requesting Facebook auth session:', error);
     throw error instanceof Error ? error : new Error('Failed to initialize Facebook auth session');
@@ -124,11 +147,43 @@ const cleanStateParam = (state) => {
 };
 
 export const handleInstagramCallback = async (code, state) => {
-  // Verify the state matches what we stored
-  const storedState = sessionStorage.getItem('oauth_state');
-  if (state !== storedState) {
-    console.error('State mismatch:', { received: state, stored: storedState });
-    throw new Error('Invalid state parameter');
+  // Get the stored state data
+  const storedStateData = sessionStorage.getItem('oauth_state');
+  
+  // Check if we have any stored state at all
+  if (!storedStateData) {
+    const errorMsg = 'No stored OAuth state found. The OAuth flow might have been interrupted or the page was refreshed.';
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+  
+  let storedStateObj;
+  try {
+    storedStateObj = JSON.parse(storedStateData);
+  } catch (e) {
+    console.error('Failed to parse stored state data:', e);
+    throw new Error('Invalid stored state format');
+  }
+  
+  // Check if the stored state has expired
+  if (storedStateObj.expiresAt && Date.now() > storedStateObj.expiresAt) {
+    const errorMsg = 'OAuth session has expired. Please try again.';
+    console.error(errorMsg, { 
+      now: new Date().toISOString(),
+      expiresAt: new Date(storedStateObj.expiresAt).toISOString() 
+    });
+    throw new Error(errorMsg);
+  }
+  
+  // Verify the received state matches the stored state
+  if (!state || state !== storedStateObj.state) {
+    console.error('State parameter mismatch:', {
+      receivedState: state ? `${state.substring(0, 8)}...` : 'MISSING',
+      storedState: storedStateObj.state ? `${storedStateObj.state.substring(0, 8)}...` : 'MISSING',
+      stateDocId: storedStateObj.stateDocId || 'MISSING',
+      timestamp: new Date(storedStateObj.timestamp).toISOString()
+    });
+    throw new Error('Invalid state parameter - possible CSRF attack or session issue');
   }
   try {
     console.log('Handling Instagram callback with code and state:', { code, state });
