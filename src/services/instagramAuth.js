@@ -46,7 +46,12 @@ const callInstagramFunction = async (path, payload) => {
 const requestFacebookAuthSession = async (uid) => {
   try {
     console.log('Requesting Facebook OAuth session from backend function...');
-    const { authUrl, state } = await callInstagramFunction('/generateFacebookAuthUrl', { uid });
+    const response = await callInstagramFunction('/generateFacebookAuthUrl', { uid });
+    
+    // Store the server-generated state in session storage
+    if (response && response.state) {
+      sessionStorage.setItem('oauth_state', response.state);
+    }
 
     if (!authUrl || !state) {
       throw new Error('Backend did not return a valid Facebook auth session.');
@@ -119,6 +124,12 @@ const cleanStateParam = (state) => {
 };
 
 export const handleInstagramCallback = async (code, state) => {
+  // Verify the state matches what we stored
+  const storedState = sessionStorage.getItem('oauth_state');
+  if (state !== storedState) {
+    console.error('State mismatch:', { received: state, stored: storedState });
+    throw new Error('Invalid state parameter');
+  }
   try {
     console.log('Handling Instagram callback with code and state:', { code, state });
     
