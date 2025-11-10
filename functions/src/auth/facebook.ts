@@ -76,10 +76,15 @@ export const generateFacebookAuthUrl = functions.https.onRequest((req: RequestWi
         return;
       }
 
-      // Log environment variables for debugging
-      console.log('Environment Variables:', {
-        FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID ? '***' + String(process.env.FACEBOOK_APP_ID).slice(-4) : 'MISSING',
-        FACEBOOK_REDIRECT_URI: process.env.FACEBOOK_REDIRECT_URI || 'MISSING'
+      // Get config values from Firebase config
+      const config = functions.config();
+      const clientId = config.facebook?.app_id || process.env.FACEBOOK_APP_ID || '608108222327479';
+      const redirectUri = config.facebook?.redirect_uri || process.env.FACEBOOK_REDIRECT_URI || 'https://tagtokn.com/auth/instagram/callback';
+
+      // Log the config values for debugging
+      console.log('Facebook Config:', {
+        clientId: clientId ? '***' + String(clientId).slice(-4) : 'MISSING',
+        redirectUri: redirectUri || 'MISSING'
       });
 
       // Generate a random state parameter
@@ -94,10 +99,7 @@ export const generateFacebookAuthUrl = functions.https.onRequest((req: RequestWi
         used: false
       });
 
-      // Create Facebook OAuth URL with fallback values
-      const clientId = process.env.FACEBOOK_APP_ID || '608108222327479';
-      const redirectUri = process.env.FACEBOOK_REDIRECT_URI || 'https://tagtokn.com/auth/instagram/callback';
-      
+      // Create Facebook OAuth URL
       const facebookAuthUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
       facebookAuthUrl.searchParams.append('client_id', clientId);
       facebookAuthUrl.searchParams.append('redirect_uri', redirectUri);
