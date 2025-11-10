@@ -1,8 +1,9 @@
 import { auth, getCurrentUser } from '../firebase';
 
 const DEFAULT_FUNCTIONS_BASE = 'https://us-central1-tagtokn.cloudfunctions.net';
-
 const FUNCTIONS_BASE_URL = (process.env.REACT_APP_FUNCTIONS_BASE_URL || DEFAULT_FUNCTIONS_BASE).replace(/\/$/, '');
+const FACEBOOK_OAUTH_URL = 'https://www.facebook.com/v19.0/dialog/oauth';
+const FACEBOOK_SCOPES = 'instagram_basic,user_profile,user_media';
 
 const buildFunctionsUrl = (path) => {
   const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -56,17 +57,17 @@ const generateInstagramAuthUrl = async (uid) => {
 
     console.log('Generated OAuth state:', state);
 
-    // For Instagram Basic Display API, we need to use the Facebook OAuth dialog
+    // Instagram auth now uses Facebook's OAuth dialog
     const params = new URLSearchParams({
       client_id: process.env.REACT_APP_INSTAGRAM_APP_ID,
       redirect_uri: process.env.REACT_APP_INSTAGRAM_REDIRECT_URI,
-      scope: 'user_profile,user_media',
+      scope: FACEBOOK_SCOPES,
       response_type: 'code',
       state: state,
+      auth_type: 'rerequest'
     });
 
-    // Use the Facebook OAuth dialog for Instagram Basic Display
-    return `https://api.instagram.com/oauth/authorize?${params.toString()}`;
+    return `${FACEBOOK_OAUTH_URL}?${params.toString()}`;
   } catch (error) {
     console.error('Error generating Instagram auth URL:', error);
     throw error;

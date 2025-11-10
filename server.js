@@ -130,7 +130,7 @@ try {
 // Instagram OAuth route
 app.get('/api/instagram/auth', (req, res) => {
   const redirectUri = encodeURIComponent(process.env.INSTAGRAM_REDIRECT_URI);
-  const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`;
+  const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${redirectUri}&scope=instagram_basic,user_profile,user_media&response_type=code&auth_type=rerequest`;
   console.log('Redirecting to Instagram OAuth:', authUrl);
   res.redirect(authUrl);
 });

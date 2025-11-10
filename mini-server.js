@@ -32,7 +32,7 @@ app.get('/api/instagram/auth', (req, res) => {
     });
   }
   
-  const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(process.env.INSTAGRAM_REDIRECT_URI)}&scope=user_profile,user_media&response_type=code`;
+  const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(process.env.INSTAGRAM_REDIRECT_URI)}&scope=instagram_basic,user_profile,user_media&response_type=code&auth_type=rerequest`;
   
   res.redirect(authUrl);
 });
