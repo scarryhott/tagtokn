@@ -2,7 +2,7 @@ import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
 import * as corsModule from 'cors';
 import { Request, Response } from 'express';
-import { onRequest } from 'firebase-functions/v2/https';
+import * as functions from 'firebase-functions';
 
 // Type for the request body
 type RequestWithBody = Request & {
@@ -59,7 +59,7 @@ interface OAuthState {
 /**
  * Generates an OAuth state parameter and stores it in Firestore
  */
-export const generateOAuthState = onRequest((req: RequestWithBody, res: Response) => {
+export const generateOAuthState = functions.https.onRequest((req: RequestWithBody, res: Response) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return handleCorsPreflight(req, res);
@@ -116,7 +116,7 @@ export const generateOAuthState = onRequest((req: RequestWithBody, res: Response
 /**
  * Exchanges an Instagram OAuth code for an access token
  */
-export const exchangeInstagramCode = onRequest((req: RequestWithBody, res: Response) => {
+export const exchangeInstagramCode = functions.https.onRequest((req: RequestWithBody, res: Response) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return handleCorsPreflight(req, res);
@@ -154,14 +154,14 @@ export const exchangeInstagramCode = onRequest((req: RequestWithBody, res: Respo
       await stateDoc.ref.update({ used: true });
 
       // Get environment variables with fallbacks
-      const appId = process.env.FACEBOOK_APP_ID || process.env.REACT_APP_FACEBOOK_APP_ID;
-      const appSecret = process.env.FACEBOOK_APP_SECRET || process.env.REACT_APP_FACEBOOK_APP_SECRET;
+      const appId = process.env.INSTAGRAM_APP_ID;
+      const appSecret = process.env.INSTAGRAM_APP_SECRET;
       const redirectUri = process.env.INSTAGRAM_REDIRECT_URI || 
                          process.env.REACT_APP_INSTAGRAM_REDIRECT_URI ||
                          'http://localhost:3000/auth/instagram/callback';
 
       if (!appId || !appSecret) {
-        throw new Error('Facebook App ID and Secret must be configured');
+        throw new Error('Instagram App ID and Secret must be configured in environment variables (INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET)');
       }
 
       // Exchange the code for an access token

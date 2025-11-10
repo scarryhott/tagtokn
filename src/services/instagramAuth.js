@@ -56,14 +56,16 @@ const generateInstagramAuthUrl = async (uid) => {
 
     console.log('Generated OAuth state:', state);
 
+    // For Instagram Basic Display API, we need to use the Facebook OAuth dialog
     const params = new URLSearchParams({
-      client_id: process.env.REACT_APP_FACEBOOK_APP_ID,
+      client_id: process.env.REACT_APP_INSTAGRAM_APP_ID,
       redirect_uri: process.env.REACT_APP_INSTAGRAM_REDIRECT_URI,
       scope: 'user_profile,user_media',
       response_type: 'code',
       state: state,
     });
 
+    // Use the Facebook OAuth dialog for Instagram Basic Display
     return `https://api.instagram.com/oauth/authorize?${params.toString()}`;
   } catch (error) {
     console.error('Error generating Instagram auth URL:', error);
@@ -100,20 +102,23 @@ export const connectInstagram = async () => {
       const currentUrl = window.location.href;
       sessionStorage.setItem('redirectAfterLogin', currentUrl);
       const loginUrl = `/login?redirect_uri=${encodeURIComponent(currentUrl)}`;
-      window.location.assign(loginUrl);
-      return { redirectedToLogin: true };
+      window.location.href = loginUrl;
+      return { redirected: true };
     }
     
-    // Generate the Instagram OAuth URL using our backend function
+    // Generate the Instagram OAuth URL
     const authUrl = await generateInstagramAuthUrl(user.uid);
     
     if (!authUrl) {
       throw new Error('Failed to generate OAuth URL');
     }
     
+    // Store the current URL to return after OAuth flow
+    sessionStorage.setItem('preOAuthUrl', window.location.href);
+    
     // Redirect to Instagram OAuth
-    window.location.assign(authUrl);
-    return { redirectedToInstagram: true };
+    window.location.href = authUrl;
+    return { redirected: true };
   } catch (error) {
     console.error('Error initiating Instagram OAuth:', error);
     throw error instanceof Error ? error : new Error('Failed to start Instagram connection');
@@ -127,22 +132,22 @@ const cleanStateParam = (state) => {
 };
 
 export const handleInstagramCallback = async (code, state) => {
-  // These variables are not currently used
-  // let oauthStateRef = null;
-  // let userId = null;
-  
   try {
     console.log('Handling Instagram callback with code and state:', { code, state });
     
     if (!code || !state) {
-      console.error('Missing required parameters:', { code, state });
-      throw new Error('Missing required parameters: code and state are required');
+      const errorMsg = 'Missing required parameters: code and state are required';
+      console.error(errorMsg, { code, state });
+      throw new Error(errorMsg);
     }
 
     // Clean the state parameter to match how it was stored
     const cleanState = cleanStateParam(state);
     console.log('Cleaned state parameter:', cleanState);
 
+    // Get the redirect URL before making the API call
+    const preOAuthUrl = sessionStorage.getItem('preOAuthUrl') || '/';
+    
     // Exchange code for token and handle everything through Vercel function
     console.log('Exchanging Instagram code for access token...');
     const tokenData = await exchangeCodeForToken(code, state);
@@ -152,9 +157,15 @@ export const handleInstagramCallback = async (code, state) => {
     }
     
     console.log('Successfully obtained custom token');
+    
+    // Clean up the stored URL
+    sessionStorage.removeItem('preOAuthUrl');
+    
     return { 
+      success: true,
       token: tokenData.token,
-      user: tokenData.user 
+      user: tokenData.user,
+      redirectUrl: preOAuthUrl
     };
   } catch (error) {
     console.error('Instagram connection error:', error);

@@ -27,6 +27,8 @@ const InstagramCallback = () => {
         const errorMsg = `Instagram authentication failed: ${errorMessage}`;
         console.error(errorMsg, { error, errorReason, errorDescription });
         setError(errorMsg);
+        // Redirect to error page or login page with error
+        navigate('/login', { state: { error: errorMsg } });
         return;
       }
       
@@ -34,6 +36,7 @@ const InstagramCallback = () => {
         const errMsg = 'Missing authorization code in the callback URL';
         console.error(errMsg);
         setError(errMsg);
+        navigate('/login', { state: { error: errMsg } });
         return;
       }
       
@@ -41,6 +44,7 @@ const InstagramCallback = () => {
         const errMsg = 'Missing state parameter in the callback URL';
         console.error(errMsg);
         setError(errMsg);
+        navigate('/login', { state: { error: errMsg } });
         return;
       }
 
@@ -50,29 +54,31 @@ const InstagramCallback = () => {
         // Handle the Instagram OAuth callback with both code and state
         const result = await handleInstagramCallback(code, state);
         
-        if (result.token) {
-          // If we got a token, sign in with it
-          setStatus('Signing in with your Instagram account...');
-          await auth.signInWithCustomToken(result.token);
+        if (result.success && result.token) {
+          console.log('Successfully authenticated with Instagram', result);
+          setStatus('Success! Redirecting...');
           
-          setStatus('Success! Your Instagram account has been connected.');
-          // Redirect to dashboard after a short delay
-          setTimeout(() => navigate('/dashboard?instagram_connected=true'), 1500);
-        } else if (result.error) {
-          // Handle API error response
-          throw new Error(result.details || result.error || 'Failed to connect to Instagram');
+          // Redirect to the stored URL or dashboard
+          const redirectTo = result.redirectUrl || sessionStorage.getItem('redirectAfterLogin') || '/';
+          console.log('Redirecting to:', redirectTo);
+          window.location.href = redirectTo;
         } else {
-          // Unexpected response format
-          throw new Error('Unexpected response from authentication service');
+          const errorMsg = result.error || 'Failed to authenticate with Instagram';
+          console.error('Authentication failed:', errorMsg);
+          throw new Error(errorMsg);
         }
       } catch (err) {
         console.error('Error in Instagram callback:', err);
-        setError(err.message || 'An error occurred during authentication');
+        const errorMessage = err.message || 'An error occurred during authentication';
+        setError(errorMessage);
         
-        // If it's an auth error, redirect to login
-        if (err.code?.startsWith('auth/')) {
-          const currentUrl = window.location.href;
-          navigate(`/login?redirect_uri=${encodeURIComponent(currentUrl)}`);
+        // Store the error in session storage
+        sessionStorage.setItem('instagramAuthError', errorMessage);
+        
+        // Redirect to login with error message
+        const loginUrl = `/login?error=${encodeURIComponent(errorMessage)}`;
+        if (window.location.pathname !== loginUrl) {
+          window.location.href = loginUrl;
         }
       }
     };
