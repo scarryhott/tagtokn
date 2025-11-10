@@ -20,7 +20,7 @@ import {
   enableIndexedDbPersistence
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable as firebaseHttpsCallable } from 'firebase/functions';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -137,7 +137,7 @@ const handleUserAuth = async (user, additionalData = {}) => {
 };
 
 // Function to sign in with Google
-const signInWithGoogle = async () => {
+export const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return await handleUserAuth(result.user);
@@ -148,7 +148,7 @@ const signInWithGoogle = async () => {
 };
 
 // Function to sign in with GitHub
-const signInWithGitHub = async () => {
+export const signInWithGitHub = async () => {
   try {
     const result = await signInWithPopup(auth, githubProvider);
     return await handleUserAuth(result.user);
@@ -159,7 +159,7 @@ const signInWithGitHub = async () => {
 };
 
 // Function to sign in with Twitter
-const signInWithTwitter = async () => {
+export const signInWithTwitter = async () => {
   try {
     const result = await signInWithPopup(auth, twitterProvider);
     return await handleUserAuth(result.user, {
@@ -174,7 +174,7 @@ const signInWithTwitter = async () => {
 };
 
 // Function to sign in with email and password
-const signInWithEmailAndPassword = async (email, password) => {
+export const signInWithEmailAndPassword = async (email, password) => {
   try {
     const result = await firebaseSignInWithEmailAndPassword(auth, email, password);
     return await handleUserAuth(result.user);
@@ -185,7 +185,7 @@ const signInWithEmailAndPassword = async (email, password) => {
 };
 
 // Function to create a new user with email and password
-const createUserWithEmailAndPassword = async (email, password, displayName = '') => {
+export const createUserWithEmailAndPassword = async (email, password, displayName = '') => {
   try {
     const result = await firebaseCreateUserWithEmailAndPassword(auth, email, password);
     return await handleUserAuth(result.user, { displayName });
@@ -196,7 +196,7 @@ const createUserWithEmailAndPassword = async (email, password, displayName = '')
 };
 
 // Function to sign out
-const signOutUser = async () => {
+export const signOutUser = async () => {
   try {
     await firebaseSignOut(auth);
   } catch (error) {
@@ -206,7 +206,7 @@ const signOutUser = async () => {
 };
 
 // Function to get current user
-const getCurrentUser = () => {
+export const getCurrentUser = () => {
   return new Promise((resolve, reject) => {
     try {
       // Ensure Firebase is initialized
@@ -273,6 +273,13 @@ const updateUserData = async (userId, data) => {
 };
 
 // Export auth methods
+export const auth = firebaseServices.auth;
+export const db = firebaseServices.db;
+export const functions = firebaseServices.functions;
+export const storage = firebaseServices.storage;
+
+export const signOut = firebaseSignOut;
+
 const firebaseExports = {
   // Core Firebase services
   initFirebase,
@@ -283,8 +290,8 @@ const firebaseExports = {
   getStorage: () => firebaseServices.storage,
   
   // Backward compatibility exports
-  db: firebaseServices.db,
-  auth: firebaseServices.auth,
+  db,
+  auth,
   
   // Auth methods
   signInWithGoogle,
@@ -307,17 +314,22 @@ const firebaseExports = {
   twitterProvider,
   
   // Firestore utilities
-  doc: (...args) => doc(initFirebase().db, ...args.slice(1)),
-  setDoc: (docRef, ...args) => setDoc(docRef, ...args),
-  getDoc: (docRef) => getDoc(docRef),
-  updateDoc: (docRef, ...args) => updateDoc(docRef, ...args),
-  serverTimestamp: () => serverTimestamp(),
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
   
   // Functions
   httpsCallable: (name, options) => {
     const { functions: fns } = initFirebase();
-    return httpsCallable(fns, name, options);
+    return firebaseHttpsCallable(fns, name, options);
   }
+};
+
+export const httpsCallable = (name, options) => {
+  const { functions: fns } = initFirebase();
+  return firebaseHttpsCallable(fns, name, options);
 };
 
 export default firebaseExports;

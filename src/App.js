@@ -370,7 +370,7 @@ const TokenomicsUI = () => {
     });
     
     return () => unsubscribe();
-  }, [navigate]);
+  }, []);
   
   const handleSignOut = async () => {
     try {
