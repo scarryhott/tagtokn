@@ -2,9 +2,6 @@ import { auth, getCurrentUser } from '../firebase';
 
 const DEFAULT_FUNCTIONS_BASE = 'https://us-central1-tagtokn.cloudfunctions.net';
 const FUNCTIONS_BASE_URL = (process.env.REACT_APP_FUNCTIONS_BASE_URL || DEFAULT_FUNCTIONS_BASE).replace(/\/$/, '');
-const FACEBOOK_OAUTH_URL = 'https://www.facebook.com/v19.0/dialog/oauth';
-const FACEBOOK_SCOPES = 'instagram_basic,user_profile,user_media';
-
 const buildFunctionsUrl = (path) => {
   const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${FUNCTIONS_BASE_URL}${sanitizedPath}`;
@@ -46,38 +43,20 @@ const callInstagramFunction = async (path, payload) => {
   return data;
 };
 
-const generateInstagramAuthUrl = async (uid) => {
+const requestFacebookAuthSession = async (uid) => {
   try {
-    console.log('Requesting OAuth state from backend function...');
-    const { state } = await callInstagramFunction('/generateOAuthState', { uid });
+    console.log('Requesting Facebook OAuth session from backend function...');
+    const { authUrl, state } = await callInstagramFunction('/generateFacebookAuthUrl', { uid });
 
-    if (!state) {
-      throw new Error('Backend did not return an OAuth state.');
+    if (!authUrl || !state) {
+      throw new Error('Backend did not return a valid Facebook auth session.');
     }
 
-    console.log('Generated OAuth state:', state);
-
-    const appId = process.env.REACT_APP_FACEBOOK_APP_ID;
-    const redirectUri = process.env.REACT_APP_FACEBOOK_REDIRECT_URI;
-
-    if (!appId || !redirectUri) {
-      throw new Error('Instagram OAuth is not configured. Please set REACT_APP_FACEBOOK_APP_ID and REACT_APP_FACEBOOK_REDIRECT_URI in your .env file.');
-    }
-
-    // Instagram auth now uses Facebook's OAuth dialog
-    const params = new URLSearchParams({
-      client_id: appId,
-      redirect_uri: redirectUri,
-      scope: FACEBOOK_SCOPES,
-      response_type: 'code',
-      state: state,
-      auth_type: 'rerequest'
-    });
-
-    return `${FACEBOOK_OAUTH_URL}?${params.toString()}`;
+    console.log('Received Facebook auth session for state:', state);
+    return { authUrl, state };
   } catch (error) {
-    console.error('Error generating Instagram auth URL:', error);
-    throw error;
+    console.error('Error requesting Facebook auth session:', error);
+    throw error instanceof Error ? error : new Error('Failed to initialize Facebook auth session');
   }
 };
 
@@ -114,15 +93,15 @@ export const connectInstagram = async () => {
       return { redirected: true };
     }
     
-    // Generate the Instagram OAuth URL
-    const authUrl = await generateInstagramAuthUrl(user.uid);
+    const { authUrl, state } = await requestFacebookAuthSession(user.uid);
     
-    if (!authUrl) {
-      throw new Error('Failed to generate OAuth URL');
+    if (!authUrl || !state) {
+      throw new Error('Failed to generate Facebook OAuth session');
     }
     
     // Store the current URL to return after OAuth flow
     sessionStorage.setItem('preOAuthUrl', window.location.href);
+    sessionStorage.setItem('instagram_oauth_state', state);
     
     // Redirect to Instagram OAuth
     window.location.href = authUrl;

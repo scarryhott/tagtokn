@@ -112,7 +112,7 @@ exports.generateFacebookAuthUrl = functions.https.onRequest((req, res) => {
             facebookAuthUrl.searchParams.append('response_type', 'code');
             facebookAuthUrl.searchParams.append('scope', 'public_profile,email');
             facebookAuthUrl.searchParams.append('auth_type', 'rerequest');
-            res.json({ authUrl: facebookAuthUrl.toString() });
+            res.json({ authUrl: facebookAuthUrl.toString(), state });
             return;
         }
         catch (error) {

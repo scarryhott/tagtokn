@@ -99,7 +99,7 @@ export const generateFacebookAuthUrl = functions.https.onRequest((req: RequestWi
       facebookAuthUrl.searchParams.append('scope', 'public_profile,email');
       facebookAuthUrl.searchParams.append('auth_type', 'rerequest');
 
-      res.json({ authUrl: facebookAuthUrl.toString() });
+      res.json({ authUrl: facebookAuthUrl.toString(), state });
       return;
     } catch (error) {
       console.error('Error generating Facebook auth URL:', error);

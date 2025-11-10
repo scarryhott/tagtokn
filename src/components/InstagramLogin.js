@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Instagram } from 'lucide-react';
 import { connectInstagram } from '../services/instagramAuth';
 
-const InstagramLogin = ({ onSuccess, onFailure, buttonText = 'Connect Instagram', render }) => {
+const InstagramLogin = ({ onSuccess, onFailure, buttonText = 'Connect Instagram via Facebook', render }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -31,6 +31,9 @@ const InstagramLogin = ({ onSuccess, onFailure, buttonText = 'Connect Instagram'
 
   return (
     <div className="instagram-login text-center">
+      <p className="mb-3 text-sm text-gray-600">
+        We use Facebook Login to securely connect your Instagram account.
+      </p>
       {error && (
         <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
           {error}
