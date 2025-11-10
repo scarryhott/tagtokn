@@ -170,9 +170,9 @@
         let authToken = '';
         
         // Instagram OAuth configuration
-        const INSTAGRAM_CLIENT_ID = 'YOUR_INSTAGRAM_APP_ID'; // Replace with your Instagram App ID
-        const INSTAGRAM_REDIRECT_URI = encodeURIComponent(window.location.origin + '/instagram-callback');
-        const INSTAGRAM_AUTH_URL = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${INSTAGRAM_CLIENT_ID}&redirect_uri=${INSTAGRAM_REDIRECT_URI}&scope=instagram_basic,user_profile,user_media&response_type=code&auth_type=rerequest`;
+        const FACEBOOK_APP_ID = 'YOUR_FACEBOOK_APP_ID'; // Replace with your Meta App ID
+        const FACEBOOK_REDIRECT_URI = encodeURIComponent(window.location.origin + '/instagram-callback');
+        const INSTAGRAM_AUTH_URL = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&scope=instagram_basic,user_profile,user_media&response_type=code&auth_type=rerequest`;
         
         function switchTab(tabName) {
             // Hide all tab contents

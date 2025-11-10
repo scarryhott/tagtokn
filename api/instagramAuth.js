@@ -2,23 +2,23 @@ const axios = require('axios');
 const admin = require('firebase-admin');
 
 // Instagram OAuth configuration with validation
-const INSTAGRAM_APP_ID = process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID;
-const INSTAGRAM_APP_SECRET = process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET;
-const INSTAGRAM_REDIRECT_URI = process.env.FACEBOOK_REDIRECT_URI || process.env.INSTAGRAM_REDIRECT_URI;
+const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
+const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+const FACEBOOK_REDIRECT_URI = process.env.FACEBOOK_REDIRECT_URI;
 
 // Validate configuration
-if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET || !INSTAGRAM_REDIRECT_URI) {
-  console.error('❌ Missing Instagram OAuth configuration. Please check your .env file.');
+if (!FACEBOOK_APP_ID || !FACEBOOK_APP_SECRET || !FACEBOOK_REDIRECT_URI) {
+  console.error('❌ Missing Meta OAuth configuration. Please check your .env file.');
   console.log('Current configuration:');
-  console.log(`- INSTAGRAM_APP_ID: ${INSTAGRAM_APP_ID ? 'Set' : 'Missing'}`);
-  console.log(`- INSTAGRAM_APP_SECRET: ${INSTAGRAM_APP_SECRET ? 'Set' : 'Missing'}`);
-  console.log(`- INSTAGRAM_REDIRECT_URI: ${INSTAGRAM_REDIRECT_URI || 'Missing'}`);
+  console.log(`- FACEBOOK_APP_ID: ${FACEBOOK_APP_ID ? 'Set' : 'Missing'}`);
+  console.log(`- FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET ? 'Set' : 'Missing'}`);
+  console.log(`- FACEBOOK_REDIRECT_URI: ${FACEBOOK_REDIRECT_URI || 'Missing'}`);
   process.exit(1);
 }
 
 console.log('✅ Instagram OAuth Configuration:');
-console.log(`- App ID: ${INSTAGRAM_APP_ID ? '✓' : '✗'}`);
-console.log(`- Redirect URI: ${INSTAGRAM_REDIRECT_URI}`);
+console.log(`- App ID: ${FACEBOOK_APP_ID ? '✓' : '✗'}`);
+console.log(`- Redirect URI: ${FACEBOOK_REDIRECT_URI}`);
 
 // Exchange authorization code for access token
 async function exchangeCodeForToken(code) {
@@ -26,10 +26,10 @@ async function exchangeCodeForToken(code) {
   try {
     const response = await axios.post('https://api.instagram.com/oauth/access_token', null, {
       params: {
-        client_id: INSTAGRAM_APP_ID,
-        client_secret: INSTAGRAM_APP_SECRET,
+        client_id: FACEBOOK_APP_ID,
+        client_secret: FACEBOOK_APP_SECRET,
         grant_type: 'authorization_code',
-        redirect_uri: INSTAGRAM_REDIRECT_URI,
+        redirect_uri: FACEBOOK_REDIRECT_URI,
         code: code
       },
       headers: {

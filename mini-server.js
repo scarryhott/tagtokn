@@ -25,9 +25,9 @@ app.get('/health', (req, res) => {
 
 // Instagram OAuth route
 app.get('/api/instagram/auth', (req, res) => {
-  const metaAppId = process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID;
-  const metaAppSecret = process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET;
-  const redirectTarget = process.env.FACEBOOK_REDIRECT_URI || process.env.INSTAGRAM_REDIRECT_URI;
+  const metaAppId = process.env.FACEBOOK_APP_ID;
+  const metaAppSecret = process.env.FACEBOOK_APP_SECRET;
+  const redirectTarget = process.env.FACEBOOK_REDIRECT_URI;
 
   if (!metaAppId || !metaAppSecret || !redirectTarget) {
     return res.status(500).json({ 

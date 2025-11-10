@@ -156,15 +156,13 @@ exports.exchangeInstagramCode = functions.https.onRequest((req, res) => {
             // Mark state as used
             await stateDoc.ref.update({ used: true });
             // Get environment variables with fallbacks
-            const appId = process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID;
-            const appSecret = process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET;
+            const appId = process.env.FACEBOOK_APP_ID;
+            const appSecret = process.env.FACEBOOK_APP_SECRET;
             const redirectUri = process.env.FACEBOOK_REDIRECT_URI ||
                 process.env.REACT_APP_FACEBOOK_REDIRECT_URI ||
-                process.env.INSTAGRAM_REDIRECT_URI ||
-                process.env.REACT_APP_INSTAGRAM_REDIRECT_URI ||
                 'http://localhost:3000/auth/instagram/callback';
             if (!appId || !appSecret) {
-                throw new Error('Meta App ID and Secret must be configured in environment variables (FACEBOOK_APP_ID/SECRET or INSTAGRAM_APP_ID/SECRET).');
+                throw new Error('Meta App ID and Secret must be configured in environment variables (FACEBOOK_APP_ID and FACEBOOK_APP_SECRET).');
             }
             // Exchange the code for an access token
             const tokenResponse = await fetch('https://api.instagram.com/oauth/access_token', {

@@ -10,8 +10,9 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 // Instagram API configuration
-const INSTAGRAM_APP_ID = functions.config().instagram.app_id;
-const INSTAGRAM_APP_SECRET = functions.config().instagram.app_secret;
+const metaConfig = functions.config().facebook || {};
+const META_APP_ID = metaConfig.app_id || process.env.FACEBOOK_APP_ID;
+const META_APP_SECRET = metaConfig.app_secret || process.env.FACEBOOK_APP_SECRET;
 
 /**
  * Exchange authorization code for access token
@@ -45,8 +46,8 @@ exports.exchangeCodeForToken = functions.https.onRequest((req, res) => {
     // Exchange code for short-lived access token
     const tokenResponse = await axios.post('https://api.instagram.com/oauth/access_token', null, {
       params: {
-        client_id: INSTAGRAM_APP_ID,
-        client_secret: INSTAGRAM_APP_SECRET,
+        client_id: META_APP_ID,
+        client_secret: META_APP_SECRET,
         grant_type: 'authorization_code',
         redirect_uri,
         code,
@@ -59,7 +60,7 @@ exports.exchangeCodeForToken = functions.https.onRequest((req, res) => {
     const longLivedResponse = await axios.get('https://graph.instagram.com/access_token', {
       params: {
         grant_type: 'ig_exchange_token',
-        client_secret: INSTAGRAM_APP_SECRET,
+        client_secret: META_APP_SECRET,
         access_token: shortLivedToken,
       },
     });

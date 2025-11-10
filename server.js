@@ -129,8 +129,8 @@ try {
 
 // Instagram OAuth route
 app.get('/api/instagram/auth', (req, res) => {
-  const metaAppId = process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID;
-  const redirectTarget = process.env.FACEBOOK_REDIRECT_URI || process.env.INSTAGRAM_REDIRECT_URI;
+  const metaAppId = process.env.FACEBOOK_APP_ID;
+  const redirectTarget = process.env.FACEBOOK_REDIRECT_URI;
 
   if (!metaAppId || !redirectTarget) {
     return res.status(500).json({ error: 'Meta OAuth is not configured on the server.' });
