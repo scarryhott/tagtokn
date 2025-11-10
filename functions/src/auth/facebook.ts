@@ -91,7 +91,7 @@ export const generateFacebookAuthUrl = functions.https.onRequest((req: RequestWi
       });
 
       // Create Facebook OAuth URL
-      const facebookAuthUrl = new URL('https://www.facebook.com/v12.0/dialog/oauth');
+      const facebookAuthUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
       facebookAuthUrl.searchParams.append('client_id', process.env.FACEBOOK_APP_ID || '');
       facebookAuthUrl.searchParams.append('redirect_uri', process.env.FACEBOOK_REDIRECT_URI || '');
       facebookAuthUrl.searchParams.append('state', state);
@@ -152,7 +152,7 @@ export const handleFacebookCallback = functions.https.onRequest((req: RequestWit
       }
 
       // Exchange the authorization code for an access token
-      const tokenResponse = await axios.get('https://graph.facebook.com/v12.0/oauth/access_token', {
+      const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
         params: {
           client_id: process.env.FACEBOOK_APP_ID,
           client_secret: process.env.FACEBOOK_APP_SECRET,
