@@ -60,9 +60,7 @@ interface OAuthState {
   used: boolean;
 }
 
-/**
- * Generates an OAuth state parameter and stores it in Firestore
- */
+// In functions/src/auth/facebook.ts
 export const generateFacebookAuthUrl = functions.https.onRequest((req: RequestWithBody, res: Response) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -78,6 +76,12 @@ export const generateFacebookAuthUrl = functions.https.onRequest((req: RequestWi
         return;
       }
 
+      // Log environment variables for debugging
+      console.log('Environment Variables:', {
+        FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID ? '***' + String(process.env.FACEBOOK_APP_ID).slice(-4) : 'MISSING',
+        FACEBOOK_REDIRECT_URI: process.env.FACEBOOK_REDIRECT_URI || 'MISSING'
+      });
+
       // Generate a random state parameter
       const state = crypto.randomBytes(16).toString('hex');
       const stateRef = db.collection('oauth_states').doc(state);
@@ -90,21 +94,32 @@ export const generateFacebookAuthUrl = functions.https.onRequest((req: RequestWi
         used: false
       });
 
-      // Create Facebook OAuth URL
+      // Create Facebook OAuth URL with fallback values
+      const clientId = process.env.FACEBOOK_APP_ID || '608108222327479';
+      const redirectUri = process.env.FACEBOOK_REDIRECT_URI || 'https://tagtokn.com/auth/instagram/callback';
+      
       const facebookAuthUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
-      facebookAuthUrl.searchParams.append('client_id', process.env.FACEBOOK_APP_ID || '');
-      facebookAuthUrl.searchParams.append('redirect_uri', process.env.FACEBOOK_REDIRECT_URI || '');
+      facebookAuthUrl.searchParams.append('client_id', clientId);
+      facebookAuthUrl.searchParams.append('redirect_uri', redirectUri);
       facebookAuthUrl.searchParams.append('state', state);
       facebookAuthUrl.searchParams.append('response_type', 'code');
-      facebookAuthUrl.searchParams.append('scope', 'public_profile,email');
+      facebookAuthUrl.searchParams.append('scope', 'public_profile,email,instagram_basic,pages_show_list');
       facebookAuthUrl.searchParams.append('auth_type', 'rerequest');
 
-      res.json({ authUrl: facebookAuthUrl.toString(), state });
-      return;
+      console.log('Generated Facebook Auth URL:', {
+        base: 'https://www.facebook.com/v19.0/dialog/oauth',
+        client_id: clientId ? '***' + String(clientId).slice(-4) : 'MISSING',
+        redirect_uri: redirectUri,
+        state: state
+      });
+
+      res.json({ 
+        authUrl: facebookAuthUrl.toString(),
+        state
+      });
     } catch (error) {
       console.error('Error generating Facebook auth URL:', error);
-      res.status(500).json({ error: 'Failed to generate Facebook auth URL' });
-      return;
+      res.status(500).json({ error: 'Failed to generate authentication URL' });
     }
   });
 });
