@@ -1295,7 +1295,7 @@ const TokenomicsUI = () => {
                   className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 py-2 px-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 mx-auto"
                 >
                   <Instagram className="h-4 w-4" />
-                  Connect Instagram
+                  Connect Instagram via Facebook
                 </button>
               </div>
             )}
@@ -1756,7 +1756,7 @@ const TokenomicsUI = () => {
                 <X className="h-6 w-6" />
               </button>
               <h3 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
-                Connect Instagram Account
+                Connect Instagram Account via Facebook
               </h3>
               
               <div className="space-y-4">
@@ -2657,7 +2657,7 @@ const CreateInfluencerModal = ({ onClose, onCreateInfluencer, connectedInstagram
             value={instagramHandle}
             readOnly={true} // Make read-only as per request
             className={`w-full p-3 bg-black/40 border border-purple-600 rounded-xl text-white placeholder-gray-400 focus:outline-none ${connectedInstagramAccount ? 'bg-gray-700/50 cursor-not-allowed' : 'focus:border-purple-400'}`}
-            placeholder="Connect Instagram to auto-fill"
+            placeholder="Connect Instagram via Facebook to auto-fill"
           />
         </div>
         <div className="mb-4">

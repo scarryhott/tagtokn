@@ -125,7 +125,7 @@ const Dashboard = () => {
                       to="/connect/instagram"
                       className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
                     >
-                      Connect Instagram
+                      Connect Instagram via Facebook
                     </Link>
                   )}
                 </div>
