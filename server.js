@@ -129,8 +129,15 @@ try {
 
 // Instagram OAuth route
 app.get('/api/instagram/auth', (req, res) => {
-  const redirectUri = encodeURIComponent(process.env.INSTAGRAM_REDIRECT_URI);
-  const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${redirectUri}&scope=instagram_basic,user_profile,user_media&response_type=code&auth_type=rerequest`;
+  const metaAppId = process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID;
+  const redirectTarget = process.env.FACEBOOK_REDIRECT_URI || process.env.INSTAGRAM_REDIRECT_URI;
+
+  if (!metaAppId || !redirectTarget) {
+    return res.status(500).json({ error: 'Meta OAuth is not configured on the server.' });
+  }
+
+  const redirectUri = encodeURIComponent(redirectTarget);
+  const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${redirectUri}&scope=instagram_basic,user_profile,user_media&response_type=code&auth_type=rerequest`;
   console.log('Redirecting to Instagram OAuth:', authUrl);
   res.redirect(authUrl);
 });

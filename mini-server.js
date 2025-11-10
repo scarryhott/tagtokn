@@ -25,14 +25,18 @@ app.get('/health', (req, res) => {
 
 // Instagram OAuth route
 app.get('/api/instagram/auth', (req, res) => {
-  if (!process.env.INSTAGRAM_APP_ID || !process.env.INSTAGRAM_APP_SECRET || !process.env.INSTAGRAM_REDIRECT_URI) {
+  const metaAppId = process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID;
+  const metaAppSecret = process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET;
+  const redirectTarget = process.env.FACEBOOK_REDIRECT_URI || process.env.INSTAGRAM_REDIRECT_URI;
+
+  if (!metaAppId || !metaAppSecret || !redirectTarget) {
     return res.status(500).json({ 
       error: 'Server configuration error',
       message: 'Instagram OAuth is not properly configured.'
     });
   }
   
-  const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(process.env.INSTAGRAM_REDIRECT_URI)}&scope=instagram_basic,user_profile,user_media&response_type=code&auth_type=rerequest`;
+  const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirectTarget)}&scope=instagram_basic,user_profile,user_media&response_type=code&auth_type=rerequest`;
   
   res.redirect(authUrl);
 });

@@ -57,10 +57,17 @@ const generateInstagramAuthUrl = async (uid) => {
 
     console.log('Generated OAuth state:', state);
 
+    const appId = process.env.REACT_APP_FACEBOOK_APP_ID || process.env.REACT_APP_INSTAGRAM_APP_ID;
+    const redirectUri = process.env.REACT_APP_FACEBOOK_REDIRECT_URI || process.env.REACT_APP_INSTAGRAM_REDIRECT_URI;
+
+    if (!appId || !redirectUri) {
+      throw new Error('Instagram OAuth is not configured. Please set REACT_APP_FACEBOOK_APP_ID and REACT_APP_FACEBOOK_REDIRECT_URI (or fallback INSTAGRAM variables).');
+    }
+
     // Instagram auth now uses Facebook's OAuth dialog
     const params = new URLSearchParams({
-      client_id: process.env.REACT_APP_INSTAGRAM_APP_ID,
-      redirect_uri: process.env.REACT_APP_INSTAGRAM_REDIRECT_URI,
+      client_id: appId,
+      redirect_uri: redirectUri,
       scope: FACEBOOK_SCOPES,
       response_type: 'code',
       state: state,

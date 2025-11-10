@@ -2,9 +2,9 @@ const axios = require('axios');
 const admin = require('firebase-admin');
 
 // Instagram OAuth configuration with validation
-const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
-const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
-const INSTAGRAM_REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI;
+const INSTAGRAM_APP_ID = process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID;
+const INSTAGRAM_APP_SECRET = process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET;
+const INSTAGRAM_REDIRECT_URI = process.env.FACEBOOK_REDIRECT_URI || process.env.INSTAGRAM_REDIRECT_URI;
 
 // Validate configuration
 if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET || !INSTAGRAM_REDIRECT_URI) {
