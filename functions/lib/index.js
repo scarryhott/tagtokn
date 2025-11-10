@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exchangeInstagramCode = exports.generateOAuthState = exports.requestTagtoknLiquidity = exports.createCustomToken = void 0;
+exports.exchangeInstagramCode = exports.generateOAuthState = exports.requestTagtoknLiquidity = exports.createCustomToken = exports.handleFacebookCallback = exports.generateFacebookAuthUrl = void 0;
 const admin = __importStar(require("firebase-admin"));
 const corsModule = __importStar(require("cors"));
 const functions = __importStar(require("firebase-functions"));
@@ -49,6 +49,9 @@ const FieldValue = admin.firestore.FieldValue;
 const instagram_1 = require("./auth/instagram");
 Object.defineProperty(exports, "generateOAuthState", { enumerable: true, get: function () { return instagram_1.generateOAuthState; } });
 Object.defineProperty(exports, "exchangeInstagramCode", { enumerable: true, get: function () { return instagram_1.exchangeInstagramCode; } });
+const facebook_1 = require("./auth/facebook");
+Object.defineProperty(exports, "generateFacebookAuthUrl", { enumerable: true, get: function () { return facebook_1.generateFacebookAuthUrl; } });
+Object.defineProperty(exports, "handleFacebookCallback", { enumerable: true, get: function () { return facebook_1.handleFacebookCallback; } });
 // Configure CORS
 const corsOptions = {
     origin: [

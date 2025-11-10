@@ -18,6 +18,7 @@ const FieldValue = admin.firestore.FieldValue;
 
 // Import OAuth functions
 import { generateOAuthState, exchangeInstagramCode } from './auth/instagram';
+import { generateFacebookAuthUrl, handleFacebookCallback } from './auth/facebook';
 
 // Configure CORS
 const corsOptions = {
@@ -42,6 +43,9 @@ const handleCorsPreflight = (req: Request, res: Response) => {
 };
 
 const platformTokenRef = db.collection('platformTokens').doc('tagtokn');
+
+// Export Facebook OAuth functions
+export { generateFacebookAuthUrl, handleFacebookCallback };
 
 // Create a custom token for the specified UID
 export const createCustomToken = functions.https.onRequest((req: Request, res: Response) => {
