@@ -76,15 +76,40 @@ export const generateFacebookAuthUrl = functions.https.onRequest((req: RequestWi
         return;
       }
 
-      // Get config values from Firebase config
+      // Get config values from Firebase config and environment variables
       const config = functions.config();
-      const clientId = config.facebook?.app_id || process.env.FACEBOOK_APP_ID || '608108222327479';
-      const redirectUri = config.facebook?.redirect_uri || process.env.FACEBOOK_REDIRECT_URI || 'https://tagtokn.com/auth/instagram/callback';
+      
+      // Get client ID from config or environment variables with fallback
+      const clientId = process.env.FACEBOOK_APP_ID || config.facebook?.app_id || '608108222327479';
+      
+      // Get redirect URI from config or environment variables with fallback
+      const redirectUri = process.env.FACEBOOK_REDIRECT_URI || 
+                         config.facebook?.redirect_uri || 
+                         'https://tagtokn.com/auth/instagram/callback';
 
-      // Log the config values for debugging
+      // Log the config values for debugging (mask sensitive data)
       console.log('Facebook Config:', {
         clientId: clientId ? '***' + String(clientId).slice(-4) : 'MISSING',
-        redirectUri: redirectUri || 'MISSING'
+        redirectUri: redirectUri || 'MISSING',
+        hasFirebaseConfig: !!config.facebook,
+        hasEnvVars: {
+          FACEBOOK_APP_ID: !!process.env.FACEBOOK_APP_ID,
+          FACEBOOK_REDIRECT_URI: !!process.env.FACEBOOK_REDIRECT_URI
+        },
+        configSources: {
+          fromEnv: {
+            clientId: !!process.env.FACEBOOK_APP_ID,
+            redirectUri: !!process.env.FACEBOOK_REDIRECT_URI
+          },
+          fromFirebaseConfig: {
+            clientId: !!config.facebook?.app_id,
+            redirectUri: !!config.facebook?.redirect_uri
+          },
+          usingFallback: {
+            clientId: !process.env.FACEBOOK_APP_ID && !config.facebook?.app_id,
+            redirectUri: !process.env.FACEBOOK_REDIRECT_URI && !config.facebook?.redirect_uri
+          }
+        }
       });
 
       // Generate a random state parameter
