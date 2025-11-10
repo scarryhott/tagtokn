@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { handleInstagramCallback } from '../services/instagramAuth';
-import { auth } from '../firebase';
 
 const InstagramCallback = () => {
   const [searchParams] = useSearchParams();

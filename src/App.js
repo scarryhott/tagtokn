@@ -28,7 +28,6 @@ import {
   signOut as firebaseSignOut,
   db
 } from './firebase';
-import { onAuthStateChanged as firebaseAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import InstagramFeedPage from './pages/InstagramFeedPage';
 import InstagramCallback from './pages/InstagramCallback';
