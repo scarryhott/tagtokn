@@ -6,13 +6,10 @@ import * as functions from 'firebase-functions';
 // Using any type to avoid the v2 type error
 type CallableContext = any;
 
-// Initialize Firebase Admin SDK with service account
-const serviceAccount = require('../service-account.json');
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://tagtokn.firebaseio.com'
-});
+// Initialize Firebase Admin SDK with default credentials
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
 

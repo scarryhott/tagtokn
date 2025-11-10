@@ -37,12 +37,10 @@ exports.exchangeInstagramCode = exports.generateOAuthState = exports.requestTagt
 const admin = __importStar(require("firebase-admin"));
 const corsModule = __importStar(require("cors"));
 const functions = __importStar(require("firebase-functions"));
-// Initialize Firebase Admin SDK with service account
-const serviceAccount = require('../service-account.json');
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://tagtokn.firebaseio.com'
-});
+// Initialize Firebase Admin SDK with default credentials
+if (!admin.apps.length) {
+    admin.initializeApp();
+}
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
 // Import OAuth functions

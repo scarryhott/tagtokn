@@ -20,6 +20,7 @@
 .firebase/
 .firebaserc
 /config/serviceAccountKey.json
+functions/service-account.json
 
 # Debug logs
 npm-debug.log*
