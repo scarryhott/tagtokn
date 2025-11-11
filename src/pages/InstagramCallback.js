@@ -7,6 +7,15 @@ const InstagramCallback = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState('Connecting to Instagram...');
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Function to handle retry logic
+  const handleRetry = () => {
+    // Clear any stored state and redirect to connect page
+    localStorage.removeItem('oauth_state');
+    sessionStorage.removeItem('instagram_oauth_state');
+    window.location.href = '/connect-instagram';
+  };
 
   useEffect(() => {
     const processCallback = async () => {
@@ -20,96 +29,92 @@ const InstagramCallback = () => {
       const errorReason = searchParams.get('error_reason');
       const errorDescription = searchParams.get('error_description');
       
-      // Handle OAuth errors from Instagram
+      // Check for OAuth errors first
       if (error) {
-        const errorMessage = errorDescription || errorReason || error;
-        const errorMsg = `Instagram authentication failed: ${errorMessage}`;
-        console.error(errorMsg, { error, errorReason, errorDescription });
-        setError(errorMsg);
-        // Redirect to error page or login page with error
-        navigate('/login', { state: { error: errorMsg } });
+        const errorMessage = `OAuth Error: ${errorDescription || errorReason || error}`;
+        console.error(errorMessage);
+        setError(errorMessage);
         return;
       }
-      
-      if (!code) {
-        const errMsg = 'Missing authorization code in the callback URL';
-        console.error(errMsg);
-        setError(errMsg);
-        navigate('/login', { state: { error: errMsg } });
+
+      if (!code || !state) {
+        const errorMessage = 'Missing required parameters. Please try again.';
+        console.error(errorMessage, { code, state });
+        setError(errorMessage);
         return;
-      }
-      
-      if (!state) {
-        const errMsg = 'Missing state parameter in the callback URL. This can happen if the authentication flow was interrupted or the page was refreshed.';
-        console.error(errMsg, { urlParams: Object.fromEntries(searchParams.entries()) });
-        setError(errMsg);
-        setStatus('Authentication failed. Please try again.');
-        
-        // Show a retry button
-        return (
-          <div>
-            <p>{errMsg}</p>
-            <button 
-              onClick={() => {
-                // Clear any existing state and restart the auth flow
-                localStorage.removeItem('oauth_state');
-                sessionStorage.removeItem('oauth_state');
-                window.location.href = '/connect-instagram';
-              }}
-              className="retry-button"
-            >
-              Try Again
-            </button>
-          </div>
-        );
       }
 
       try {
-        setStatus('Authenticating with Instagram...');
+        setStatus('Verifying authentication...');
         
-        // Handle the Instagram OAuth callback with both code and state
-        const result = await handleInstagramCallback(code, state);
-        
-        if (result.success && result.token) {
-          console.log('Successfully authenticated with Instagram', result);
-          setStatus('Success! Redirecting...');
-          
-          // Redirect to the stored URL or dashboard
-          const redirectTo = result.redirectUrl || sessionStorage.getItem('redirectAfterLogin') || '/';
-          console.log('Redirecting to:', redirectTo);
-          window.location.href = redirectTo;
-        } else {
-          const errorMsg = result.error || 'Failed to authenticate with Instagram';
-          console.error('Authentication failed:', errorMsg);
-          throw new Error(errorMsg);
+        // Get the stored state from localStorage or sessionStorage
+        const storedState = localStorage.getItem('oauth_state') || sessionStorage.getItem('instagram_oauth_state');
+        if (!storedState) {
+          throw new Error('No OAuth state found. The session may have expired. Please try again.');
         }
+
+        let storedStateObj;
+        try {
+          storedStateObj = JSON.parse(storedState);
+        } catch (e) {
+          console.error('Error parsing stored state:', e);
+          throw new Error('Invalid session data. Please try again.');
+        }
+
+        // Check if state has expired
+        if (storedStateObj.expiresAt && Date.now() > storedStateObj.expiresAt) {
+          // Clear expired state
+          localStorage.removeItem('oauth_state');
+          sessionStorage.removeItem('instagram_oauth_state');
+          throw new Error('Session expired. Please try again.');
+        }
+
+        // Call the backend to exchange the code for a token
+        setStatus('Finalizing connection...');
+        const result = await handleInstagramCallback(code, state);
+
+        if (result && result.error) {
+          throw new Error(result.error);
+        }
+
+        // Clear the stored state on success
+        localStorage.removeItem('oauth_state');
+        sessionStorage.removeItem('instagram_oauth_state');
+
+        // Redirect to the dashboard or previous page
+        const redirectTo = localStorage.getItem('preOAuthUrl') || sessionStorage.getItem('redirectAfterLogin') || '/dashboard';
+        localStorage.removeItem('preOAuthUrl');
+        sessionStorage.removeItem('redirectAfterLogin');
+        
+        console.log('Authentication successful, redirecting to:', redirectTo);
+        window.location.href = redirectTo;
+
       } catch (err) {
         console.error('Error in Instagram callback:', err);
         
-        // Handle state parameter errors specifically
-        if (err.message.includes('state parameter') || err.message.includes('CSRF')) {
-          const errorMsg = 'Security validation failed. Please try connecting your Instagram account again.';
-          console.error('State validation error:', errorMsg);
-          setError(errorMsg);
-          navigate('/login', { 
-            state: { 
-              error: 'Security Check Failed',
-              errorDescription: 'The connection attempt could not be verified. This might be due to an expired session or a security issue. Please try again.'
-            } 
-          });
-          return;
+        // Format error message for display
+        let errorMessage = err.message || 'An error occurred during authentication';
+        
+        // Handle specific error cases
+        if (errorMessage.includes('state') && errorMessage.includes('mismatch')) {
+          errorMessage = 'Security validation failed. The connection attempt could not be verified.';
+          
+          // Auto-retry once if it's a state mismatch
+          if (retryCount === 0) {
+            console.log('Retrying Instagram connection...');
+            setRetryCount(1);
+            // Small delay before retry
+            setTimeout(() => {
+              handleRetry();
+            }, 1000);
+            return;
+          }
         }
-        const errorMessage = err.message || 'An error occurred during authentication';
+        
         setError(errorMessage);
         
         // Store the error in session storage
         sessionStorage.setItem('instagramAuthError', errorMessage);
-        
-        // Redirect to login with error message
-        const loginUrl = `/login?error=${encodeURIComponent(errorMessage)}`;
-        if (window.location.pathname !== loginUrl) {
-          window.location.href = loginUrl;
-        }
       }
     };
 
@@ -117,41 +122,42 @@ const InstagramCallback = () => {
     
     // Cleanup function in case component unmounts
     return () => {
-      // Clear any stored state
-      sessionStorage.removeItem('instagram_oauth_user_id');
+      // Clear any stored state if needed
     };
-  }, [navigate, searchParams]);
+  }, [searchParams, navigate, retryCount]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            {error ? 'Connection Failed' : status.includes('Success') ? 'Connected!' : 'Connecting to Instagram'}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {status}
-          </p>
-          
-          {error && (
-            <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
-              <p className="font-medium">Error:</p>
-              <p className="text-sm">{error}</p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+        <h1 className="text-2xl font-bold text-center">
+          {error ? 'Connection Failed' : 'Connecting Instagram'}
+        </h1>
+        
+        {error ? (
+          <div className="space-y-4">
+            <div className="p-4 text-red-700 bg-red-50 rounded-md">
+              <p className="font-medium">Error: {error}</p>
+              <p className="mt-2 text-sm">
+                Please try again or contact support if the issue persists.
+              </p>
+            </div>
+            <div className="flex justify-center">
               <button
-                onClick={() => window.location.reload()}
-                className="mt-2 text-sm font-medium text-red-700 hover:text-red-600"
+                onClick={handleRetry}
+                className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
-                Try again
+                Try Again
               </button>
             </div>
-          )}
-
-          {!error && (
-            <div className="mt-6">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          )}
-        </div>
+            <p className="text-center text-gray-600">{status}</p>
+          </div>
+        )}
       </div>
     </div>
   );
