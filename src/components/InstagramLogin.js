@@ -65,8 +65,8 @@ const InstagramLogin = ({
         </div>
         <div className="ml-3">
           <p className="text-sm text-blue-700">
-            We use Instagram Basic Display API to securely connect to your personal Instagram account.
-            No Facebook account or business verification required.
+            We use Instagram Graph API to securely connect to your Instagram Business or Creator account.
+            A Facebook Business account is required to connect your Instagram account.
           </p>
         </div>
       </div>
@@ -95,7 +95,8 @@ const InstagramLogin = ({
             {infoBox}
             
             <p className="text-sm text-gray-500 mb-4">
-              Connect your personal Instagram account using Instagram Basic Display API.
+              Connect your Instagram Business or Creator account using Instagram Graph API.
+              This requires a linked Facebook Business account.
             </p>
             
             {error && (
