@@ -83,40 +83,27 @@ const InstagramCallback = () => {
         console.log('Session storage:', JSON.stringify(sessionStorage, null, 2));
         console.log('Local storage:', JSON.stringify(localStorage, null, 2));
         
-        // Get the state from sessionStorage (primary) or localStorage (fallback)
+        // Get the state from sessionStorage
         const sessionState = sessionStorage.getItem('instagram_oauth_state');
         
         if (!sessionState) {
           throw new Error('No active OAuth session found. The session may have expired or the page was refreshed. Please try again.');
         }
-          let storedStateObj;
-          try {
-            storedStateObj = JSON.parse(storedStateData);
-          } catch (e) {
-            console.error('Error parsing stored state:', e);
-            throw new Error('Invalid session data. Please try again.');
-          }
-          
-          // Verify the state matches
-          if (storedStateObj.state !== state) {
-            throw new Error('Invalid session state. Possible CSRF attempt or expired session.');
-          }
-          
-          // Check if state has expired
-          if (storedStateObj.expiresAt && Date.now() > storedStateObj.expiresAt) {
-            clearAuthState();
-            throw new Error('Session expired. Please try again.');
-          }
-        } else if (sessionState !== state) {
-          // State from sessionStorage doesn't match
+        
+        // Verify the state matches
+        if (sessionState !== state) {
+          console.error('State mismatch:', {
+            stored: sessionState,
+            received: state,
+            sessionStorage: JSON.stringify(sessionStorage, null, 2)
+          });
           throw new Error('Invalid session state. Possible CSRF attempt or expired session.');
         }
 
-        // Check if state has expired
-        if (storedStateObj.expiresAt && Date.now() > storedStateObj.expiresAt) {
-          // Clear expired state
-          localStorage.removeItem('oauth_state');
-          sessionStorage.removeItem('instagram_oauth_state');
+        // Check if we have an expiration time
+        const expiresAt = sessionStorage.getItem('instagram_oauth_expires');
+        if (expiresAt && Date.now() > parseInt(expiresAt, 10)) {
+          clearAuthState();
           throw new Error('Session expired. Please try again.');
         }
 
