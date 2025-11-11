@@ -6,11 +6,18 @@ import { connectInstagram } from '../services/instagramAuth';
 const InstagramLogin = ({ 
   onSuccess, 
   onFailure, 
-  buttonText = 'Connect Instagram via Facebook', 
+  buttonText, 
   render,
   showInModal = false,
-  onModalClose = () => {}
+  onModalClose = () => {},
+  user = {}
 }) => {
+  // Set default button text based on whether user has an Instagram ID
+  const defaultButtonText = user?.instagramId 
+    ? 'Reconnect Instagram' 
+    : 'Connect Instagram via Facebook';
+    
+  buttonText = buttonText || defaultButtonText;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -54,7 +61,7 @@ const InstagramLogin = ({
             </svg>
           </button>
           <h3 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
-            Connect Instagram Account via Facebook
+            {user?.instagramId ? 'Reconnect Instagram' : 'Connect Instagram Account via Facebook'}
           </h3>
           
           <div className="space-y-4">
@@ -140,7 +147,8 @@ InstagramLogin.propTypes = {
   onSuccess: PropTypes.func,
   onFailure: PropTypes.func,
   render: PropTypes.func,
-  buttonText: PropTypes.string
+  buttonText: PropTypes.string,
+  user: PropTypes.object
 };
 
 export default InstagramLogin;
