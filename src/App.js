@@ -814,11 +814,10 @@ const TokenomicsUI = () => {
       // For now, we'll just extract the username from the response
       const username = response.username || 'instagram_user';
       setConnectedInstagramAccount(username);
-      setInstagramConnectMessage('');
-      setShowInstagramConnectModal(false);
-      
-      // Show success message
       setInstagramConnectMessage('Success! Your Instagram account has been connected.');
+      
+      // Navigate back to the dashboard
+      navigate('/dashboard');
       
     } catch (error) {
       console.error('Error connecting Instagram:', error);
@@ -1322,7 +1321,7 @@ const TokenomicsUI = () => {
               <div className="text-center">
                 <p className="text-gray-400 mb-4">Connect your Instagram account to earn tokens by linking posts.</p>
                 <button
-                  onClick={() => { setInstagramConnectMessage(''); setShowInstagramConnectModal(true); }}
+                  onClick={() => navigate('/connect/instagram')}
                   className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 py-2 px-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 mx-auto"
                 >
                   <Instagram className="h-4 w-4" />
