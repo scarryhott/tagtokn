@@ -381,7 +381,7 @@ const TokenomicsUI = () => {
 
   // Instagram Integration States (for the user earning tokens)
   const [connectedInstagramAccount, setConnectedInstagramAccount] = useState(null); // Stores connected username
-  const [showInstagramConnectModal, setShowInstagramConnectModal] = useState(false);
+  const navigate = useNavigate();
   // Instagram connect input state
   const [instagramConnectMessage, setInstagramConnectMessage] = useState('');
   const [showInstagramLinkModal, setShowInstagramLinkModal] = useState(false);
@@ -892,7 +892,7 @@ const TokenomicsUI = () => {
   const openInstagramLinkModal = (influencer) => {
     if (!connectedInstagramAccount) {
       setInstagramLinkMessage('Please connect your Instagram account first.');
-      setShowInstagramConnectModal(true); // Prompt to connect if not already
+      navigate('/connect/instagram');
       return;
     }
     setInfluencerToEarnFor(influencer);
@@ -901,9 +901,14 @@ const TokenomicsUI = () => {
     setShowInstagramLinkModal(true);
   };
 
+  const handleConnectInstagramClick = () => {
+    navigate('/connect/instagram');
+  };
+
   const handleLinkInstagramPost = () => {
     if (!connectedInstagramAccount) {
       setInstagramLinkMessage('No Instagram account connected. Please connect first.');
+      navigate('/connect/instagram');
       return;
     }
     if (!instagramPostLinkInput.startsWith('https://www.instagram.com/p/') || instagramPostLinkInput.trim().length < 35) { // Basic validation for a typical Instagram post URL length
@@ -1771,22 +1776,6 @@ const TokenomicsUI = () => {
           </div>
         )}
 
-        {/* Instagram Connect Modal */}
-        {showInstagramConnectModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-            <div className="bg-gradient-to-br from-purple-800 to-indigo-800 rounded-2xl p-8 max-w-md w-full shadow-2xl relative border border-purple-500/50">
-              <button 
-                onClick={() => setShowInstagramConnectModal(false)}
-                className="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              <ConnectInstagramPage />
-            </div>
-          </div>
-        )}
 
         {/* Instagram Link Post Modal */}
         {showInstagramLinkModal && influencerToEarnFor && (
