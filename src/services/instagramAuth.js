@@ -193,14 +193,37 @@ export const connectInstagram = async () => {
       }
     });
 
-    // Build the Instagram OAuth URL
+    // Build the Instagram OAuth URL with latest API requirements
     const authUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
+    
+    // Required parameters
     authUrl.searchParams.append('client_id', process.env.REACT_APP_FACEBOOK_APP_ID);
     authUrl.searchParams.append('redirect_uri', redirectUri);
     authUrl.searchParams.append('state', response.state);
     authUrl.searchParams.append('response_type', 'code');
-    authUrl.searchParams.append('scope', 'public_profile,email,instagram_basic,pages_show_list,pages_read_engagement');
+    
+    // Updated scopes for Instagram Graph API
+    const scopes = [
+      'instagram_basic',
+      'pages_show_list',
+      'pages_read_engagement',
+      'instagram_manage_insights',
+      'instagram_content_publish',
+      'pages_read_engagement',
+      'public_profile',
+      'email'
+    ];
+    
+    authUrl.searchParams.append('scope', scopes.join(','));
+    
+    // Recommended parameters
     authUrl.searchParams.append('auth_type', 'rerequest');
+    authUrl.searchParams.append('config_id', 'default');
+    authUrl.searchParams.append('response_type', 'code,granted_scopes');
+    
+    // Add display mode for better mobile experience
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    authUrl.searchParams.append('display', isMobile ? 'touch' : 'popup');
 
     console.log('Redirecting to Instagram OAuth URL:', {
       hostname: authUrl.hostname,
