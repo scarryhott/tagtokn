@@ -140,26 +140,43 @@ export const connectInstagram = async () => {
       window.location.href = loginUrl;
       return { redirected: true };
     }
-    
+
+    // Store the current URL to return after OAuth flow
+    const currentUrl = window.location.href;
+    sessionStorage.setItem('preOAuthUrl', currentUrl);
+
     // Request a new OAuth session with the current URL as redirect
-    const redirectUri = window.location.origin + '/auth/instagram/callback';
+    const redirectUri = `${window.location.origin}/auth/instagram/callback`;
+    console.log('Initiating Instagram OAuth with redirect URI:', redirectUri);
+
+    // First, get the OAuth state from the server
     const response = await callInstagramFunction('/generateOAuthState', { 
       uid: user.uid,
       redirectUri
     });
-    
-    if (!response.success || !response.state) {
+
+    if (!response || !response.state) {
+      console.error('Invalid response from generateOAuthState:', response);
       throw new Error('Failed to generate OAuth state');
     }
-    
-    // Store minimal state in localStorage as a fallback
-    localStorage.setItem('oauth_state', JSON.stringify({
+
+    console.log('Generated OAuth state:', {
+      state: response.state.substring(0, 8) + '...',
+      expiresAt: response.expiresAt
+    });
+
+    // Store the state in localStorage as a fallback
+    const stateData = {
       state: response.state,
-      expiresAt: new Date(response.expiresAt).getTime()
-    }));
+      stateDocId: response.stateDocId,
+      expiresAt: new Date(response.expiresAt).getTime(),
+      timestamp: Date.now()
+    };
     
-    // The server will set an HTTP-only cookie with the state
-    // Now build the Instagram OAuth URL
+    localStorage.setItem('oauth_state', JSON.stringify(stateData));
+    console.log('Stored OAuth state in localStorage');
+
+    // Build the Instagram OAuth URL
     const authUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
     authUrl.searchParams.append('client_id', process.env.REACT_APP_FACEBOOK_APP_ID);
     authUrl.searchParams.append('redirect_uri', redirectUri);
@@ -167,15 +184,24 @@ export const connectInstagram = async () => {
     authUrl.searchParams.append('response_type', 'code');
     authUrl.searchParams.append('scope', 'public_profile,email,instagram_basic,pages_show_list,pages_read_engagement');
     authUrl.searchParams.append('auth_type', 'rerequest');
-    
-    // Store the current URL to return after OAuth flow
-    sessionStorage.setItem('preOAuthUrl', window.location.href);
+
+    console.log('Redirecting to Instagram OAuth URL:', {
+      hostname: authUrl.hostname,
+      pathname: authUrl.pathname,
+      stateLength: response.state.length,
+      statePrefix: response.state.substring(0, 8) + '...',
+      hasStateDocId: !!response.stateDocId
+    });
     
     // Redirect to Instagram OAuth
     window.location.href = authUrl.toString();
     return { redirected: true };
   } catch (error) {
-    console.error('Error initiating Instagram OAuth:', error);
+    console.error('Error initiating Instagram OAuth:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     throw error instanceof Error ? error : new Error('Failed to start Instagram connection');
   }
 };
