@@ -105,59 +105,47 @@ export const exchangeCodeForToken = async (code, state) => {
   try {
     console.log('Exchanging code for token with state:', state.substring(0, 8) + '...');
     
-    // Check if we're using Basic Display API or Graph API
-    const isBasicApi = !state.includes('facebook');
+    // Exchange code for short-lived access token
+    const tokenParams = new URLSearchParams({
+      client_id: process.env.REACT_APP_INSTAGRAM_APP_ID,
+      client_secret: process.env.REACT_APP_INSTAGRAM_APP_SECRET,
+      grant_type: 'authorization_code',
+      redirect_uri: window.location.origin + '/auth/instagram/callback',
+      code
+    });
+
+    // Get short-lived access token
+    const response = await fetch('https://api.instagram.com/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: tokenParams
+    });
+
+    const data = await response.json();
     
-    if (isBasicApi) {
-      // For Basic Display API (Personal Accounts)
-      const tokenParams = new URLSearchParams({
-        client_id: process.env.REACT_APP_INSTAGRAM_APP_ID || process.env.REACT_APP_FACEBOOK_APP_ID,
-        client_secret: process.env.REACT_APP_INSTAGRAM_APP_SECRET || process.env.REACT_APP_FACEBOOK_APP_SECRET,
-        grant_type: 'authorization_code',
-        redirect_uri: window.location.origin + '/auth/instagram/callback',
-        code
-      });
-
-      const response = await fetch('https://api.instagram.com/oauth/access_token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: tokenParams
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error_message || 'Failed to exchange code for token');
-      }
-
-      // For Basic API, we also need to exchange the short-lived token for a long-lived one
-      if (data.access_token) {
-        const longLivedResponse = await fetch(`https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.REACT_APP_INSTAGRAM_APP_SECRET || process.env.REACT_APP_FACEBOOK_APP_SECRET}&access_token=${data.access_token}`);
-        const longLivedData = await longLivedResponse.json();
-        
-        if (longLivedData.access_token) {
-          // Get user profile
-          const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username&access_token=${longLivedData.access_token}`);
-          const userData = await userResponse.json();
-          
-          return {
-            ...longLivedData,
-            user: userData,
-            is_business: false
-          };
-        }
-      }
-      
-      return data;
-    } else {
-      // For Graph API (Business/Creator Accounts) - use existing backend function
-      return await callInstagramFunction('/exchangeInstagramCode', { 
-        code, 
-        state
-      });
+    if (!response.ok) {
+      throw new Error(data.error_message || 'Failed to exchange code for token');
     }
+
+    // Exchange short-lived token for long-lived token
+    const longLivedResponse = await fetch(`https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.REACT_APP_INSTAGRAM_APP_SECRET}&access_token=${data.access_token}`);
+    const longLivedData = await longLivedResponse.json();
+    
+    if (!longLivedData.access_token) {
+      throw new Error('Failed to get long-lived access token');
+    }
+
+    // Get user profile
+    const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${longLivedData.access_token}`);
+    const userData = await userResponse.json();
+    
+    return {
+      ...longLivedData,
+      user: userData,
+      is_business: false
+    };
   } catch (error) {
     console.error('Error exchanging code for token:', error);
     throw error;
@@ -221,39 +209,13 @@ export const connectInstagram = async () => {
       state: stateString.substring(0, 8) + '...'
     });
 
-    // Build the Instagram OAuth URL with support for both account types
-    let authUrl;
-    const useBasicApi = true; // Set to false to use Graph API (business accounts)
-    
-    if (useBasicApi) {
-      // Basic Display API (Personal Accounts)
-      authUrl = new URL('https://api.instagram.com/oauth/authorize');
-      authUrl.searchParams.append('client_id', process.env.REACT_APP_INSTAGRAM_APP_ID || process.env.REACT_APP_FACEBOOK_APP_ID);
-      authUrl.searchParams.append('redirect_uri', redirectUri);
-      authUrl.searchParams.append('state', response.state);
-      authUrl.searchParams.append('response_type', 'code');
-      authUrl.searchParams.append('scope', 'user_profile,user_media');
-    } else {
-      // Graph API (Business/Creator Accounts)
-      authUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
-      authUrl.searchParams.append('client_id', process.env.REACT_APP_FACEBOOK_APP_ID);
-      authUrl.searchParams.append('redirect_uri', redirectUri);
-      authUrl.searchParams.append('state', response.state);
-      authUrl.searchParams.append('response_type', 'code');
-      
-      // Business account scopes
-      const scopes = [
-        'instagram_basic',
-        'pages_show_list',
-        'instagram_manage_insights',
-        'instagram_content_publish',
-        'pages_read_engagement'
-      ];
-      
-      authUrl.searchParams.append('scope', scopes.join(','));
-      authUrl.searchParams.append('auth_type', 'rerequest');
-    }
-    
+    // Build the Instagram Basic Display OAuth URL for personal accounts
+    const authUrl = new URL('https://api.instagram.com/oauth/authorize');
+    authUrl.searchParams.append('client_id', process.env.REACT_APP_INSTAGRAM_APP_ID);
+    authUrl.searchParams.append('redirect_uri', redirectUri);
+    authUrl.searchParams.append('state', response.state);
+    authUrl.searchParams.append('response_type', 'code');
+    authUrl.searchParams.append('scope', 'user_profile,user_media');
     authUrl.searchParams.append('display', 'popup');
     
     console.log('Initiating OAuth flow with URL:', {
