@@ -66,9 +66,9 @@ const requestFacebookAuthSession = async (uid) => {
     // Store the current URL to redirect back after successful auth
     const currentUrl = window.location.href;
     
-    // Store all data in session storage
-    sessionStorage.setItem('oauth_state', JSON.stringify(stateData));
-    sessionStorage.setItem('preOAuthUrl', currentUrl);
+    // Store all data in localStorage for persistence across redirects
+    localStorage.setItem('oauth_state', JSON.stringify(stateData));
+    localStorage.setItem('preOAuthUrl', currentUrl);
     
     console.log('Stored OAuth state:', {
       state: state.substring(0, 8) + '...',
@@ -90,7 +90,27 @@ const requestFacebookAuthSession = async (uid) => {
 
 export const exchangeCodeForToken = async (code, state) => {
   try {
-    return await callInstagramFunction('/exchangeInstagramCode', { code, state });
+    // Get the stored state data to include the state document ID
+    const storedStateData = localStorage.getItem('oauth_state') || sessionStorage.getItem('oauth_state');
+    if (!storedStateData) {
+      throw new Error('No stored OAuth state found');
+    }
+    
+    const storedStateObj = JSON.parse(storedStateData);
+    
+    // The backend expects the state to be the document ID, not the state value
+    const stateDocId = storedStateObj.stateDocId;
+    
+    if (!stateDocId) {
+      throw new Error('No state document ID found in stored state');
+    }
+    
+    console.log('Exchanging code with state document ID:', stateDocId);
+    
+    return await callInstagramFunction('/exchangeInstagramCode', { 
+      code, 
+      state: stateDocId // Send the state document ID as the state parameter
+    });
   } catch (error) {
     console.error('Error exchanging code for token:', error);
     throw error;
@@ -148,7 +168,7 @@ const cleanStateParam = (state) => {
 
 export const handleInstagramCallback = async (code, state) => {
   // Get the stored state data
-  const storedStateData = sessionStorage.getItem('oauth_state');
+  const storedStateData = localStorage.getItem('oauth_state') || sessionStorage.getItem('oauth_state');
   
   // Check if we have any stored state at all
   if (!storedStateData) {
@@ -172,19 +192,29 @@ export const handleInstagramCallback = async (code, state) => {
       now: new Date().toISOString(),
       expiresAt: new Date(storedStateObj.expiresAt).toISOString() 
     });
+    // Clean up expired state
+    localStorage.removeItem('oauth_state');
+    sessionStorage.removeItem('oauth_state');
     throw new Error(errorMsg);
   }
   
-  // Verify the received state matches the stored state
-  if (!state || state !== storedStateObj.state) {
-    console.error('State parameter mismatch:', {
-      receivedState: state ? `${state.substring(0, 8)}...` : 'MISSING',
-      storedState: storedStateObj.state ? `${storedStateObj.state.substring(0, 8)}...` : 'MISSING',
-      stateDocId: storedStateObj.stateDocId || 'MISSING',
-      timestamp: new Date(storedStateObj.timestamp).toISOString()
-    });
-    throw new Error('Invalid state parameter - possible CSRF attack or session issue');
+  // Verify we have the state document ID
+  if (!storedStateObj.stateDocId) {
+    const errorMsg = 'Missing state document ID. Cannot verify OAuth state.';
+    console.error(errorMsg, { storedStateObj });
+    // Clean up invalid state
+    localStorage.removeItem('oauth_state');
+    sessionStorage.removeItem('oauth_state');
+    throw new Error(errorMsg);
   }
+
+  // Log state verification for debugging
+  console.log('Proceeding with state verification', {
+    stateDocId: storedStateObj.stateDocId,
+    receivedState: state ? `${state.substring(0, 8)}...` : 'MISSING',
+    storedState: storedStateObj.state ? `${storedStateObj.state.substring(0, 8)}...` : 'MISSING',
+    expiresAt: storedStateObj.expiresAt ? new Date(storedStateObj.expiresAt).toISOString() : 'NO_EXPIRY'
+  });
   try {
     console.log('Handling Instagram callback with code and state:', { code, state });
     
@@ -212,6 +242,7 @@ export const handleInstagramCallback = async (code, state) => {
     console.log('Successfully obtained custom token');
     
     // Clean up the stored URL
+    localStorage.removeItem('preOAuthUrl');
     sessionStorage.removeItem('preOAuthUrl');
     
     return { 

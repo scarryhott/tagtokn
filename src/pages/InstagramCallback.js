@@ -40,16 +40,28 @@ const InstagramCallback = () => {
       }
       
       if (!state) {
-        const errMsg = 'Missing state parameter in the callback URL. Please try connecting your Instagram account again.';
+        const errMsg = 'Missing state parameter in the callback URL. This can happen if the authentication flow was interrupted or the page was refreshed.';
         console.error(errMsg, { urlParams: Object.fromEntries(searchParams.entries()) });
         setError(errMsg);
-        navigate('/login', { 
-          state: { 
-            error: 'Connection failed',
-            errorDescription: 'Missing required authentication parameters. Please try connecting your Instagram account again.'
-          } 
-        });
-        return;
+        setStatus('Authentication failed. Please try again.');
+        
+        // Show a retry button
+        return (
+          <div>
+            <p>{errMsg}</p>
+            <button 
+              onClick={() => {
+                // Clear any existing state and restart the auth flow
+                localStorage.removeItem('oauth_state');
+                sessionStorage.removeItem('oauth_state');
+                window.location.href = '/connect-instagram';
+              }}
+              className="retry-button"
+            >
+              Try Again
+            </button>
+          </div>
+        );
       }
 
       try {
