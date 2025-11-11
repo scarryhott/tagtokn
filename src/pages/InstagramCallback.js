@@ -8,6 +8,13 @@ const InstagramCallback = () => {
   const [status, setStatus] = useState('Connecting to Instagram...');
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  
+  // Function to clear all auth state
+  const clearAuthState = () => {
+    localStorage.removeItem('oauth_state');
+    sessionStorage.removeItem('instagram_oauth_state');
+    sessionStorage.removeItem('connect_redirect');
+  };
 
   // Function to handle retry logic
   const handleRetry = () => {
@@ -26,69 +33,92 @@ const InstagramCallback = () => {
       const code = searchParams.get('code');
       const state = searchParams.get('state');
       const error = searchParams.get('error');
-      const errorReason = searchParams.get('error_reason');
+      const errorReason = searchParams.get('error_reason');;
       const errorDescription = searchParams.get('error_description');
+
+      // Clean up the URL by removing the OAuth response parameters and #_=_ fragment
+      if (window.history.replaceState) {
+        // Remove the fragment if it's just #_=_
+        if (window.location.hash === '#_=_') {
+          // Remove the fragment without causing a page reload
+          window.history.replaceState(
+            '', 
+            document.title, 
+            window.location.pathname + window.location.search
+          );
+        } else if (window.location.search) {
+          // Just clean the parameters but keep the fragment if it's not #_=_
+          const cleanUrl = window.location.pathname + (window.location.hash || '');
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      }
       
       // Check for OAuth errors first
       if (error) {
         const errorMessage = `OAuth Error: ${errorDescription || errorReason || error}`;
         console.error(errorMessage);
         setError(errorMessage);
-        // Clear any invalid state
-        localStorage.removeItem('oauth_state');
-        sessionStorage.removeItem('instagram_oauth_state');
+        clearAuthState();
         return;
       }
 
       if (!code || !state) {
-        const errorMessage = 'Missing required parameters. Please try again.';
+        const errorMessage = 'Missing required authentication parameters. Please try again.';
         console.error(errorMessage, { code, state });
         setError(errorMessage);
-        // Clear any invalid state
-        localStorage.removeItem('oauth_state');
-        sessionStorage.removeItem('instagram_oauth_state');
+        clearAuthState();
         return;
       }
       
-      // Log the received state for debugging
-      console.log('Received OAuth state from URL:', {
-        state: state ? `${state.substring(0, 8)}...` : 'MISSING',
-        code: code ? 'PRESENT' : 'MISSING',
-        redirectUri: window.location.href
-      });
+      console.log('Processing OAuth callback with state:', state.substring(0, 8) + '...');
 
       try {
         setStatus('Verifying authentication...');
         
-        // Get the stored state from localStorage
-        const storedState = localStorage.getItem('oauth_state');
-        console.log('Retrieved stored state from localStorage:', storedState ? 'FOUND' : 'NOT FOUND');
+        // First check sessionStorage (more reliable for OAuth flows)
+        const sessionState = sessionStorage.getItem('instagram_oauth_state');
+        const storedStateData = localStorage.getItem('oauth_state');
         
-        if (!storedState) {
-          // Check if we were redirected from the connect flow
-          const connectRedirect = sessionStorage.getItem('connect_redirect');
-          if (connectRedirect) {
-            console.log('Found connect redirect in sessionStorage, clearing and retrying...');
-            sessionStorage.removeItem('connect_redirect');
-            setRetryCount(prev => prev + 1);
-            return;
+        console.log('Stored state information:', {
+          sessionState: sessionState ? `FOUND (${sessionState.substring(0, 8)}...)` : 'NOT FOUND',
+          storedState: storedStateData ? 'FOUND' : 'NOT FOUND',
+          receivedState: state.substring(0, 8) + '...',
+          url: window.location.href
+        });
+
+        // Log all sessionStorage keys for debugging
+        console.log('Session storage keys:', Object.keys(sessionStorage));
+        console.log('Local storage keys:', Object.keys(localStorage));
+
+        // Verify state from sessionStorage first (most reliable)
+        if (!sessionState) {
+          // Check if we have a stored state in localStorage as fallback
+          if (!storedStateData) {
+            throw new Error('No active OAuth session found. The session may have expired. Please try again.');
           }
           
-          const errorMsg = 'No OAuth state found. The session may have expired. Please try again.';
-          console.error(errorMsg, { 
-            hasLocalStorage: !!localStorage.getItem('oauth_state'),
-            hasSessionStorage: !!sessionStorage.getItem('instagram_oauth_state'),
-            sessionStorageKeys: Object.keys(sessionStorage)
-          });
-          throw new Error(errorMsg);
-        }
-
-        let storedStateObj;
-        try {
-          storedStateObj = JSON.parse(storedState);
-        } catch (e) {
-          console.error('Error parsing stored state:', e);
-          throw new Error('Invalid session data. Please try again.');
+          // Try to parse the stored state
+          let storedStateObj;
+          try {
+            storedStateObj = JSON.parse(storedStateData);
+          } catch (e) {
+            console.error('Error parsing stored state:', e);
+            throw new Error('Invalid session data. Please try again.');
+          }
+          
+          // Verify the state matches
+          if (storedStateObj.state !== state) {
+            throw new Error('Invalid session state. Possible CSRF attempt or expired session.');
+          }
+          
+          // Check if state has expired
+          if (storedStateObj.expiresAt && Date.now() > storedStateObj.expiresAt) {
+            clearAuthState();
+            throw new Error('Session expired. Please try again.');
+          }
+        } else if (sessionState !== state) {
+          // State from sessionStorage doesn't match
+          throw new Error('Invalid session state. Possible CSRF attempt or expired session.');
         }
 
         // Check if state has expired

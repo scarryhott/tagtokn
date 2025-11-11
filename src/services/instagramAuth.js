@@ -46,42 +46,55 @@ const callInstagramFunction = async (path, payload) => {
 const requestFacebookAuthSession = async (uid) => {
   try {
     console.log('Requesting Facebook OAuth session from backend function...');
-    const response = await callInstagramFunction('/generateFacebookAuthUrl', { uid });
     
-    if (!response || !response.authUrl || !response.state || !response.stateDocId) {
-      console.error('Invalid response from server:', response);
-      throw new Error('Backend did not return a valid Facebook auth session.');
-    }
+    // Generate a secure random state
+    const state = crypto.randomUUID();
     
-    const { authUrl, state, stateDocId } = response;
-    
-    // Store the state information in session storage
-    const stateData = {
-      state,
-      stateDocId,
-      timestamp: Date.now(),
-      expiresAt: Date.now() + (29 * 60 * 1000) // 29 minutes from now (slightly less than server's 30m)
-    };
+    // Build the redirect URI - must match exactly with Facebook app settings
+    const redirectUri = window.location.origin + "/auth/instagram/callback";
     
     // Store the current URL to redirect back after successful auth
     const currentUrl = window.location.href;
     
-    // Store all data in localStorage for persistence across redirects
-    localStorage.setItem('oauth_state', JSON.stringify(stateData));
-    localStorage.setItem('preOAuthUrl', currentUrl);
+    // Store the state in both sessionStorage and localStorage for redundancy
+    const stateData = {
+      state,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + (10 * 60 * 1000), // 10 minutes expiration
+      redirectUri,
+      currentUrl
+    };
     
-    console.log('Stored OAuth state:', {
+    // Store in sessionStorage (primary) and localStorage (fallback)
+    sessionStorage.setItem('instagram_oauth_state', state);
+    localStorage.setItem('oauth_state', JSON.stringify(stateData));
+    
+    // Also store the current URL for redirect after auth
+    sessionStorage.setItem('preOAuthUrl', currentUrl);
+    
+    console.log('Storing OAuth state:', {
       state: state.substring(0, 8) + '...',
-      stateDocId,
+      redirectUri,
       expiresAt: new Date(stateData.expiresAt).toISOString(),
       currentUrl
     });
     
-    return { 
-      authUrl, 
+    // Get the auth URL from the server
+    const response = await callInstagramFunction('/generateFacebookAuthUrl', { 
+      uid,
       state,
-      stateDocId
-    };
+      redirect_uri: redirectUri
+    });
+    
+    if (!response || !response.authUrl) {
+      console.error('Invalid response from server:', response);
+      throw new Error('Backend did not return a valid Facebook auth URL.');
+    }
+    
+    console.log('Redirecting to OAuth URL:', response.authUrl);
+    
+    // Redirect to the auth URL
+    window.location.href = response.authUrl;
   } catch (error) {
     console.error('Error requesting Facebook auth session:', error);
     throw error instanceof Error ? error : new Error('Failed to initialize Facebook auth session');
