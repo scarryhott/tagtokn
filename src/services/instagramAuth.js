@@ -25,22 +25,41 @@ const parseJsonResponse = async (response) => {
 };
 
 const callInstagramFunction = async (path, payload) => {
-  const response = await fetch(buildFunctionsUrl(path), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
+  const url = buildFunctionsUrl(path);
+  console.log(`Calling function at: ${url}`, { payload });
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        ...payload,
+        // Include any additional metadata that might be needed
+        clientId: process.env.REACT_APP_INSTAGRAM_APP_ID,
+      }),
+    });
 
-  const data = await parseJsonResponse(response);
+    console.log('Raw response:', response);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`Request failed with status ${response.status}: ${errorText}`);
+    }
 
-  if (!response.ok) {
-    throw new Error(data.error || data.details || `Request failed with status ${response.status}`);
+    const data = await parseJsonResponse(response);
+    return data;
+  } catch (error) {
+    console.error('Error in callInstagramFunction:', {
+      error: error.message,
+      url,
+      payload
+    });
+    throw error;
   }
-
-  return data;
 };
 
 export const exchangeCodeForToken = async (code, state) => {
