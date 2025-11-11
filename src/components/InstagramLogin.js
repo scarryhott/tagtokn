@@ -14,22 +14,26 @@ const InstagramLogin = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     setIsLoading(true);
     setError(null);
     
-    try {
-      console.log('Initiating Instagram connection...');
-      // This will redirect to Instagram OAuth
-      await connectInstagram();
-      // Note: connectInstagram will redirect, so code after this won't run unless there's an error
-    } catch (error) {
-      console.error('Error initiating Instagram login:', error);
-      const errorMessage = error.message || 'Failed to connect to Instagram';
-      setError(errorMessage);
-      onFailure && onFailure(error);
-      setIsLoading(false);
-    }
+    // Don't use async/await since we're redirecting
+    console.log('Initiating Instagram connection...');
+    
+    // Call connectInstagram directly - it will handle the redirect
+    connectInstagram()
+      .then(() => {
+        // This will only run if there's an error (since successful connect will redirect)
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error('Error initiating Instagram login:', error);
+        const errorMessage = error.message || 'Failed to connect to Instagram';
+        setError(errorMessage);
+        onFailure && onFailure(error);
+        setIsLoading(false);
+      });
   };
 
   if (render) {
