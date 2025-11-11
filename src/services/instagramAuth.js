@@ -165,32 +165,22 @@ export const connectInstagram = async () => {
       expiresAt: response.expiresAt
     });
 
-    // Prepare state data with additional metadata
-    const stateData = {
-      state: response.state,
-      stateDocId: response.stateDocId,
-      expiresAt: new Date(response.expiresAt).getTime(),
-      timestamp: Date.now(),
-      redirectUri: redirectUri,
-      userAgent: navigator.userAgent,
-      timestampISO: new Date().toISOString()
-    };
-    
-    // Store in both localStorage and sessionStorage for redundancy
-    const stateString = JSON.stringify(stateData);
-    localStorage.setItem('oauth_state', stateString);
+    // Store only the minimal required state in sessionStorage
+    // This ensures it's scoped to the current session and domain
+    const stateString = response.state;
     sessionStorage.setItem('instagram_oauth_state', stateString);
     
-    // Set a flag to detect if we're coming from a redirect
-    sessionStorage.setItem('connect_redirect', 'true');
+    // Also store in localStorage as a fallback with a short expiration
+    const stateData = {
+      state: stateString,
+      expiresAt: Date.now() + (10 * 60 * 1000), // 10 minutes
+      timestamp: Date.now()
+    };
+    localStorage.setItem('oauth_state', JSON.stringify(stateData));
     
     console.log('Stored OAuth state:', {
-      state: response.state.substring(0, 8) + '...',
-      expiresAt: new Date(stateData.expiresAt).toISOString(),
-      storageKeys: {
-        localStorage: Object.keys(localStorage),
-        sessionStorage: Object.keys(sessionStorage)
-      }
+      state: stateString.substring(0, 8) + '...',
+      expiresAt: new Date(stateData.expiresAt).toISOString()
     });
 
     // Build the Instagram OAuth URL with latest API requirements
@@ -253,69 +243,65 @@ const cleanStateParam = (state) => {
 };
 
 export const handleInstagramCallback = async (code, state) => {
-  // Get the stored state data
-  const storedStateData = localStorage.getItem('oauth_state') || sessionStorage.getItem('oauth_state');
-  
-  // Check if we have any stored state at all
-  if (!storedStateData) {
-    const errorMsg = 'No stored OAuth state found. The OAuth flow might have been interrupted or the page was refreshed.';
-    console.error(errorMsg);
-    throw new Error(errorMsg);
+  if (!state) {
+    throw new Error('No state parameter received from Instagram');
   }
+
+  // First try to get the state from sessionStorage (primary)
+  let storedState = sessionStorage.getItem('instagram_oauth_state');
   
-  let storedStateObj;
-  try {
-    storedStateObj = JSON.parse(storedStateData);
-  } catch (e) {
-    console.error('Failed to parse stored state data:', e);
-    throw new Error('Invalid stored state format');
+  // If not found in sessionStorage, try localStorage as fallback
+  if (!storedState) {
+    console.log('State not found in sessionStorage, checking localStorage...');
+    const storedStateData = localStorage.getItem('oauth_state');
+    
+    if (storedStateData) {
+      try {
+        const parsedState = JSON.parse(storedStateData);
+        // Check if the state in localStorage is expired
+        if (parsedState.expiresAt && Date.now() > parsedState.expiresAt) {
+          console.warn('State in localStorage has expired');
+          localStorage.removeItem('oauth_state');
+        } else {
+          storedState = parsedState.state;
+        }
+      } catch (e) {
+        console.error('Error parsing stored state from localStorage:', e);
+        localStorage.removeItem('oauth_state');
+      }
+    }
   }
-  
-  // Check if the stored state has expired
-  if (storedStateObj.expiresAt && Date.now() > storedStateObj.expiresAt) {
-    const errorMsg = 'OAuth session has expired. Please try again.';
-    console.error(errorMsg, { 
-      now: new Date().toISOString(),
-      expiresAt: new Date(storedStateObj.expiresAt).toISOString() 
+
+  // If we still don't have a stored state, throw an error
+  if (!storedState) {
+    const errorMsg = 'No valid OAuth state found. The session may have expired or the page was refreshed.';
+    console.error(errorMsg, {
+      hasSessionState: !!sessionStorage.getItem('instagram_oauth_state'),
+      hasLocalState: !!localStorage.getItem('oauth_state')
     });
-    // Clean up expired state
-    localStorage.removeItem('oauth_state');
-    sessionStorage.removeItem('oauth_state');
-    throw new Error(errorMsg);
-  }
-  
-  // Verify we have the state document ID
-  if (!storedStateObj.stateDocId) {
-    const errorMsg = 'Missing state document ID. Cannot verify OAuth state.';
-    console.error(errorMsg, { storedStateObj });
-    // Clean up invalid state
-    localStorage.removeItem('oauth_state');
-    sessionStorage.removeItem('oauth_state');
     throw new Error(errorMsg);
   }
 
-  // Log state verification for debugging
-  console.log('Proceeding with state verification', {
-    stateDocId: storedStateObj.stateDocId,
-    receivedState: state ? `${state.substring(0, 8)}...` : 'MISSING',
-    storedState: storedStateObj.state ? `${storedStateObj.state.substring(0, 8)}...` : 'MISSING',
-    expiresAt: storedStateObj.expiresAt ? new Date(storedStateObj.expiresAt).toISOString() : 'NO_EXPIRY',
-    currentTime: new Date().toISOString()
-  });
-  
-  // Verify state parameter matches
-  if (!state || !storedStateObj.state || state !== storedStateObj.state) {
-    const errorMsg = `Invalid state parameter. Expected ${storedStateObj.state ? storedStateObj.state.substring(0, 8) + '...' : 'none'}, got ${state ? state.substring(0, 8) + '...' : 'none'}`;
-    console.error(errorMsg, { 
-      receivedState: state, 
-      storedState: storedStateObj.state,
-      storedStateData
+  // Verify the state matches exactly
+  if (storedState !== state) {
+    console.error('State mismatch:', {
+      storedState: storedState.substring(0, 8) + '...',
+      receivedState: state.substring(0, 8) + '...',
+      storedLength: storedState.length,
+      receivedLength: state.length
     });
-    // Clean up state to prevent reuse
-    localStorage.removeItem('oauth_state');
-    sessionStorage.removeItem('oauth_state');
-    throw new Error('Invalid state parameter');
+    throw new Error('Invalid state parameter. The OAuth state did not match.');
   }
+
+  console.log('State verification successful:', {
+    storedState: storedState.substring(0, 8) + '...',
+    receivedState: state.substring(0, 8) + '...'
+  });
+
+  // Clean up the state after successful verification
+  sessionStorage.removeItem('instagram_oauth_state');
+  localStorage.removeItem('oauth_state');
+
   try {
     console.log('Handling Instagram callback with code and state:', { code, state });
     
