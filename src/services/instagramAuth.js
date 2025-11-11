@@ -104,10 +104,60 @@ const requestFacebookAuthSession = async (uid) => {
 export const exchangeCodeForToken = async (code, state) => {
   try {
     console.log('Exchanging code for token with state:', state.substring(0, 8) + '...');
-    return await callInstagramFunction('/exchangeInstagramCode', { 
-      code, 
-      state
-    });
+    
+    // Check if we're using Basic Display API or Graph API
+    const isBasicApi = !state.includes('facebook');
+    
+    if (isBasicApi) {
+      // For Basic Display API (Personal Accounts)
+      const tokenParams = new URLSearchParams({
+        client_id: process.env.REACT_APP_INSTAGRAM_APP_ID || process.env.REACT_APP_FACEBOOK_APP_ID,
+        client_secret: process.env.REACT_APP_INSTAGRAM_APP_SECRET || process.env.REACT_APP_FACEBOOK_APP_SECRET,
+        grant_type: 'authorization_code',
+        redirect_uri: window.location.origin + '/auth/instagram/callback',
+        code
+      });
+
+      const response = await fetch('https://api.instagram.com/oauth/access_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: tokenParams
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error_message || 'Failed to exchange code for token');
+      }
+
+      // For Basic API, we also need to exchange the short-lived token for a long-lived one
+      if (data.access_token) {
+        const longLivedResponse = await fetch(`https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.REACT_APP_INSTAGRAM_APP_SECRET || process.env.REACT_APP_FACEBOOK_APP_SECRET}&access_token=${data.access_token}`);
+        const longLivedData = await longLivedResponse.json();
+        
+        if (longLivedData.access_token) {
+          // Get user profile
+          const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username&access_token=${longLivedData.access_token}`);
+          const userData = await userResponse.json();
+          
+          return {
+            ...longLivedData,
+            user: userData,
+            is_business: false
+          };
+        }
+      }
+      
+      return data;
+    } else {
+      // For Graph API (Business/Creator Accounts) - use existing backend function
+      return await callInstagramFunction('/exchangeInstagramCode', { 
+        code, 
+        state
+      });
+    }
   } catch (error) {
     console.error('Error exchanging code for token:', error);
     throw error;
@@ -171,28 +221,39 @@ export const connectInstagram = async () => {
       state: stateString.substring(0, 8) + '...'
     });
 
-    // Build the Instagram OAuth URL with latest API requirements
-    const authUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
+    // Build the Instagram OAuth URL with support for both account types
+    let authUrl;
+    const useBasicApi = true; // Set to false to use Graph API (business accounts)
     
-    // Required parameters
-    authUrl.searchParams.append('client_id', process.env.REACT_APP_FACEBOOK_APP_ID);
-    authUrl.searchParams.append('redirect_uri', redirectUri);
-    authUrl.searchParams.append('state', response.state);
-    authUrl.searchParams.append('response_type', 'code');
+    if (useBasicApi) {
+      // Basic Display API (Personal Accounts)
+      authUrl = new URL('https://api.instagram.com/oauth/authorize');
+      authUrl.searchParams.append('client_id', process.env.REACT_APP_INSTAGRAM_APP_ID || process.env.REACT_APP_FACEBOOK_APP_ID);
+      authUrl.searchParams.append('redirect_uri', redirectUri);
+      authUrl.searchParams.append('state', response.state);
+      authUrl.searchParams.append('response_type', 'code');
+      authUrl.searchParams.append('scope', 'user_profile,user_media');
+    } else {
+      // Graph API (Business/Creator Accounts)
+      authUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
+      authUrl.searchParams.append('client_id', process.env.REACT_APP_FACEBOOK_APP_ID);
+      authUrl.searchParams.append('redirect_uri', redirectUri);
+      authUrl.searchParams.append('state', response.state);
+      authUrl.searchParams.append('response_type', 'code');
+      
+      // Business account scopes
+      const scopes = [
+        'instagram_basic',
+        'pages_show_list',
+        'instagram_manage_insights',
+        'instagram_content_publish',
+        'pages_read_engagement'
+      ];
+      
+      authUrl.searchParams.append('scope', scopes.join(','));
+      authUrl.searchParams.append('auth_type', 'rerequest');
+    }
     
-    // Updated scopes for Instagram Graph API - using only necessary scopes
-    const scopes = [
-      'instagram_basic',
-      'pages_show_list',
-      'instagram_manage_insights',
-      'instagram_content_publish',
-      'pages_read_engagement'
-    ];
-    
-    authUrl.searchParams.append('scope', scopes.join(','));
-    
-    // Recommended parameters
-    authUrl.searchParams.append('auth_type', 'rerequest');
     authUrl.searchParams.append('display', 'popup');
     
     console.log('Initiating OAuth flow with URL:', {
@@ -257,58 +318,61 @@ export const handleInstagramCallback = async (code, state) => {
     throw new Error('No active OAuth session found. Please try again.');
   }
 
-  // Verify the state matches exactly
-  if (storedState !== state) {
-    console.error('State mismatch:', {
+  // For Basic API, the state might be in a different format
+  const isBasicApi = !state.includes('facebook');
+  let stateMatches = false;
+  
+  if (isBasicApi) {
+    // For Basic API, we might need to parse the state if it's JSON
+    try {
+      const parsedState = JSON.parse(state);
+      // Check if the state matches as part of the state object
+      stateMatches = parsedState && parsedState.st === storedState;
+    } catch (e) {
+      // If not JSON, check direct string match
+      stateMatches = storedState === state;
+    }
+  } else {
+    // For Graph API, exact match is required
+    stateMatches = storedState === state;
+  }
+  
+  if (!stateMatches) {
+    console.error('State verification failed:', {
+      isBasicApi,
       storedState: storedState.substring(0, 8) + '...',
       receivedState: state.substring(0, 8) + '...',
       storedLength: storedState.length,
-      receivedLength: state.length,
-      allSessionStorage: JSON.stringify(sessionStorage, null, 2)
+      receivedLength: state.length
     });
     throw new Error('Invalid state parameter. The OAuth state did not match.');
   }
 
   console.log('State verification successful:', {
     storedState: storedState.substring(0, 8) + '...',
-    receivedState: state.substring(0, 8) + '...'
+    receivedState: state.substring(0, 8) + '...',
+    isBasicApi
   });
 
   // Clean up the state after successful verification
   sessionStorage.removeItem('instagram_oauth_state');
-
+  
+  // Get the redirect URL before making the API call
+  const preOAuthUrl = sessionStorage.getItem('preOAuthUrl') || '/';
+  
   try {
-    console.log('Handling Instagram callback with code and state:', { code, state });
+    // Exchange the code for an access token
+    const result = await exchangeCodeForToken(code, state);
     
-    if (!code || !state) {
-      const errorMsg = 'Missing required parameters: code and state are required';
-      console.error(errorMsg, { code, state });
-      throw new Error(errorMsg);
-    }
-
-    // Clean the state parameter to match how it was stored
-    const cleanState = cleanStateParam(state);
-    console.log('Cleaned state parameter:', cleanState);
-
-    // Get the redirect URL before making the API call
-    const preOAuthUrl = sessionStorage.getItem('preOAuthUrl') || '/';
-    
-    // Exchange code for token and handle everything through Vercel function
-    console.log('Exchanging Instagram code for access token...');
-    const tokenData = await exchangeCodeForToken(code, state);
-    
-    if (!tokenData.success || !tokenData.token) {
-      throw new Error(tokenData.error || 'Failed to complete Instagram authentication');
+    if (!result || !result.access_token) {
+      throw new Error(result?.error || 'Failed to complete Instagram authentication');
     }
     
-    console.log('Successfully obtained custom token');
+    console.log('Successfully obtained Instagram access token');
     
-    // Clean up the stored URL
+    // Clean up stored URLs
     localStorage.removeItem('preOAuthUrl');
     sessionStorage.removeItem('preOAuthUrl');
-    
-    // Set success flag in localStorage for the popup to detect
-    localStorage.setItem('instagram_auth_success', 'true');
     
     // If this is in a popup, close it
     if (window.opener) {
@@ -318,14 +382,19 @@ export const handleInstagramCallback = async (code, state) => {
       window.location.href = preOAuthUrl || '/dashboard';
     }
     
-    return { 
+    // Return the result with account type information
+    return {
+      ...result,
       success: true,
-      token: tokenData.token,
-      user: tokenData.user,
+      is_business: !isBasicApi,
       redirectUrl: preOAuthUrl
     };
   } catch (error) {
     console.error('Instagram connection error:', error);
+    // Clean up on error
+    localStorage.removeItem('preOAuthUrl');
+    sessionStorage.removeItem('preOAuthUrl');
+    
     return { 
       error: error.message || 'Failed to connect Instagram account',
       details: error.details 
