@@ -52,17 +52,33 @@ const db = admin.firestore();
 interface OAuthState {
   uid: string;
   state: string;
+  stateDocId?: string;
+  redirectUri?: string | null;
   createdAt: admin.firestore.Timestamp | admin.firestore.FieldValue;
+  expiresAt?: admin.firestore.Timestamp;
   used: boolean;
+  usedAt?: admin.firestore.Timestamp;
 }
 
 /**
  * Generates an OAuth state parameter and stores it in Firestore
  */
+// Set CORS headers for all responses
+const setCorsHeaders = (res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigins.join(','));
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+};
+
 export const generateOAuthState = functions.https.onRequest((req: RequestWithBody, res: Response) => {
+  // Set CORS headers
+  setCorsHeaders(res);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return handleCorsPreflight(req, res);
+    res.status(204).send('');
+    return;
   }
 
   // Only allow POST requests
@@ -81,28 +97,52 @@ export const generateOAuthState = functions.https.onRequest((req: RequestWithBod
       }
 
       // Generate a random state string
-      const state = crypto.randomBytes(16).toString('hex');
+      const state = crypto.randomBytes(32).toString('hex');
+      const stateDocId = crypto.randomBytes(16).toString('hex');
+      
+      // Store the state in Firestore with a 10-minute expiration
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      
       const stateData = {
         uid,
         state,
+        stateDocId,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        used: false
-      } as OAuthState;
+        expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+        used: false,
+        redirectUri: req.body.redirectUri || null
+      };
 
-      // Store the state in Firestore with a 1-hour expiration
-      await db.collection('oauthStates').doc(state).set(stateData, { merge: true });
+      await db.collection('oauthStates').doc(stateDocId).set(stateData);
+      
+      // Set HTTP-only secure cookie with the state
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Secure in production
+        sameSite: 'lax' as const,
+        maxAge: 10 * 60 * 1000, // 10 minutes
+        path: '/',
+        domain: process.env.NODE_ENV === 'production' ? '.tagtokn.com' : 'localhost'
+      };
+
+      // Set the cookie
+      res.cookie('oauth_state', stateDocId, cookieOptions);
       
       // Clean up old states (older than 1 hour)
       const oneHourAgo = new Date(Date.now() - 3600 * 1000);
       const oldStates = await db.collection('oauthStates')
-        .where('createdAt', '<=', admin.firestore.Timestamp.fromDate(oneHourAgo))
+        .where('expiresAt', '<=', admin.firestore.Timestamp.fromDate(oneHourAgo))
         .get();
       
       const batch = db.batch();
       oldStates.docs.forEach(doc => batch.delete(doc.ref));
       await batch.commit();
 
-      res.status(200).json({ state });
+      res.status(200).json({ 
+        success: true,
+        state: stateDocId, // Return the document ID as the state
+        expiresAt: expiresAt.toISOString()
+      });
     } catch (error) {
       console.error('Error generating OAuth state:', error);
       res.status(500).json({ 
@@ -117,9 +157,13 @@ export const generateOAuthState = functions.https.onRequest((req: RequestWithBod
  * Exchanges an Instagram OAuth code for an access token
  */
 export const exchangeInstagramCode = functions.https.onRequest((req: RequestWithBody, res: Response) => {
+  // Set CORS headers
+  setCorsHeaders(res);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return handleCorsPreflight(req, res);
+    res.status(204).send('');
+    return;
   }
 
   // Only allow POST requests
@@ -131,22 +175,59 @@ export const exchangeInstagramCode = functions.https.onRequest((req: RequestWith
   // Process the request
   return corsHandler(req, res, async () => {
     try {
-      const { code, state } = req.body;
-      if (!code || !state) {
-        res.status(400).json({ error: 'Code and state are required' });
+      const { code, state: stateFromBody } = req.body;
+      const stateFromCookie = req.cookies?.oauth_state;
+      
+      if (!code || !stateFromBody) {
+        res.status(400).json({ 
+          error: 'Code and state are required',
+          details: { hasCode: !!code, hasState: !!stateFromBody }
+        });
+        return;
+      }
+
+      // Verify state from cookie matches the one in the request body
+      if (stateFromBody !== stateFromCookie) {
+        console.error('State mismatch:', { 
+          stateFromBody, 
+          stateFromCookie,
+          cookies: req.cookies,
+          headers: req.headers
+        });
+        res.status(400).json({ 
+          error: 'Invalid state parameter',
+          details: 'State mismatch between cookie and request body'
+        });
         return;
       }
 
       // Verify the state exists and is not used
-      const stateDoc = await db.collection('oauthStates').doc(state).get();
+      const stateDoc = await db.collection('oauthStates').doc(stateFromBody).get();
       if (!stateDoc.exists) {
-        res.status(400).json({ error: 'Invalid state parameter' });
+        res.status(400).json({ 
+          error: 'Invalid state parameter',
+          details: 'State not found in database'
+        });
         return;
       }
 
       const stateData = stateDoc.data() as OAuthState;
+      
+      // Check if state has expired
+      const now = new Date();
+      if (stateData.expiresAt && (stateData.expiresAt as admin.firestore.Timestamp).toDate() < now) {
+        res.status(400).json({ 
+          error: 'State has expired',
+          details: `Expired at: ${(stateData.expiresAt as admin.firestore.Timestamp).toDate()}`
+        });
+        return;
+      }
+
       if (stateData.used) {
-        res.status(400).json({ error: 'State has already been used' });
+        res.status(400).json({ 
+          error: 'State has already been used',
+          details: `First used at: ${(stateData.usedAt as admin.firestore.Timestamp)?.toDate()}`
+        });
         return;
       }
 

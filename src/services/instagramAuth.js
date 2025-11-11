@@ -141,18 +141,38 @@ export const connectInstagram = async () => {
       return { redirected: true };
     }
     
-    const { authUrl, state } = await requestFacebookAuthSession(user.uid);
+    // Request a new OAuth session with the current URL as redirect
+    const redirectUri = window.location.origin + '/auth/instagram/callback';
+    const response = await callInstagramFunction('/generateOAuthState', { 
+      uid: user.uid,
+      redirectUri
+    });
     
-    if (!authUrl || !state) {
-      throw new Error('Failed to generate Facebook OAuth session');
+    if (!response.success || !response.state) {
+      throw new Error('Failed to generate OAuth state');
     }
+    
+    // Store minimal state in localStorage as a fallback
+    localStorage.setItem('oauth_state', JSON.stringify({
+      state: response.state,
+      expiresAt: new Date(response.expiresAt).getTime()
+    }));
+    
+    // The server will set an HTTP-only cookie with the state
+    // Now build the Instagram OAuth URL
+    const authUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
+    authUrl.searchParams.append('client_id', process.env.REACT_APP_FACEBOOK_APP_ID);
+    authUrl.searchParams.append('redirect_uri', redirectUri);
+    authUrl.searchParams.append('state', response.state);
+    authUrl.searchParams.append('response_type', 'code');
+    authUrl.searchParams.append('scope', 'public_profile,email,instagram_basic,pages_show_list,pages_read_engagement');
+    authUrl.searchParams.append('auth_type', 'rerequest');
     
     // Store the current URL to return after OAuth flow
     sessionStorage.setItem('preOAuthUrl', window.location.href);
-    sessionStorage.setItem('instagram_oauth_state', state);
     
     // Redirect to Instagram OAuth
-    window.location.href = authUrl;
+    window.location.href = authUrl.toString();
     return { redirected: true };
   } catch (error) {
     console.error('Error initiating Instagram OAuth:', error);
