@@ -209,9 +209,23 @@ export const connectInstagram = async () => {
       state: stateString.substring(0, 8) + '...'
     });
 
+    // Debug: Log all environment variables for verification
+    console.log('Environment variables:', {
+      INSTAGRAM_APP_ID: process.env.REACT_APP_INSTAGRAM_APP_ID,
+      NODE_ENV: process.env.NODE_ENV,
+      PUBLIC_URL: process.env.PUBLIC_URL,
+      // Add other relevant env vars for debugging
+    });
+
+    // Ensure we have the required app ID
+    const appId = process.env.REACT_APP_INSTAGRAM_APP_ID || '608108222327479';
+    if (!appId) {
+      throw new Error('Instagram App ID is not configured');
+    }
+
     // Build the Instagram Basic Display OAuth URL for personal accounts
     const authUrl = new URL('https://api.instagram.com/oauth/authorize');
-    authUrl.searchParams.append('client_id', process.env.REACT_APP_INSTAGRAM_APP_ID);
+    authUrl.searchParams.append('client_id', appId);
     authUrl.searchParams.append('redirect_uri', redirectUri);
     authUrl.searchParams.append('state', response.state);
     authUrl.searchParams.append('response_type', 'code');
@@ -222,7 +236,8 @@ export const connectInstagram = async () => {
       hostname: authUrl.hostname,
       pathname: authUrl.pathname,
       state: response.state.substring(0, 8) + '...',
-      redirect_uri: redirectUri
+      redirect_uri: redirectUri,
+      client_id: appId.substring(0, 4) + '...' + appId.slice(-4) // Show first and last 4 chars of app ID
     });
     
     // Open in a popup window for better UX
