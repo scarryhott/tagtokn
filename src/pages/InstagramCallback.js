@@ -11,9 +11,13 @@ const InstagramCallback = () => {
   
   // Function to clear all auth state
   const clearAuthState = () => {
+    // Clear both storage locations for thorough cleanup
     localStorage.removeItem('oauth_state');
     sessionStorage.removeItem('instagram_oauth_state');
+    sessionStorage.removeItem('preOAuthUrl');
     sessionStorage.removeItem('connect_redirect');
+    
+    console.log('Cleared all auth state from storage');
   };
 
   // Function to handle retry logic
@@ -75,29 +79,16 @@ const InstagramCallback = () => {
       try {
         setStatus('Verifying authentication...');
         
-        // First check sessionStorage (more reliable for OAuth flows)
-        const sessionState = sessionStorage.getItem('instagram_oauth_state');
-        const storedStateData = localStorage.getItem('oauth_state');
+        // Log all storage for debugging
+        console.log('Session storage:', JSON.stringify(sessionStorage, null, 2));
+        console.log('Local storage:', JSON.stringify(localStorage, null, 2));
         
-        console.log('Stored state information:', {
-          sessionState: sessionState ? `FOUND (${sessionState.substring(0, 8)}...)` : 'NOT FOUND',
-          storedState: storedStateData ? 'FOUND' : 'NOT FOUND',
-          receivedState: state.substring(0, 8) + '...',
-          url: window.location.href
-        });
-
-        // Log all sessionStorage keys for debugging
-        console.log('Session storage keys:', Object.keys(sessionStorage));
-        console.log('Local storage keys:', Object.keys(localStorage));
-
-        // Verify state from sessionStorage first (most reliable)
+        // Get the state from sessionStorage (primary) or localStorage (fallback)
+        const sessionState = sessionStorage.getItem('instagram_oauth_state');
+        
         if (!sessionState) {
-          // Check if we have a stored state in localStorage as fallback
-          if (!storedStateData) {
-            throw new Error('No active OAuth session found. The session may have expired. Please try again.');
-          }
-          
-          // Try to parse the stored state
+          throw new Error('No active OAuth session found. The session may have expired or the page was refreshed. Please try again.');
+        }
           let storedStateObj;
           try {
             storedStateObj = JSON.parse(storedStateData);

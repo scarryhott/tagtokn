@@ -103,26 +103,10 @@ const requestFacebookAuthSession = async (uid) => {
 
 export const exchangeCodeForToken = async (code, state) => {
   try {
-    // Get the stored state data to include the state document ID
-    const storedStateData = localStorage.getItem('oauth_state') || sessionStorage.getItem('oauth_state');
-    if (!storedStateData) {
-      throw new Error('No stored OAuth state found');
-    }
-    
-    const storedStateObj = JSON.parse(storedStateData);
-    
-    // The backend expects the state to be the document ID, not the state value
-    const stateDocId = storedStateObj.stateDocId;
-    
-    if (!stateDocId) {
-      throw new Error('No state document ID found in stored state');
-    }
-    
-    console.log('Exchanging code with state document ID:', stateDocId);
-    
+    console.log('Exchanging code for token with state:', state.substring(0, 8) + '...');
     return await callInstagramFunction('/exchangeInstagramCode', { 
       code, 
-      state: stateDocId // Send the state document ID as the state parameter
+      state
     });
   } catch (error) {
     console.error('Error exchanging code for token:', error);
@@ -270,12 +254,7 @@ export const handleInstagramCallback = async (code, state) => {
   
   if (!storedState) {
     console.log('No OAuth state found in sessionStorage');
-  }
-
-  if (!storedState) {
-    const errorMsg = 'No OAuth state found. The session may have expired or the page was refreshed. Please try again.';
-    console.error(errorMsg);
-    throw new Error(errorMsg);
+    throw new Error('No active OAuth session found. Please try again.');
   }
 
   // Verify the state matches exactly
@@ -284,7 +263,8 @@ export const handleInstagramCallback = async (code, state) => {
       storedState: storedState.substring(0, 8) + '...',
       receivedState: state.substring(0, 8) + '...',
       storedLength: storedState.length,
-      receivedLength: state.length
+      receivedLength: state.length,
+      allSessionStorage: JSON.stringify(sessionStorage, null, 2)
     });
     throw new Error('Invalid state parameter. The OAuth state did not match.');
   }
