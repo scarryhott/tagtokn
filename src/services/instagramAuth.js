@@ -178,22 +178,13 @@ export const connectInstagram = async () => {
       expiresAt: response.expiresAt
     });
 
-    // Store only the minimal required state in sessionStorage
-    // This ensures it's scoped to the current session and domain
+    // Store the state in sessionStorage
+    // This ensures it's scoped to the current session and tab
     const stateString = response.state;
     sessionStorage.setItem('instagram_oauth_state', stateString);
     
-    // Also store in localStorage as a fallback with a short expiration
-    const stateData = {
-      state: stateString,
-      expiresAt: Date.now() + (10 * 60 * 1000), // 10 minutes
-      timestamp: Date.now()
-    };
-    localStorage.setItem('oauth_state', JSON.stringify(stateData));
-    
-    console.log('Stored OAuth state:', {
-      state: stateString.substring(0, 8) + '...',
-      expiresAt: new Date(stateData.expiresAt).toISOString()
+    console.log('Stored OAuth state in sessionStorage:', {
+      state: stateString.substring(0, 8) + '...'
     });
 
     // Build the Instagram OAuth URL with latest API requirements
@@ -274,38 +265,16 @@ export const handleInstagramCallback = async (code, state) => {
     throw new Error('No state parameter received from Instagram');
   }
 
-  // First try to get the state from sessionStorage (primary)
-  let storedState = sessionStorage.getItem('instagram_oauth_state');
+  // Get the state from sessionStorage
+  const storedState = sessionStorage.getItem('instagram_oauth_state');
   
-  // If not found in sessionStorage, try localStorage as fallback
   if (!storedState) {
-    console.log('State not found in sessionStorage, checking localStorage...');
-    const storedStateData = localStorage.getItem('oauth_state');
-    
-    if (storedStateData) {
-      try {
-        const parsedState = JSON.parse(storedStateData);
-        // Check if the state in localStorage is expired
-        if (parsedState.expiresAt && Date.now() > parsedState.expiresAt) {
-          console.warn('State in localStorage has expired');
-          localStorage.removeItem('oauth_state');
-        } else {
-          storedState = parsedState.state;
-        }
-      } catch (e) {
-        console.error('Error parsing stored state from localStorage:', e);
-        localStorage.removeItem('oauth_state');
-      }
-    }
+    console.log('No OAuth state found in sessionStorage');
   }
 
-  // If we still don't have a stored state, throw an error
   if (!storedState) {
-    const errorMsg = 'No valid OAuth state found. The session may have expired or the page was refreshed.';
-    console.error(errorMsg, {
-      hasSessionState: !!sessionStorage.getItem('instagram_oauth_state'),
-      hasLocalState: !!localStorage.getItem('oauth_state')
-    });
+    const errorMsg = 'No OAuth state found. The session may have expired or the page was refreshed. Please try again.';
+    console.error(errorMsg);
     throw new Error(errorMsg);
   }
 
@@ -327,7 +296,6 @@ export const handleInstagramCallback = async (code, state) => {
 
   // Clean up the state after successful verification
   sessionStorage.removeItem('instagram_oauth_state');
-  localStorage.removeItem('oauth_state');
 
   try {
     console.log('Handling Instagram callback with code and state:', { code, state });
