@@ -259,8 +259,23 @@ export const handleInstagramCallback = async (code, state) => {
     stateDocId: storedStateObj.stateDocId,
     receivedState: state ? `${state.substring(0, 8)}...` : 'MISSING',
     storedState: storedStateObj.state ? `${storedStateObj.state.substring(0, 8)}...` : 'MISSING',
-    expiresAt: storedStateObj.expiresAt ? new Date(storedStateObj.expiresAt).toISOString() : 'NO_EXPIRY'
+    expiresAt: storedStateObj.expiresAt ? new Date(storedStateObj.expiresAt).toISOString() : 'NO_EXPIRY',
+    currentTime: new Date().toISOString()
   });
+  
+  // Verify state parameter matches
+  if (!state || !storedStateObj.state || state !== storedStateObj.state) {
+    const errorMsg = `Invalid state parameter. Expected ${storedStateObj.state ? storedStateObj.state.substring(0, 8) + '...' : 'none'}, got ${state ? state.substring(0, 8) + '...' : 'none'}`;
+    console.error(errorMsg, { 
+      receivedState: state, 
+      storedState: storedStateObj.state,
+      storedStateData
+    });
+    // Clean up state to prevent reuse
+    localStorage.removeItem('oauth_state');
+    sessionStorage.removeItem('oauth_state');
+    throw new Error('Invalid state parameter');
+  }
   try {
     console.log('Handling Instagram callback with code and state:', { code, state });
     
