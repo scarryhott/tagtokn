@@ -15,8 +15,8 @@ const InstagramLogin = ({
 }) => {
   // Set default button text based on whether user has an Instagram ID
   const defaultButtonText = user?.instagramId 
-    ? 'Reconnect Instagram' 
-    : 'Connect with Instagram';
+    ? 'Reconnect Instagram Business Account' 
+    : 'Connect Instagram Business Account';
     
   buttonText = buttonText || defaultButtonText;
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +47,12 @@ const InstagramLogin = ({
   if (render) {
     return render({ onClick: handleLogin, loading: isLoading, error });
   }
+  
+  const helpText = !user?.instagramId && (
+    <p className="mt-2 text-sm text-gray-500">
+      Note: Only Instagram Business or Creator accounts can be connected.
+    </p>
+  );
 
   // Info box about Basic Display API
   const infoBox = (

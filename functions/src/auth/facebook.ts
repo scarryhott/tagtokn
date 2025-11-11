@@ -137,24 +137,43 @@ export const generateFacebookAuthUrl = functions.https.onRequest((req: RequestWi
         expiresAt: stateData.expiresAt.toISOString()
       });
 
-      // Create Facebook OAuth URL
-      const facebookAuthUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
-      facebookAuthUrl.searchParams.append('client_id', clientId);
-      facebookAuthUrl.searchParams.append('redirect_uri', redirectUri);
-      facebookAuthUrl.searchParams.append('state', state);
-      facebookAuthUrl.searchParams.append('response_type', 'code');
-      facebookAuthUrl.searchParams.append('scope', 'public_profile,email,instagram_basic,pages_show_list,pages_read_engagement');
-      facebookAuthUrl.searchParams.append('auth_type', 'rerequest');
+      // Define the required OAuth scopes for Instagram Business accounts
+      const scopes = [
+        'instagram_basic',
+        'instagram_manage_insights',
+        'pages_show_list',
+        'pages_read_engagement',
+        'public_profile',
+        'email'
+      ];
+  
+      // Additional parameters to ensure business account connection
+      const authParams = new URLSearchParams({
+        client_id: process.env.FACEBOOK_APP_ID || '',
+        redirect_uri: process.env.FACEBOOK_REDIRECT_URI || '',
+        response_type: 'code',
+        auth_type: 'rerequest',
+        scope: scopes.join(','),
+        state: state,
+        config_id: '0', // 0 is for business accounts
+        setup: JSON.stringify({
+          platform: 'instagram',
+          business_app: 1
+        })
+      });
+
+      // Generate the Facebook OAuth URL for Instagram Business accounts
+      const authUrl = `https://www.facebook.com/v12.0/dialog/oauth?${authParams.toString()}`;
 
       const responseData = { 
         success: true,
-        authUrl: facebookAuthUrl.toString(),
-        state: state,
+        authUrl,
+        state,
         stateDocId: stateDocId
       };
       
       console.log('Generated Facebook Auth URL:', {
-        base: 'https://www.facebook.com/v19.0/dialog/oauth',
+        base: 'https://www.facebook.com/v12.0/dialog/oauth',
         client_id: clientId ? '***' + String(clientId).slice(-4) : 'MISSING',
         redirect_uri: redirectUri,
         state_length: state.length,
