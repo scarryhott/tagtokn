@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged as firebaseAuthStateChanged } from 'firebase/auth';
 import InstagramFeed from '../components/InstagramFeed';
-import InstagramLogin from '../components/InstagramLogin';
+import InstagramBusinessConnect from '../components/InstagramBusinessConnect';
 
 const InstagramFeedPage = () => {
   const [user, setUser] = useState(null);
@@ -45,7 +45,7 @@ const InstagramFeedPage = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Your Instagram Feed</h1>
-          <InstagramLogin 
+          <InstagramBusinessConnect 
             onSuccess={handleLoginSuccess}
             buttonText="Refresh Feed"
             className="w-auto"

@@ -15,8 +15,8 @@ const InstagramLogin = ({
 }) => {
   // Set default button text based on whether user has an Instagram ID
   const defaultButtonText = user?.instagramId 
-    ? 'Reconnect Instagram Business Account' 
-    : 'Connect Instagram Business Account';
+    ? 'Reconnect Instagram Business Account (TEST)' 
+    : 'Connect Instagram Business Account (TEST)';
     
   buttonText = buttonText || defaultButtonText;
   const [isLoading, setIsLoading] = useState(false);
