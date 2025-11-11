@@ -31,7 +31,7 @@ import {
 import { doc, getDoc } from 'firebase/firestore';
 import InstagramFeedPage from './pages/InstagramFeedPage';
 import InstagramCallback from './pages/InstagramCallback';
-import InstagramLogin from './components/InstagramLogin';
+import ConnectInstagramPage from './pages/ConnectInstagramPage';
 import Dashboard from './pages/Dashboard';
 import LocalBusinessVerification from './pages/LocalBusinessVerification';
 import TagToknTokenPage from './pages/TagToknTokenPage';
@@ -1771,15 +1771,21 @@ const TokenomicsUI = () => {
           </div>
         )}
 
-        {/* Instagram Connect Modal - Using the enhanced InstagramLogin component */}
+        {/* Instagram Connect Modal */}
         {showInstagramConnectModal && (
-          <InstagramLogin 
-            onSuccess={handleConnectInstagram}
-            onFailure={handleInstagramConnectFailure}
-            showInModal={true}
-            onModalClose={() => setShowInstagramConnectModal(false)}
-            buttonText="Connect Instagram via Facebook"
-          />
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+            <div className="bg-gradient-to-br from-purple-800 to-indigo-800 rounded-2xl p-8 max-w-md w-full shadow-2xl relative border border-purple-500/50">
+              <button 
+                onClick={() => setShowInstagramConnectModal(false)}
+                className="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <ConnectInstagramPage />
+            </div>
+          </div>
         )}
 
         {/* Instagram Link Post Modal */}
@@ -2716,7 +2722,7 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/connect/instagram" element={<InstagramLogin />} />
+          <Route path="/connect/instagram" element={<ConnectInstagramPage />} />
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
           <Route path="/instagram-feed" element={<InstagramFeedPage />} />
           <Route path="/local-business" element={<LocalBusinessVerification />} />
