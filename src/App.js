@@ -383,7 +383,7 @@ const TokenomicsUI = () => {
   const [connectedInstagramAccount, setConnectedInstagramAccount] = useState(null); // Stores connected username
   const navigate = useNavigate();
   // Instagram connect input state
-  const [instagramConnectMessage, setInstagramConnectMessage] = useState('');
+  const [, setInstagramConnectMessage] = useState('');
   const [showInstagramLinkModal, setShowInstagramLinkModal] = useState(false);
   const [instagramPostLinkInput, setInstagramPostLinkInput] = useState('');
   const [instagramLinkMessage, setInstagramLinkMessage] = useState('');
@@ -800,35 +800,7 @@ const TokenomicsUI = () => {
   };
 
   // Instagram Connection Handlers (for the user earning tokens)
-  const handleConnectInstagram = async (response) => {
-    try {
-      console.log('Instagram login successful:', response);
-      
-      // If we're reconnecting, clear any existing connection first
-      if (connectedInstagramAccount) {
-        console.log('Reconnecting Instagram account...');
-        // You might want to add additional cleanup here if needed
-      }
-      
-      // Here you would typically verify the response with your backend
-      // For now, we'll just extract the username from the response
-      const username = response.username || 'instagram_user';
-      setConnectedInstagramAccount(username);
-      setInstagramConnectMessage('Success! Your Instagram account has been connected.');
-      
-      // Navigate back to the dashboard
-      navigate('/dashboard');
-      
-    } catch (error) {
-      console.error('Error connecting Instagram:', error);
-      setInstagramConnectMessage('Failed to connect Instagram. Please try again.');
-    }
-  };
-  
-  const handleInstagramConnectFailure = (error) => {
-    console.error('Instagram login failed:', error);
-    setInstagramConnectMessage('Failed to connect to Instagram. Please try again.');
-  };
+  // handleConnectInstagram and handleInstagramConnectFailure functions removed as they're not being used
 
   const handleDisconnectInstagram = async () => {
     try {
@@ -900,9 +872,7 @@ const TokenomicsUI = () => {
     setShowInstagramLinkModal(true);
   };
 
-  const handleConnectInstagramClick = () => {
-    navigate('/connect/instagram');
-  };
+  // handleConnectInstagramClick function removed as it's not being used
 
   const handleLinkInstagramPost = () => {
     if (!connectedInstagramAccount) {

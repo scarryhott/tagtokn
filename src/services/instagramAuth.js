@@ -43,64 +43,6 @@ const callInstagramFunction = async (path, payload) => {
   return data;
 };
 
-const requestFacebookAuthSession = async (uid) => {
-  try {
-    console.log('Requesting Facebook OAuth session from backend function...');
-    
-    // Generate a secure random state
-    const state = crypto.randomUUID();
-    
-    // Build the redirect URI - must match exactly with Facebook app settings
-    const redirectUri = window.location.origin + "/auth/instagram/callback";
-    
-    // Store the current URL to redirect back after successful auth
-    const currentUrl = window.location.href;
-    
-    // Store the state in both sessionStorage and localStorage for redundancy
-    const stateData = {
-      state,
-      timestamp: Date.now(),
-      expiresAt: Date.now() + (10 * 60 * 1000), // 10 minutes expiration
-      redirectUri,
-      currentUrl
-    };
-    
-    // Store in sessionStorage (primary) and localStorage (fallback)
-    sessionStorage.setItem('instagram_oauth_state', state);
-    localStorage.setItem('oauth_state', JSON.stringify(stateData));
-    
-    // Also store the current URL for redirect after auth
-    sessionStorage.setItem('preOAuthUrl', currentUrl);
-    
-    console.log('Storing OAuth state:', {
-      state: state.substring(0, 8) + '...',
-      redirectUri,
-      expiresAt: new Date(stateData.expiresAt).toISOString(),
-      currentUrl
-    });
-    
-    // Get the auth URL from the server
-    const response = await callInstagramFunction('/generateFacebookAuthUrl', { 
-      uid,
-      state,
-      redirect_uri: redirectUri
-    });
-    
-    if (!response || !response.authUrl) {
-      console.error('Invalid response from server:', response);
-      throw new Error('Backend did not return a valid Facebook auth URL.');
-    }
-    
-    console.log('Redirecting to OAuth URL:', response.authUrl);
-    
-    // Redirect to the auth URL
-    window.location.href = response.authUrl;
-  } catch (error) {
-    console.error('Error requesting Facebook auth session:', error);
-    throw error instanceof Error ? error : new Error('Failed to initialize Facebook auth session');
-  }
-};
-
 export const exchangeCodeForToken = async (code, state) => {
   try {
     console.log('Exchanging code for token with state:', state.substring(0, 8) + '...');
@@ -151,8 +93,6 @@ export const exchangeCodeForToken = async (code, state) => {
     throw error;
   }
 };
-
-// getInstagramUserData function has been removed as it's not currently used
 
 export const connectInstagram = async () => {
   try {
@@ -274,12 +214,6 @@ export const connectInstagram = async () => {
     });
     throw error instanceof Error ? error : new Error('Failed to start Instagram connection');
   }
-};
-
-// Helper function to clean state parameter
-const cleanStateParam = (state) => {
-  if (!state) return '';
-  return state.replace(/[^a-zA-Z0-9]/g, '');
 };
 
 export const handleInstagramCallback = async (code, state) => {
