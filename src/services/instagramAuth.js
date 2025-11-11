@@ -165,16 +165,33 @@ export const connectInstagram = async () => {
       expiresAt: response.expiresAt
     });
 
-    // Store the state in localStorage as a fallback
+    // Prepare state data with additional metadata
     const stateData = {
       state: response.state,
       stateDocId: response.stateDocId,
       expiresAt: new Date(response.expiresAt).getTime(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      redirectUri: redirectUri,
+      userAgent: navigator.userAgent,
+      timestampISO: new Date().toISOString()
     };
     
-    localStorage.setItem('oauth_state', JSON.stringify(stateData));
-    console.log('Stored OAuth state in localStorage');
+    // Store in both localStorage and sessionStorage for redundancy
+    const stateString = JSON.stringify(stateData);
+    localStorage.setItem('oauth_state', stateString);
+    sessionStorage.setItem('instagram_oauth_state', stateString);
+    
+    // Set a flag to detect if we're coming from a redirect
+    sessionStorage.setItem('connect_redirect', 'true');
+    
+    console.log('Stored OAuth state:', {
+      state: response.state.substring(0, 8) + '...',
+      expiresAt: new Date(stateData.expiresAt).toISOString(),
+      storageKeys: {
+        localStorage: Object.keys(localStorage),
+        sessionStorage: Object.keys(sessionStorage)
+      }
+    });
 
     // Build the Instagram OAuth URL
     const authUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');

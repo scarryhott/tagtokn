@@ -29,10 +29,6 @@ const InstagramCallback = () => {
       const errorReason = searchParams.get('error_reason');
       const errorDescription = searchParams.get('error_description');
       
-      // Log stored state for debugging
-      const storedState = localStorage.getItem('oauth_state') || sessionStorage.getItem('instagram_oauth_state');
-      console.log('Stored state at callback:', storedState);
-      
       // Check for OAuth errors first
       if (error) {
         const errorMessage = `OAuth Error: ${errorDescription || errorReason || error}`;
@@ -53,14 +49,38 @@ const InstagramCallback = () => {
         sessionStorage.removeItem('instagram_oauth_state');
         return;
       }
+      
+      // Log the received state for debugging
+      console.log('Received OAuth state from URL:', {
+        state: state ? `${state.substring(0, 8)}...` : 'MISSING',
+        code: code ? 'PRESENT' : 'MISSING',
+        redirectUri: window.location.href
+      });
 
       try {
         setStatus('Verifying authentication...');
         
-        // Get the stored state from localStorage or sessionStorage
-        const storedState = localStorage.getItem('oauth_state') || sessionStorage.getItem('instagram_oauth_state');
+        // Get the stored state from localStorage
+        const storedState = localStorage.getItem('oauth_state');
+        console.log('Retrieved stored state from localStorage:', storedState ? 'FOUND' : 'NOT FOUND');
+        
         if (!storedState) {
-          throw new Error('No OAuth state found. The session may have expired. Please try again.');
+          // Check if we were redirected from the connect flow
+          const connectRedirect = sessionStorage.getItem('connect_redirect');
+          if (connectRedirect) {
+            console.log('Found connect redirect in sessionStorage, clearing and retrying...');
+            sessionStorage.removeItem('connect_redirect');
+            setRetryCount(prev => prev + 1);
+            return;
+          }
+          
+          const errorMsg = 'No OAuth state found. The session may have expired. Please try again.';
+          console.error(errorMsg, { 
+            hasLocalStorage: !!localStorage.getItem('oauth_state'),
+            hasSessionStorage: !!sessionStorage.getItem('instagram_oauth_state'),
+            sessionStorageKeys: Object.keys(sessionStorage)
+          });
+          throw new Error(errorMsg);
         }
 
         let storedStateObj;
