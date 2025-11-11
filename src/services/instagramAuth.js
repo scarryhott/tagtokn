@@ -192,40 +192,54 @@ export const connectInstagram = async () => {
     authUrl.searchParams.append('state', response.state);
     authUrl.searchParams.append('response_type', 'code');
     
-    // Updated scopes for Instagram Graph API
+    // Updated scopes for Instagram Graph API - using only necessary scopes
     const scopes = [
       'instagram_basic',
       'pages_show_list',
-      'pages_read_engagement',
       'instagram_manage_insights',
       'instagram_content_publish',
-      'pages_read_engagement',
-      'public_profile',
-      'email'
+      'pages_read_engagement'
     ];
     
     authUrl.searchParams.append('scope', scopes.join(','));
     
     // Recommended parameters
     authUrl.searchParams.append('auth_type', 'rerequest');
-    authUrl.searchParams.append('config_id', 'default');
-    authUrl.searchParams.append('response_type', 'code,granted_scopes');
+    authUrl.searchParams.append('display', 'popup');
     
-    // Add display mode for better mobile experience
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    authUrl.searchParams.append('display', isMobile ? 'touch' : 'popup');
-
-    console.log('Redirecting to Instagram OAuth URL:', {
+    console.log('Initiating OAuth flow with URL:', {
       hostname: authUrl.hostname,
       pathname: authUrl.pathname,
-      stateLength: response.state.length,
-      statePrefix: response.state.substring(0, 8) + '...',
-      hasStateDocId: !!response.stateDocId
+      state: response.state.substring(0, 8) + '...',
+      redirect_uri: redirectUri
     });
     
-    // Redirect to Instagram OAuth
-    window.location.href = authUrl.toString();
-    return { redirected: true };
+    // Open in a popup window for better UX
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      authUrl.toString(),
+      'Connect Instagram',
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
+    );
+    
+    // Set up a listener for the popup being closed
+    const popupClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(popupClosed);
+        // Check if we have a success flag in localStorage
+        const success = localStorage.getItem('instagram_auth_success');
+        if (success) {
+          localStorage.removeItem('instagram_auth_success');
+          window.location.reload();
+        }
+      }
+    }, 500);
+    
+    return { popup, redirected: false };
   } catch (error) {
     console.error('Error initiating Instagram OAuth:', {
       error: error.message,
@@ -331,6 +345,17 @@ export const handleInstagramCallback = async (code, state) => {
     // Clean up the stored URL
     localStorage.removeItem('preOAuthUrl');
     sessionStorage.removeItem('preOAuthUrl');
+    
+    // Set success flag in localStorage for the popup to detect
+    localStorage.setItem('instagram_auth_success', 'true');
+    
+    // If this is in a popup, close it
+    if (window.opener) {
+      window.close();
+    } else {
+      // Otherwise, redirect to the original URL or dashboard
+      window.location.href = preOAuthUrl || '/dashboard';
+    }
     
     return { 
       success: true,
