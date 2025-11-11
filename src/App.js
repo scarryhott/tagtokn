@@ -800,63 +800,90 @@ const TokenomicsUI = () => {
   };
 
   // Instagram Connection Handlers (for the user earning tokens)
-  const handleConnectInstagram = (response) => {
-    console.log('Instagram login successful:', response);
-    // Here you would typically verify the response with your backend
-    // For now, we'll just extract the username from the response
-    const username = response.username || 'instagram_user';
-    setConnectedInstagramAccount(username);
-    setInstagramConnectMessage('');
-    setShowInstagramConnectModal(false);
+  const handleConnectInstagram = async (response) => {
+    try {
+      console.log('Instagram login successful:', response);
+      
+      // If we're reconnecting, clear any existing connection first
+      if (connectedInstagramAccount) {
+        console.log('Reconnecting Instagram account...');
+        // You might want to add additional cleanup here if needed
+      }
+      
+      // Here you would typically verify the response with your backend
+      // For now, we'll just extract the username from the response
+      const username = response.username || 'instagram_user';
+      setConnectedInstagramAccount(username);
+      setInstagramConnectMessage('');
+      setShowInstagramConnectModal(false);
+      
+      // Show success message
+      setInstagramConnectMessage('Success! Your Instagram account has been connected.');
+      
+    } catch (error) {
+      console.error('Error connecting Instagram:', error);
+      setInstagramConnectMessage('Failed to connect Instagram. Please try again.');
+    }
   };
-
+  
   const handleInstagramConnectFailure = (error) => {
     console.error('Instagram login failed:', error);
     setInstagramConnectMessage('Failed to connect to Instagram. Please try again.');
   };
 
-  const handleDisconnectInstagram = () => {
-    // Identify and remove earned tokens
-    const earnedTokensToRemove = userTokens.filter(token => token.type === 'earned');
-    const newOwnedTokens = userTokens.filter(token => token.type !== 'earned');
+  const handleDisconnectInstagram = async () => {
+    try {
+      // Clear the connected Instagram account
+      setConnectedInstagramAccount(null);
+      setInstagramConnectMessage('Your Instagram account has been disconnected.');
+      
+      // Identify and remove earned tokens
+      const earnedTokensToRemove = userTokens.filter(token => token.type === 'earned');
+      const newOwnedTokens = userTokens.filter(token => token.type !== 'earned');
 
-    // Clear the connected Instagram account
-    setConnectedInstagramAccount(null);
-
-    // Update influencer and global stats for removed earned tokens
-    setInfluencers(prevInfluencers => {
-      const updatedInfluencers = prevInfluencers.map(inf => {
-        let newEarnedCount = inf.earned;
-        let newTotalSupply = inf.totalSupply;
-        earnedTokensToRemove.forEach(token => {
-          if (token.influencerId === inf.id) {
-            newEarnedCount = Math.max(0, newEarnedCount - 1);
-            newTotalSupply = Math.max(0, newTotalSupply - 1);
-          }
+      // Update influencer and global stats for removed earned tokens
+      setInfluencers(prevInfluencers => {
+        return prevInfluencers.map(inf => {
+          let newEarnedCount = inf.earned;
+          let newTotalSupply = inf.totalSupply;
+          
+          earnedTokensToRemove.forEach(token => {
+            if (token.influencerId === inf.id) {
+              newEarnedCount = Math.max(0, newEarnedCount - 1);
+              newTotalSupply = Math.max(0, newTotalSupply - 1);
+            }
+          });
+          
+          // Recalculate ratio and price for affected influencers
+          const updatedInf = { ...inf, earned: newEarnedCount, totalSupply: newTotalSupply };
+          updatedInf.ratio = updatedInf.marketplaceBought > 0 
+            ? updatedInf.earned / updatedInf.marketplaceBought 
+            : (updatedInf.earned > 0 ? updatedInf.earned : 0);
+            
+          updatedInf.price = calculateInfluencerPrice(updatedInf, globalStats);
+          return updatedInf;
         });
-        // Recalculate ratio and price for affected influencers
-        const updatedInf = { ...inf, earned: newEarnedCount, totalSupply: newTotalSupply };
-        updatedInf.ratio = updatedInf.marketplaceBought > 0 ? updatedInf.earned / updatedInf.marketplaceBought : (updatedInf.earned > 0 ? updatedInf.earned : 0);
-        updatedInf.price = calculateInfluencerPrice(updatedInf, globalStats); // Use current globalStats for price calc
-        return updatedInf;
       });
-      return updatedInfluencers;
-    });
 
-    // Update global stats
-    setGlobalStats(prevGlobalStats => {
-      const newTotalEarned = Math.max(0, prevGlobalStats.totalEarned - earnedTokensToRemove.length);
-      const newEarnedToBoughtRatio = prevGlobalStats.totalMarketplaceBought > 0 ? newTotalEarned / prevGlobalStats.totalMarketplaceBought : (newTotalEarned > 0 ? newTotalEarned : 0);
-      const newEarnedCoinValue = newTotalEarned > 0 ? (prevGlobalStats.totalMarketplaceBought / newTotalEarned) / 100 : 0.01;
-      return {
+      // Update global stats
+      setGlobalStats(prevGlobalStats => ({
         ...prevGlobalStats,
-        totalEarned: newTotalEarned,
-        earnedToBoughtRatio: newEarnedToBoughtRatio,
-        earnedCoinValue: newEarnedCoinValue
-      };
-    });
+        totalEarned: Math.max(0, prevGlobalStats.totalEarned - earnedTokensToRemove.length),
+        earnedToBoughtRatio: prevGlobalStats.totalMarketplaceBought > 0 
+          ? Math.max(0, prevGlobalStats.totalEarned - earnedTokensToRemove.length) / prevGlobalStats.totalMarketplaceBought 
+          : 0,
+        earnedCoinValue: (prevGlobalStats.totalEarned - earnedTokensToRemove.length) > 0 
+          ? (prevGlobalStats.totalMarketplaceBought / (prevGlobalStats.totalEarned - earnedTokensToRemove.length)) / 100 
+          : 0.01
+      }));
 
-    setUserTokens(newOwnedTokens); // Update user's inventory
+      // Update user's tokens
+      setUserTokens(newOwnedTokens);
+      
+    } catch (error) {
+      console.error('Error disconnecting Instagram:', error);
+      setInstagramConnectMessage('Failed to disconnect Instagram. Please try again.');
+    }
     setConnectedInstagramAccount(null);
     setInstagramConnectMessage('Instagram account disconnected. All earned tokens removed.');
   };
@@ -1744,77 +1771,15 @@ const TokenomicsUI = () => {
           </div>
         )}
 
-        {/* Instagram Connect Modal */}
+        {/* Instagram Connect Modal - Using the enhanced InstagramLogin component */}
         {showInstagramConnectModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-            <div className="bg-gradient-to-br from-purple-800 to-indigo-800 rounded-2xl p-8 max-w-md w-full shadow-2xl relative border border-purple-500/50">
-              <button 
-                onClick={() => setShowInstagramConnectModal(false)} 
-                className="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-              <h3 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
-                Connect Instagram Account via Facebook
-              </h3>
-              
-              <div className="space-y-4">
-                {instagramConnectMessage && (
-                  <div className={`p-3 text-sm rounded-md ${
-                    instagramConnectMessage.includes('Success') ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'
-                  }`}>
-                    {instagramConnectMessage}
-                  </div>
-                )}
-                
-                {!connectedInstagramAccount ? (
-                  <>
-                    <p className="text-gray-300 text-sm mb-4">
-                      Connect your Instagram account to start earning tokens for your engagement.
-                    </p>
-                    <InstagramLogin 
-                      onSuccess={handleConnectInstagram}
-                      onFailure={handleInstagramConnectFailure}
-                    />
-                    <div className="text-center text-xs text-gray-400 pt-2">
-                      <p>Don't have an Instagram account?{' '}
-                        <a 
-                          href="https://www.instagram.com/" 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-blue-400 hover:underline"
-                        >
-                          Sign up
-                        </a>
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center p-4 bg-black/20 rounded-lg border border-green-500/30">
-                    <div className="w-16 h-16 mx-auto rounded-full bg-green-500/10 flex items-center justify-center mb-3">
-                      <svg className="w-8 h-8 text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                      </svg>
-                    </div>
-                    <h4 className="text-lg font-medium text-white">Connected as @{connectedInstagramAccount}</h4>
-                    <p className="text-sm text-gray-300 mt-1">You can now earn tokens for your engagement.</p>
-                    <button
-                      onClick={handleDisconnectInstagram}
-                      className="mt-4 px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300"
-                    >
-                      Disconnect Account
-                    </button>
-                  </div>
-                )}
-                
-                <div className="pt-4 border-t border-gray-700/50 mt-4">
-                  <p className="text-xs text-gray-400 text-center">
-                    By connecting, you agree to our Terms of Service and Privacy Policy
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <InstagramLogin 
+            onSuccess={handleConnectInstagram}
+            onFailure={handleInstagramConnectFailure}
+            showInModal={true}
+            onModalClose={() => setShowInstagramConnectModal(false)}
+            buttonText="Connect Instagram via Facebook"
+          />
         )}
 
         {/* Instagram Link Post Modal */}
