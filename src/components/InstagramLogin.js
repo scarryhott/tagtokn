@@ -10,7 +10,8 @@ const InstagramLogin = ({
   render,
   showInModal = false,
   onModalClose = () => {},
-  user = {}
+  user = {},
+  className = ''
 }) => {
   // Set default button text based on whether user has an Instagram ID
   const defaultButtonText = user?.instagramId 
