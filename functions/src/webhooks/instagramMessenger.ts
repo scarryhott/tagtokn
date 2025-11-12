@@ -34,17 +34,19 @@ interface WebhookBody {
 
 // Webhook for Instagram Messenger API
 export const instagramMessengerWebhook = functions.https.onRequest(
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       // Handle verification request
       if (req.method === 'GET') {
-        return verifyWebhookToken(req, res);
+        verifyWebhookToken(req, res);
+        return;
       }
 
       // Only accept POST requests for webhook events
       if (req.method !== 'POST') {
         res.setHeader('Allow', ['GET', 'POST']);
-        return res.status(405).send(`Method ${req.method} Not Allowed`);
+        res.status(405).send(`Method ${req.method} Not Allowed`);
+        return;
       }
 
       // Verify the request signature
@@ -52,7 +54,8 @@ export const instagramMessengerWebhook = functions.https.onRequest(
         verifyRequestSignature(req);
       } catch (error) {
         console.error('Invalid request signature:', error);
-        return res.status(401).send('Invalid signature');
+        res.status(401).send('Invalid signature');
+        return;
       }
 
       const body = req.body as WebhookBody;
@@ -60,11 +63,13 @@ export const instagramMessengerWebhook = functions.https.onRequest(
 
       // Validate webhook body
       if (body.object !== 'instagram') {
-        return res.status(404).send('Not a valid Instagram webhook');
+        res.status(404).send('Not a valid Instagram webhook');
+        return;
       }
 
       if (!body.entry || !Array.isArray(body.entry)) {
-        return res.status(400).send('Invalid webhook payload');
+        res.status(400).send('Invalid webhook payload');
+        return;
       }
 
       // Process each entry in the webhook
@@ -87,18 +92,21 @@ export const instagramMessengerWebhook = functions.https.onRequest(
         }
 
         // Acknowledge receipt of the event
-        return res.status(200).send('EVENT_RECEIVED');
+        res.status(200).send('EVENT_RECEIVED');
+        return;
       } catch (error) {
         console.error('Error processing webhook entry:', error);
         if (!res.headersSent) {
-          return res.status(500).send('Error processing webhook entry');
+          res.status(500).send('Error processing webhook entry');
         }
+        return;
       }
     } catch (error) {
       console.error('Unexpected error in webhook handler:', error);
       if (!res.headersSent) {
-        return res.status(500).send('Internal Server Error');
+        res.status(500).send('Internal Server Error');
       }
+      return;
     }
   }
 );
@@ -221,17 +229,6 @@ interface MessageRequest {
   tag?: string;
 }
 
-interface FacebookError {
-  message: string;
-  type: string;
-  code: number;
-  error_subcode?: number;
-  fbtrace_id: string;
-  error_user_title?: string;
-  error_user_msg?: string;
-  error_data?: Record<string, unknown>;
-}
-
 interface MessageResponse {
   recipient_id: string;
   message_id: string;
@@ -258,12 +255,6 @@ interface SendMessageOptions {
   typingIndicator?: boolean;
   /** Timeout for the request in milliseconds (default: 10000) */
   timeout?: number;
-}
-
-interface RateLimitInfo {
-  limit: number;
-  remaining: number;
-  resetTime: Date | null;
 }
 
 class MessengerError extends Error {
