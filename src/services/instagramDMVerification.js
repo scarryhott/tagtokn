@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 // Generate a random 6-digit verification code
 const generateVerificationCode = () => {
