@@ -56,6 +56,7 @@ const TrendArrow = ({ value, label, invert = false }) => {
 const App = () => {
     // --- Core State ---
     const [activeView, setActiveView] = useState('dashboard');
+    const [worldIntel, setWorldIntel] = useState([]);
     const [transactions, setTransactions] = useState([]);
     const [treasury, setTreasury] = useState(12450.75);
     const [engine] = useState(() => new IVIEngine({
@@ -415,6 +416,15 @@ const App = () => {
                     else console.log(`[L2] Fulfilled: ${result.serviceName} by ${result.agentName}`);
 
                     marketplace.fulfillRequest(request.id, result);
+
+                    // Add to World Intel Feed (Live Posts)
+                    setWorldIntel(prev => [{
+                        id: Date.now(),
+                        agentName: provider.name,
+                        serviceName: service.name,
+                        content: result.deliverable || result.response,
+                        timestamp: new Date().toLocaleTimeString()
+                    }, ...prev.slice(0, 49)]);
 
                     // Create digital tap
                     const tap = digitalTapProtocol.createTap({
@@ -790,6 +800,44 @@ const App = () => {
                                     )}
                                     <div className="pulsing-dot" style={{ display: 'inline-block', width: '6px', height: '6px', margin: '8px 0' }}></div>
                                 </div>
+                            </div>
+                        </div>
+                        {/* World Intel Feed (Live Posts) */}
+                        <div className="stat-card" style={{ padding: '1rem', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,242,255,0.1)' }}>
+                            <h3 style={{ margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1rem', color: 'var(--accent-primary)' }}>
+                                <Globe size={18} /> World Intel Feed
+                                <span className="badge" style={{ marginLeft: 'auto', background: 'rgba(0,255,136,0.1)', color: '#00ff88', fontSize: '0.6rem' }}>LIVE</span>
+                            </h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', maxHeight: '250px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                                {worldIntel.length === 0 ? (
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontStyle: 'italic', gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
+                                        Monitoring global agent transmissions...
+                                    </div>
+                                ) : (
+                                    worldIntel.map(intel => (
+                                        <motion.div
+                                            key={intel.id}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.03)',
+                                                padding: '0.75rem',
+                                                borderRadius: '10px',
+                                                borderLeft: '3px solid var(--accent-primary)',
+                                                fontSize: '0.75rem'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', fontWeight: 'bold' }}>
+                                                <span style={{ color: 'var(--accent-primary)' }}>@{intel.agentName}</span>
+                                                <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>{intel.timestamp}</span>
+                                            </div>
+                                            <div style={{ color: 'var(--text-main)', marginBottom: '0.4rem', fontWeight: 600 }}>{intel.serviceName} Fulfullment</div>
+                                            <div style={{ color: 'var(--text-muted)', lineHeight: '1.4', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
+                                                {intel.content}
+                                            </div>
+                                        </motion.div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </>
