@@ -1,0 +1,30 @@
+{
+    "name": "nfc-ivi-app",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "server": "node server/index.js",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "cors": "^2.8.6",
+        "dotenv": "^17.3.1",
+        "ethers": "^6.16.0",
+        "express": "^5.2.1",
+        "framer-motion": "^10.16.4",
+        "lucide-react": "^0.284.0",
+        "openai": "^6.25.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "recharts": "^2.9.0"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.15",
+        "@types/react-dom": "^18.2.7",
+        "@vitejs/plugin-react": "^4.0.3",
+        "vite": "^4.4.5"
+    }
+}
