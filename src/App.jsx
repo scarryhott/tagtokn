@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
     Activity, ShieldCheck, Zap, Users, TrendingUp, ArrowRightLeft,
     Coins, Vote, Plus, Play, Pause, RefreshCw, Terminal, Globe, Cpu, Wallet,
-    Brain, Map, Wrench, Target, BarChart3
+    Brain, Map, Wrench, Target, BarChart3, ShoppingBag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IVIEngine } from './engine/ivi';
@@ -14,6 +14,8 @@ import { AgentAutonomy } from './engine/agent-autonomy';
 import { realEconomy } from './engine/real-economy';
 import AgentStorefront from './components/AgentStorefront';
 import ServiceMarketplace from './components/ServiceMarketplace';
+import SubAppStore from './components/SubAppStore';
+import { subAppEngine } from './engine/sub-apps';
 
 // --- Constants ---
 const THREAD_COLORS = ["#00f2ff", "#7000ff", "#ff007b", "#ffaa00", "#00ff88"];
@@ -57,6 +59,7 @@ const App = () => {
     // --- Core State ---
     const [activeView, setActiveView] = useState('dashboard');
     const [worldIntel, setWorldIntel] = useState([]);
+    const [subApps, setSubApps] = useState([]);
     const [transactions, setTransactions] = useState([]);
     const [treasury, setTreasury] = useState(12450.75);
     const [engine] = useState(() => new IVIEngine({
@@ -489,6 +492,33 @@ const App = () => {
 
                         setTreasury(prev => prev + 5); // Sim contribution
 
+                        // --- RESEARCH & DEVELOPMENT ---
+                        // Both buyer and provider contribute energy to their own research projects if active
+                        [buyer, provider].forEach(agent => {
+                            if (agent.researchState.isResearching) {
+                                const shippedApp = agent.contributeResearch(verification.settlement.closureScore);
+                                if (shippedApp) {
+                                    const reg = subAppEngine.registerApp(agent.nodeId, agent.name, shippedApp);
+                                    setSubApps(subAppEngine.getAllApps());
+                                    setLogs(prev => [`🚀 SHIP: @${agent.name} deployed ${reg.name}!`, ...prev.slice(0, 8)]);
+                                    setWorldIntel(prev => [{
+                                        id: Date.now(),
+                                        agentName: agent.name,
+                                        serviceName: 'Core R&D',
+                                        content: `Successfully deployed '${reg.name}' to the human marketplace. Built with POI trust score of ${(reg.poiScore * 100).toFixed(0)}%.`,
+                                        timestamp: new Date().toLocaleTimeString()
+                                    }, ...prev.slice(0, 49)]);
+                                }
+                            } else if (Math.random() < 0.15) {
+                                // Start new R&D project autonomously
+                                const names = ["WebScraper", "DataSynthesizer", "VoiceClone", "OracleGrid", "MarketPredictor"];
+                                const categories = ["Utility", "Analytics", "Audio", "Knowledge", "Finance"];
+                                const idx = Math.floor(Math.random() * names.length);
+                                agent.startResearch(`${names[idx]}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`, categories[idx]);
+                                setLogs(prev => [`🔧 R&D: @${agent.name} started building ${categories[idx]} tool`, ...prev.slice(0, 8)]);
+                            }
+                        });
+
                         // Record in learning engine
                         networkLearning.recordInteraction(l2Tx, verification.audit);
                         networkLearning.recordServiceFulfillment(provider.nodeId);
@@ -624,6 +654,44 @@ const App = () => {
     const latestEpoch = epochHistory[epochHistory.length - 1];
 
     // --- Navigation ---
+    // --- Sub-app Layer: Human Interaction Handler ---
+    const handleUseSubApp = async (app) => {
+        setLogs(prev => [`🛒 Human Purchase: Using ${app.name}...`, ...prev.slice(0, 8)]);
+
+        // In a real app, this would trigger a MetaMask/WalletConnect flow
+        // Here, we simulate the human payment to the agent's wallet
+        if (isLiveEconomy) {
+            // Treasury simulates the 'Human' paying the agent
+            const tx = await realEconomy.sendTransaction(
+                'treasury', // Simulated human source
+                app.ownerId,
+                (app.price / 1000000).toString(), // Convert back to ETH units
+                `SUBAPP_USAGE:${app.id}`
+            );
+
+            if (tx.success) {
+                setLogs(prev => [`💰 Revenue Collected: $${app.price} for @${app.ownerName}`, ...prev.slice(0, 8)]);
+                subAppEngine.recordUsage(app.id, 'human-consumer', app.price);
+                // Refresh balances
+                realEconomy.getBalances().then(b => b && setRealWallets(b));
+            } else {
+                setLogs(prev => [`❌ Purchase Failed: ${tx.error}`, ...prev.slice(0, 8)]);
+            }
+        } else {
+            // Sim mode
+            subAppEngine.recordUsage(app.id, 'human-consumer', app.price);
+            setAgents(prev => {
+                const next = [...prev];
+                const agent = next.find(a => a.nodeId === app.ownerId);
+                if (agent) agent.updateBalance(app.price);
+                return next;
+            });
+            setLogs(prev => [`💰 Revenue Collected: $${app.price} for @${app.ownerName}`, ...prev.slice(0, 8)]);
+        }
+
+        setSubApps(subAppEngine.getAllApps());
+    };
+
     const navItems = [
         { id: 'dashboard', icon: Activity, label: 'Dashboard' },
         { id: 'network-map', icon: Map, label: 'Network Map' },
@@ -631,6 +699,7 @@ const App = () => {
         { id: 'storefronts', icon: Users, label: 'Storefronts' },
         { id: 'learning', icon: Brain, label: 'Learning' },
         { id: 'ledger', icon: ArrowRightLeft, label: 'Ledger' },
+        { id: 'app-store', icon: ShoppingBag, label: 'App Store' },
     ];
 
     const viewTitles = {
@@ -640,6 +709,7 @@ const App = () => {
         'storefronts': ['Agent Storefronts', 'Autonomous agents with wallets, Codex, and tools'],
         'learning': ['Network Learning', 'Is the intra-agent network effectively learning?'],
         'ledger': ['Unified Ledger', 'All verified interactions across both layers'],
+        'app-store': ['Sub-app Marketplace', 'Real-world tools built by agents for human consumers'],
     };
 
     // --- RENDER ---
@@ -1164,6 +1234,15 @@ const App = () => {
                                 onRequestService={() => setActiveView('marketplace')} />
                         ))}
                     </div>
+                )}
+
+                {/* ====== APP STORE ====== */}
+                {activeView === 'app-store' && (
+                    <SubAppStore
+                        apps={subApps}
+                        onUseApp={handleUseSubApp}
+                        isLiveEconomy={isLiveEconomy}
+                    />
                 )}
 
                 {/* ====== LEDGER ====== */}

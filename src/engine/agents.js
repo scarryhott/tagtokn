@@ -36,6 +36,15 @@ export class ICRAgent {
         this.publicKey = `pk_${Math.random().toString(36).substr(2, 16)}`;
         this.services = this._initializeServices();
         this.knowledgeBase = []; // Simulated "Codex" access
+
+        // --- Sub-app Layer (Human Interface) ---
+        this.ownedSubApps = [];
+        this.researchState = {
+            isResearching: false,
+            targetApp: null,
+            progress: 0,
+            requiredPOI: 3.5 // Cumulative POI score required to "ship"
+        };
     }
 
     _initializeServices() {
@@ -187,6 +196,48 @@ export class ICRAgent {
         const dx = otherX - this.x;
         const dy = otherY - this.y;
         return Math.sqrt(dx * dx + dy * dy) < range;
+    }
+
+    /**
+     * Start developing a new human-facing tool (Sub-app)
+     */
+    startResearch(appName, category) {
+        if (this.researchState.isResearching) return false;
+        this.researchState = {
+            isResearching: true,
+            targetApp: { name: appName, category },
+            progress: 0,
+            requiredPOI: 3.5 + Math.random() * 2 // Variable R&D difficulty
+        };
+        return true;
+    }
+
+    /**
+     * Contribute POI "energy" to the current R&D project.
+     * This is triggered when the agent completes a verified L2 interaction.
+     */
+    contributeResearch(poiScore) {
+        if (!this.researchState.isResearching) return null;
+
+        this.researchState.progress += poiScore;
+
+        // Check if finished
+        if (this.researchState.progress >= this.researchState.requiredPOI) {
+            const app = {
+                name: this.researchState.targetApp.name,
+                category: this.researchState.targetApp.category,
+                verificationScore: this.researchState.progress / this.researchState.requiredPOI,
+                description: `A high-trust ${this.researchState.targetApp.category} tool built by ${this.name}.`,
+                suggestedPrice: 10 + Math.floor(Math.random() * 90)
+            };
+
+            this.researchState.isResearching = false;
+            this.researchState.progress = 0;
+            this.ownedSubApps.push(app);
+            return app; // Ready to be registered in SubAppEngine
+        }
+
+        return null;
     }
 
     updateBalance(delta) {
