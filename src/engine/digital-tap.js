@@ -110,13 +110,15 @@ export class DigitalTapProtocol {
         // Route plausibility = digital fingerprint quality
         const routePlausibility = tap.proof.fingerprint.quality;
 
-        // Secret factor = shared context depth
+        // Secret factor = shared context depth + novelty boost
         const secretFactor = tap.proof.sharedContext.depth;
+        const isNovel = tap.proof.sharedContext.isNovel;
 
         const auditResult = this.engine.audit({
             events: loopEvents,
             nodes: loopNodes,
             secretFactor,
+            isNovel,
             routePlausibility
         }, networkStats);
 

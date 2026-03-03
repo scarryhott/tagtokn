@@ -522,6 +522,10 @@ const App = () => {
                         timestamp: new Date().toLocaleTimeString()
                     }, ...prev.slice(0, 49)]);
 
+                    // --- SECRET GAME (WORD OF MOUTH) ---
+                    // Rule 1: Secrets are combined. Rule 20: Dual elements.
+                    const contextExchange = buyer.exchangeSecret(provider, townLedger);
+
                     // Create digital tap
                     const tap = digitalTapProtocol.createTap({
                         from: buyer, to: provider,
@@ -530,8 +534,15 @@ const App = () => {
                         channel: 'marketplace'
                     });
 
+                    // Update tap proof with Secret Game metrics for IVI Audit
+                    tap.proof.sharedContext.isNovel = contextExchange.noveltyScale > 0.5;
+
                     // Verify and settle through IVI with REAL network stats
-                    const verification = digitalTapProtocol.verifyAndSettle(tap, stats);
+                    // Enforce 3-2-1 rules: Category is passed to IVI engine
+                    const verification = digitalTapProtocol.verifyAndSettle(tap, {
+                        ...stats,
+                        category: service.category === 'event' ? 'event' : 'service'
+                    });
                     console.log(`[L2] Audit: score=${verification.settlement.closureScore.toFixed(4)} verified=${verification.settlement.verified}`);
 
                     marketplace.settleRequest(request.id, verification.settlement);

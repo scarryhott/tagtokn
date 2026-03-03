@@ -81,29 +81,33 @@ export class IVIEngine {
 
         let score = this.calculateClosureScore(i, r, E);
 
-        // Secret Verification Boost (Word of Mouth)
-        // If the loop has a high secret matching factor, boost the score
+        // Secret Verification Boost (Full Word of Mouth)
+        // Rule 6: Trust after multiple sources. Rule 32: Novelty requirement.
         if (loop.secretFactor > 0) {
-            score = Math.min(1.0, score + (0.2 * loop.secretFactor));
+            // Factor is boosted by novelty and verifiability context
+            const noveltyBonus = loop.isNovel ? 0.3 : 0.05;
+            score = Math.min(1.0, score + (noveltyBonus * loop.secretFactor));
         }
 
         // Geographic Grounding (Route Plausibility)
-        // If the travel path is physically impossible/unlikely, penalize the score
         if (loop.routePlausibility !== undefined) {
             score *= (0.5 + 0.5 * loop.routePlausibility);
         }
 
         const isClosure = score >= this.tau;
 
-        // Fees: 2% of the loop volume
+        // Fees: 2% (Rule 98 in code)
         const loopVolume = loop.events.reduce((sum, e) => sum + e.amount, 0);
         const poolContribution = loopVolume * 0.02;
 
-        // Minting weight from transaction types (3, 2, 1)
-        const totalWeight = loop.events.reduce((sum, e) => sum + (e.weight || 1), 0);
+        // Minting weights (Rule 1: 3-2-1 rules)
+        // Goods/Services = 3, Donation = 2, Event = 1
+        const totalWeight = loop.events.reduce((sum, e) => {
+            const typeWeight = e.category === 'service' ? 3 : (e.category === 'donation' ? 2 : 1);
+            return sum + typeWeight;
+        }, 0);
 
-        // Reward (M) scaled by loop weight and closure score
-        // M = Weights * S(i,r,E)
+        // Reward (M) scaled by weights and closure score
         const reward = isClosure ? totalWeight * score : 0;
 
         // Governance weights update: W(x) += M(L) for nodes in loop

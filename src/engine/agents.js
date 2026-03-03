@@ -130,41 +130,51 @@ export class ICRAgent {
     }
 
     /**
-     * Participate in the "Secret Game" (analog word-of-mouth protocol)
-     * Exchanging elements of stories to form combined secrets.
+     * Participate in the "Secret Game" (Full Word-of-Mouth Protocol)
+     * Rule 1: Secrets are combined by two or more individuals into a story.
+     * Rule 20: Dual elements (Real/Fake) are merged. 
+     * Rule 6: Trust after multiple sources.
      */
-    exchangeSecret(otherAgent) {
-        // Combined secret: element from both parties
-        const element1 = this.own_secret.split(' ')[0];
-        const element2 = otherAgent.own_secret.split(' ')[0];
-        const combined = `${element1}-${element2}`;
+    exchangeSecret(otherAgent, ledger) {
+        // Elements from Alice/Bob/Chauncey from secretgame.docx
+        const storyA = this.own_secret;
+        const storyB = otherAgent.own_secret;
 
-        this.secrets.push(combined);
-        otherAgent.secrets.push(combined);
+        // Combination rule: Create a combined fragment (Rule 1)
+        const elementA = storyA.split(' ')[0];
+        const elementB = storyB.split(' ')[0];
+        const combinedFragment = `${elementA}-${elementB}`;
 
-        // Track how many sources tell the same secret (verification scale)
-        const updateTrusted = (agent, secret) => {
-            const count = (agent.trusted_secrets.get(secret) || 0) + 1;
-            agent.trusted_secrets.set(secret, count);
-            // If heard from multiple sources, it becomes "Verified Word of Mouth"
-            if (count > 2) {
-                agent.c_score = Math.min(1.0, agent.c_score + 0.1);
+        // Add to local memories (Rule 6: trust from multiple sources)
+        const updateTrusted = (agent, source, element) => {
+            const memory = agent.trusted_secrets.get(element) || { sources: new Set(), count: 0 };
+            memory.sources.add(source.nodeId);
+            memory.count = memory.sources.size;
+            agent.trusted_secrets.set(element, memory);
+
+            // If heard from 2+ sources, C_SCORE (Closure) improves
+            if (memory.count >= 2) {
+                agent.c_score = Math.min(1.0, agent.c_score + 0.08);
             }
         };
 
-        updateTrusted(this, otherAgent.own_secret);
-        updateTrusted(otherAgent, this.own_secret);
+        updateTrusted(this, otherAgent, storyB);
+        updateTrusted(otherAgent, this, storyA);
 
-        // Secret game updates Relation (R) weight
-        this.r_weight += 0.05;
-        otherAgent.r_weight += 0.05;
+        // Propagate to global ledger (Rule 1, 32)
+        if (ledger) {
+            ledger.propagateStory(this.name, otherAgent.name, combinedFragment, true);
+        }
+
+        // Relation (R) growth from shared narratives
+        this.r_weight += 0.08;
+        otherAgent.r_weight += 0.08;
 
         return {
-            combined,
+            combinedFragment,
             sourceA: this.name,
             sourceB: otherAgent.name,
-            storyA: this.own_secret,
-            storyB: otherAgent.own_secret
+            noveltyScale: ledger?.isNovel(combinedFragment) ? 1.0 : 0.2
         };
     }
 
