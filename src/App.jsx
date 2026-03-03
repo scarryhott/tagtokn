@@ -81,6 +81,7 @@ const App = () => {
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [isLiveEconomy, setIsLiveEconomy] = useState(false);
     const [realWallets, setRealWallets] = useState({});
+    const [processedTxHashes, setProcessedTxHashes] = useState(new Set());
 
     // --- Connect to Real Economy Backend ---
     useEffect(() => {
@@ -190,6 +191,98 @@ const App = () => {
             });
         }
     }, [realWallets, isLiveEconomy]);
+
+    // --- IVI Data Mechanism: On-Chain Transaction Monitor ---
+    useEffect(() => {
+        if (!isLiveEconomy || !isSimulating) return;
+
+        const monitorInterval = setInterval(async () => {
+            const onChainTxs = await realEconomy.getTransactionHistory();
+            if (!onChainTxs || onChainTxs.length === 0) return;
+
+            const newTxs = onChainTxs.filter(tx => !processedTxHashes.has(tx.hash));
+            if (newTxs.length === 0) return;
+
+            newTxs.forEach(async (tx) => {
+                // Find the agent involved in this transaction
+                const agent = agentsRef.current.find(a =>
+                    a.walletAddress === tx.from || a.walletAddress === tx.to
+                );
+
+                if (agent) {
+                    const direction = tx.from === agent.walletAddress ? 'outbound' : 'inbound';
+
+                    // 1. Ingest external transaction into the Digital Tap Protocol
+                    // This is the "Data Mechanism" mentioned in notes.docx
+                    const extTap = digitalTapProtocol.ingestExternalTransaction({
+                        fromWallet: tx.from,
+                        toWallet: tx.to,
+                        amount: parseFloat(tx.amountEth) * 1000000, // Convert ETH to game units
+                        txHash: tx.hash,
+                        network: 'Base Sepolia',
+                        agent: agent,
+                        direction: direction
+                    });
+
+                    // 2. Audit and settle through IVI
+                    const auditStats = {
+                        nodeDegrees: networkStats.nodeDegrees,
+                        nodeVolumes: networkStats.nodeVolumes,
+                        totalVolume: networkStats.totalVolume,
+                        networkAvgDegree: networkStats.networkAvgDegree,
+                        globalVelocity: networkStats.globalVelocity
+                    };
+                    const verification = digitalTapProtocol.verifyAndSettle(extTap, auditStats);
+
+                    // 3. Record in learning engine
+                    const l1Tx = {
+                        id: tx.hash.slice(0, 12),
+                        from: tx.from, fromName: direction === 'outbound' ? agent.name : 'External',
+                        to: tx.to, toName: direction === 'inbound' ? agent.name : 'External',
+                        amount: parseFloat(tx.amountEth) * 1000000,
+                        type: 'on-chain', weight: 5, // L1 weighted higher
+                        timestamp: Date.now(), layer: 'L1',
+                        isReal: true
+                    };
+
+                    networkLearning.recordInteraction(l1Tx, verification.audit);
+
+                    setLogs(prev => [`📡 L1 Ingest: Verified on-chain tx ${tx.hash.slice(0, 10)}...`, ...prev.slice(0, 8)]);
+                    setTransactions(prev => {
+                        const updated = [...prev.slice(-49), l1Tx];
+                        transactionsRef.current = updated;
+                        return updated;
+                    });
+
+                    // 4. Update Agent Trust & Weights based on Audit
+                    if (verification.settlement.verified) {
+                        setAgents(prev => {
+                            const next = prev.map(a => Object.assign(Object.create(Object.getPrototypeOf(a)), a));
+                            const target = next.find(a => a.nodeId === agent.nodeId);
+                            if (target) {
+                                // Closure boost from verified real-world activity
+                                target.c_score = Math.min(1.0, target.c_score + (verification.settlement.closureScore * 0.1));
+                                // Relation boost from external connectivity
+                                target.r_weight += 0.05;
+                            }
+                            agentsRef.current = next;
+                            return next;
+                        });
+                    }
+                }
+            });
+
+            // Update processed set
+            setProcessedTxHashes(prev => {
+                const next = new Set(prev);
+                newTxs.forEach(tx => next.add(tx.hash));
+                return next;
+            });
+
+        }, 8000); // Poll every 8 seconds
+
+        return () => clearInterval(monitorInterval);
+    }, [isLiveEconomy, isSimulating, processedTxHashes, networkStats]);
     const networkStats = useMemo(() => {
         const nodeDegrees = {}, nodeVolumes = {};
         let totalVolume = 0;
