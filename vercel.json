@@ -2,15 +2,9 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/api/asin/resolve",
-      "destination": "/api/asin/resolve.js"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
     }
   ],
-  "outputDirectory": "dist",
-  "installCommand": "npm install --include=dev",
-  "buildCommand": "npm run build"
+  "outputDirectory": "dist"
 }

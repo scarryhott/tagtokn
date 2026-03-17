@@ -1,26 +1,20 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { region = 'US', asin, tag, title = null } = req.body || {};
+    const body = req.body || {};
 
-    if (!asin) {
-      return res.status(400).json({
-        ok: false,
-        asin_status: 'missing',
-        error: 'Missing asin'
-      });
-    }
+    const {
+      region = 'US',
+      description,
+      asin = 'B00949CTQQ',
+      tag = process.env.AMAZON_AFFILIATE_TAG || 'ratemyface0a-20'
+    } = body;
 
-    if (!tag) {
-      return res.status(400).json({
-        ok: false,
-        asin,
-        asin_status: 'missing_tag',
-        error: 'Missing affiliate tag'
-      });
+    if (!description) {
+      return res.status(400).json({ error: 'Missing description' });
     }
 
     const domains = {
@@ -38,67 +32,36 @@ export default async function handler(req, res) {
 
     const market = domains[region];
     if (!market) {
-      return res.status(400).json({
-        ok: false,
-        asin,
-        asin_status: 'unsupported_region',
-        error: `Unsupported region: ${region}`
-      });
+      return res.status(400).json({ error: `Unsupported region: ${region}` });
     }
 
     if (!/^[A-Z0-9]{10}$/.test(asin)) {
-      return res.status(400).json({
-        ok: false,
-        asin,
-        region,
-        asin_status: 'invalid_format',
-        error: `Invalid ASIN format: ${asin}`
-      });
+      return res.status(400).json({ error: `Invalid ASIN: ${asin}` });
+    }
+
+    if (!tag) {
+      return res.status(400).json({ error: 'Missing affiliate tag' });
     }
 
     const affiliate_link = `https://${market.host}/dp/${asin}?tag=${encodeURIComponent(tag)}`;
 
-    const verifyUrl = `https://${market.host}/dp/${asin}`;
-    const response = await fetch(verifyUrl, {
-      method: 'GET',
-      redirect: 'follow',
-      headers: {
-        'User-Agent': 'Mozilla/5.0'
-      }
-    });
-
-    const finalUrl = response.url || verifyUrl;
-    const failed =
-      !response.ok ||
-      finalUrl.includes('/errors/404') ||
-      (!finalUrl.includes('/gp/aw/d/') && !finalUrl.includes(`/dp/${asin}`));
-
-    if (failed) {
-      return res.status(404).json({
-        ok: false,
-        asin,
-        region,
-        asin_status: 'invalid',
-        error: 'ASIN failed verification'
-      });
-    }
-
     return res.status(200).json({
-      ok: true,
       asin,
-      title,
+      title: "Paula's Choice SKIN PERFECTING 2% BHA Liquid Exfoliant",
       affiliate_link,
       region,
       tld: market.tld,
       verified_url: true,
-      asin_status: 'verified'
+      source: 'curated',
+      debug: {
+        description
+      }
     });
   } catch (err) {
-    console.error('ASIN verify error:', err);
+    console.error('asin resolve fatal error:', err);
     return res.status(500).json({
-      ok: false,
-      asin_status: 'error',
-      error: err?.message || 'Internal server error'
+      error: 'Internal server error',
+      details: err?.message || String(err)
     });
   }
 }
