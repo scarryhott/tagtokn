@@ -1,9 +1,12 @@
 {
-    "version": 2,
-    "rewrites": [
-        {
-            "source": "/api/(.*)",
-            "destination": "/api/index.js"
-        }
-    ]
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    }
+  ],
+  "outputDirectory": "dist",
+  "installCommand": "npm install --include=dev",
+  "buildCommand": "npm run build"
 }
