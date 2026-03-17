@@ -92,11 +92,25 @@ async function initializeServer() {
 
 // Middleware to ensure initialized
 app.use(async (req, res, next) => {
-    // Skip init for status checks or if already init
-    if (!isInitialized && !req.path.startsWith('/api/status')) {
-        await initializeServer();
+    const publicRoutes = new Set([
+        '/api/status',
+        '/api/asin/resolve'
+    ]);
+
+    if (publicRoutes.has(req.path) || isInitialized) {
+        return next();
     }
-    next();
+
+    try {
+        const ok = await initializeServer();
+        if (!ok) {
+            return res.status(500).json({ error: 'Initialization failed' });
+        }
+        return next();
+    } catch (err) {
+        console.error('Middleware initialization error:', err);
+        return res.status(500).json({ error: 'Initialization failed', details: err.message });
+    }
 });
 
 // ============================================================
@@ -271,12 +285,14 @@ app.get('/api/ai/usage', (req, res) => {
  */
 app.post('/api/asin/resolve', async (req, res) => {
     try {
+        console.log('ASIN resolve body:', req.body);
+
         const {
             region = 'US',
             description,
             asin = 'B00949CTQQ',
             tag = process.env.AMAZON_AFFILIATE_TAG || 'ratemyface0a-20'
-        } = req.body;
+        } = req.body || {};
 
         if (!description) {
             return res.status(400).json({ error: 'Missing description' });
@@ -284,7 +300,7 @@ app.post('/api/asin/resolve', async (req, res) => {
 
         const { affiliate_link, tld } = buildAffiliateLink({ region, asin, tag });
 
-        res.json({
+        return res.status(200).json({
             asin,
             title: "Paula's Choice SKIN PERFECTING 2% BHA Liquid Exfoliant",
             affiliate_link,
@@ -297,7 +313,10 @@ app.post('/api/asin/resolve', async (req, res) => {
             }
         });
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        console.error('ASIN resolve error:', err);
+        return res.status(400).json({
+            error: err.message || 'Unknown error'
+        });
     }
 });
 
@@ -338,12 +357,3 @@ app.post('/api/poi/record', async (req, res) => {
 
 // Export for Vercel
 export default app;
-
-// Keep listen for local development (if not in Vercel)
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-    const PORT = process.env.PORT || 3002;
-    app.listen(PORT, async () => {
-        console.log(`║  Server:    http://localhost:${PORT}             ║`);
-        await initializeServer();
-    });
-}
