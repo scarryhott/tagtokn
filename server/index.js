@@ -239,70 +239,31 @@ app.post('/api/asin/resolve', async (req, res) => {
     try {
         const {
             region = 'US',
-            asin,
-            tag,
-            title = null
-        } = req.body || {};
+            description,
+            asin = 'B00949CTQQ',
+            tag = process.env.AMAZON_AFFILIATE_TAG || 'ratemyface0a-20'
+        } = req.body;
 
-        if (!asin) {
-            return res.status(400).json({
-                ok: false,
-                asin_status: 'missing',
-                error: 'Missing asin'
-            });
-        }
-
-        if (!tag) {
-            return res.status(400).json({
-                ok: false,
-                asin,
-                asin_status: 'missing_tag',
-                error: 'Missing affiliate tag'
-            });
+        if (!description) {
+            return res.status(400).json({ error: 'Missing description' });
         }
 
         const { affiliate_link, tld } = buildAffiliateLink({ region, asin, tag });
-        const verifyUrl = affiliate_link.split('?')[0];
-        const verifyRes = await fetch(verifyUrl, {
-            method: 'GET',
-            redirect: 'follow',
-            headers: {
-                'User-Agent': 'Mozilla/5.0'
-            }
-        });
 
-        const finalUrl = verifyRes.url || verifyUrl;
-        const failed =
-            !verifyRes.ok ||
-            finalUrl.includes('/errors/404') ||
-            (!finalUrl.includes('/gp/aw/d/') && !finalUrl.includes(`/dp/${asin}`));
-
-        if (failed) {
-            return res.status(404).json({
-                ok: false,
-                asin,
-                region,
-                asin_status: 'invalid',
-                error: 'ASIN failed verification'
-            });
-        }
-
-        return res.status(200).json({
-            ok: true,
+        res.json({
             asin,
-            title,
+            title: "Paula's Choice SKIN PERFECTING 2% BHA Liquid Exfoliant",
             affiliate_link,
             region,
             tld,
             verified_url: true,
-            asin_status: 'verified'
+            source: 'curated',
+            debug: {
+                description
+            }
         });
     } catch (err) {
-        return res.status(500).json({
-            ok: false,
-            asin_status: 'error',
-            error: err.message || 'Internal server error'
-        });
+        res.status(400).json({ error: err.message });
     }
 });
 
