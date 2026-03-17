@@ -6,7 +6,5 @@
       "destination": "/api/index.js"
     }
   ],
-  "outputDirectory": "dist",
-  "installCommand": "npm install --include=dev",
-  "buildCommand": "npm run build"
+  "outputDirectory": "dist"
 }
