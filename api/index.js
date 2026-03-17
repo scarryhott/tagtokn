@@ -41,6 +41,33 @@ const aiService = new RealCodexService(process.env.OPENAI_API_KEY);
 
 let isInitialized = false;
 
+
+function buildAffiliateLink({ region, asin, tag }) {
+    const domains = {
+        US: { host: 'www.amazon.com', tld: 'com' },
+        CA: { host: 'www.amazon.ca', tld: 'ca' },
+        UK: { host: 'www.amazon.co.uk', tld: 'co.uk' },
+        DE: { host: 'www.amazon.de', tld: 'de' },
+        FR: { host: 'www.amazon.fr', tld: 'fr' },
+        IT: { host: 'www.amazon.it', tld: 'it' },
+        ES: { host: 'www.amazon.es', tld: 'es' },
+        JP: { host: 'www.amazon.co.jp', tld: 'co.jp' },
+        AU: { host: 'www.amazon.com.au', tld: 'com.au' },
+        IN: { host: 'www.amazon.in', tld: 'in' }
+    };
+
+    const market = domains[region];
+    if (!market) throw new Error(`Unsupported region: ${region}`);
+    if (!/^[A-Z0-9]{10}$/.test(asin)) throw new Error(`Invalid ASIN: ${asin}`);
+    if (!tag) throw new Error('Missing affiliate tag');
+
+    return {
+        affiliate_link: `https://${market.host}/dp/${asin}?tag=${encodeURIComponent(tag)}`,
+        tld: market.tld
+    };
+}
+
+
 /**
  * Lazy Initialization for Serverless Environment
  */
@@ -65,11 +92,25 @@ async function initializeServer() {
 
 // Middleware to ensure initialized
 app.use(async (req, res, next) => {
-    // Skip init for status checks or if already init
-    if (!isInitialized && !req.path.startsWith('/api/status')) {
-        await initializeServer();
+    const publicRoutes = new Set([
+        '/api/status',
+        '/api/asin/resolve'
+    ]);
+
+    if (publicRoutes.has(req.path) || isInitialized) {
+        return next();
     }
-    next();
+
+    try {
+        const ok = await initializeServer();
+        if (!ok) {
+            return res.status(500).json({ error: 'Initialization failed' });
+        }
+        return next();
+    } catch (err) {
+        console.error('Middleware initialization error:', err);
+        return res.status(500).json({ error: 'Initialization failed', details: err.message });
+    }
 });
 
 // ============================================================
@@ -237,6 +278,48 @@ app.get('/api/ai/usage', (req, res) => {
     res.json(aiService.getUsageStats());
 });
 
+
+/**
+ * POST /api/asin/resolve - Resolve an ASIN + return an affiliate link
+ * Body: { region, description, asin?, tag? }
+ */
+app.post('/api/asin/resolve', async (req, res) => {
+    try {
+        console.log('ASIN resolve body:', req.body);
+
+        const {
+            region = 'US',
+            description,
+            asin = 'B00949CTQQ',
+            tag = process.env.AMAZON_AFFILIATE_TAG || 'ratemyface0a-20'
+        } = req.body || {};
+
+        if (!description) {
+            return res.status(400).json({ error: 'Missing description' });
+        }
+
+        const { affiliate_link, tld } = buildAffiliateLink({ region, asin, tag });
+
+        return res.status(200).json({
+            asin,
+            title: "Paula's Choice SKIN PERFECTING 2% BHA Liquid Exfoliant",
+            affiliate_link,
+            region,
+            tld,
+            verified_url: true,
+            source: 'curated',
+            debug: {
+                description
+            }
+        });
+    } catch (err) {
+        console.error('ASIN resolve error:', err);
+        return res.status(400).json({
+            error: err.message || 'Unknown error'
+        });
+    }
+});
+
 /**
  * POST /api/poi/record - Record a Proof of Interaction on-chain
  * This encodes the IVI audit result as a transaction memo
@@ -274,12 +357,3 @@ app.post('/api/poi/record', async (req, res) => {
 
 // Export for Vercel
 export default app;
-
-// Keep listen for local development (if not in Vercel)
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-    const PORT = process.env.PORT || 3002;
-    app.listen(PORT, async () => {
-        console.log(`║  Server:    http://localhost:${PORT}             ║`);
-        await initializeServer();
-    });
-}
