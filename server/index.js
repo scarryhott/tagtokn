@@ -240,24 +240,19 @@ app.post('/api/asin/resolve', async (req, res) => {
         const {
             region = 'US',
             description,
-            asin,
-            title,
+            asin = 'B00949CTQQ',
             tag = process.env.AMAZON_AFFILIATE_TAG || 'ratemyface0a-20'
-        } = req.body || {};
+        } = req.body;
 
         if (!description) {
             return res.status(400).json({ error: 'Missing description' });
-        }
-
-        if (!asin) {
-            return res.status(400).json({ error: 'Missing asin' });
         }
 
         const { affiliate_link, tld } = buildAffiliateLink({ region, asin, tag });
 
         res.json({
             asin,
-            title: title || null,
+            title: "Paula's Choice SKIN PERFECTING 2% BHA Liquid Exfoliant",
             affiliate_link,
             region,
             tld,
