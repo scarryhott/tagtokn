@@ -74,10 +74,19 @@ Items that are **partially done**, **API-only**, or **not wired** between the Re
 
 ---
 
+## SpacetimeDB (realtime)
+
+- [x] **Module** — `spacetimedb/src/index.ts`: public `nfc_live_ping` + `post_live_ping` reducer (demo ping stream).
+- [x] **Client** — Nav **SpacetimeDB** + `SpacetimeNfcPanel.jsx` when `VITE_SPACETIMEDB_URI` is set; token persisted as `nfc_stdb_token`.
+- [ ] **Publish / ops** — Install [CLI](https://spacetimedb.com/install), run local server (`spacetime start` or Docker), then `npm run spacetime:publish` from repo root (database name `nfc-tap` by default).
+- [ ] **Product integration** — Still a side channel vs Express/SQLite; extend module + bind Joint rooms / graph if you want one writer path.
+
+---
+
 ## Quality & automation
 
 - [ ] E2E or integration tests (auth → mint → list → purchase).
-- [ ] CI (build + test).
+- [x] CI (build + test) — `.github/workflows/ci.yml`.
 
 ---
 

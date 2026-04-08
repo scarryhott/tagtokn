@@ -1,0 +1,8 @@
+{
+  "name": "nfc-tap-stdb-module",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "spacetimedb": "2.1.0"
+  }
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
     Activity, ShieldCheck, Zap, Users, TrendingUp, ArrowRightLeft,
     Coins, Vote, Plus, Play, Pause, RefreshCw, Terminal, Globe, Cpu, Wallet,
-    Brain, Map, Wrench, Target, BarChart3, ShoppingBag, Hexagon, Gem, MessageCircle,
+    Brain, Map, Wrench, Target, BarChart3, ShoppingBag, Hexagon, Gem, MessageCircle, Radio,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IVIEngine } from './engine/ivi';
@@ -21,6 +21,7 @@ import GovernanceBoard from './components/GovernanceBoard';
 import TutteAtlas from './components/TutteAtlas';
 import NfcMarketplace from './components/NfcMarketplace';
 import JointKimiRoom from './components/JointKimiRoom';
+import SpacetimeNfcPanel from './components/SpacetimeNfcPanel';
 import PublicProfileView from './components/PublicProfileView';
 import { userRegistry, nfcAuthHeaders } from './engine/user-accounts';
 import { votingEngine } from './engine/governance';
@@ -952,6 +953,7 @@ const App = () => {
         { id: 'tutte-atlas', icon: Hexagon, label: 'Tutte Atlas' },
         { id: 'nfc-hub', icon: Gem, label: 'Graph NFTs' },
         { id: 'joint-kimi', icon: MessageCircle, label: 'Joint rooms' },
+        { id: 'spacetime-live', icon: Radio, label: 'SpacetimeDB' },
         { id: 'marketplace', icon: Globe, label: 'Marketplace' },
         { id: 'storefronts', icon: Users, label: 'Storefronts' },
         { id: 'learning', icon: Brain, label: 'Learning' },
@@ -968,6 +970,7 @@ const App = () => {
         'tutte-atlas': ['Tutte Atlas', 'Global vs local harmonic graph, face NFTs, Barbour sphere, interconnects'],
         'nfc-hub': ['Graph NFT hub', 'Mint, ingest, inventory, listings, interconnects on the internal ledger'],
         'joint-kimi': ['Joint Kimi rooms', 'Perspectival chat sessions tagged with graph epoch'],
+        'spacetime-live': ['SpacetimeDB', 'Realtime pings — shared module next to NFC (optional)'],
         'marketplace': ['Agent Marketplace', 'Agentic service providers verified via Digital Tap'],
         'storefronts': ['Agent Storefronts', 'Autonomous agents with wallets, Codex, and tools'],
         'learning': ['Network Learning', 'Is the intra-agent network effectively learning?'],
@@ -1595,6 +1598,8 @@ const App = () => {
                     {activeView === 'joint-kimi' && (
                         <JointKimiRoom currentUserId={currentUser?.id || ''} />
                     )}
+
+                    {activeView === 'spacetime-live' && <SpacetimeNfcPanel />}
 
                     {/* ====== LEARNING VIEW ====== */}
                     {activeView === 'learning' && (
