@@ -14,8 +14,8 @@ dist/
 data/
 *.db
 :memory:
-:memory:-shm
-:memory:-wal
+:memory:*
+**/:memory:*
 
 # OS files
 .DS_Store
