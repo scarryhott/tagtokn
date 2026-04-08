@@ -546,3 +546,110 @@ export function scoreCandidateConnectivity(db, { candidateNodeId, perspectiveNod
   return { connectivity: perspectives.size, perspectiveIds: Array.from(perspectives) };
 }
 
+/**
+ * Per-epoch centroid of each user's owned nodes in the Tutte plane → perspectival paths (temporal ledger geometry).
+ */
+export function computePerspectivalPaths(db, { maxUsers = 24 } = {}) {
+  const epochRows = db.prepare(`SELECT DISTINCT epoch FROM node_embeddings ORDER BY epoch ASC`).all();
+  const epochs = epochRows.map((r) => r.epoch);
+  if (epochs.length === 0) return { epochs: [], paths: [] };
+
+  const ownerRows = db
+    .prepare(
+      `
+    SELECT DISTINCT TRIM(owner_user_id) AS uid FROM graph_nodes
+    WHERE TRIM(COALESCE(owner_user_id,'')) != ''
+  `,
+    )
+    .all();
+  let userIds = ownerRows.map((r) => r.uid).filter(Boolean);
+
+  const nftUserRows = db
+    .prepare(
+      `
+    SELECT DISTINCT minted_by_user_id AS uid FROM nft_tokens WHERE TRIM(COALESCE(minted_by_user_id,'')) != ''
+    UNION
+    SELECT DISTINCT TRIM(COALESCE(current_owner_user_id,'')) FROM nft_tokens
+    WHERE TRIM(COALESCE(current_owner_user_id,'')) != ''
+  `,
+    )
+    .all();
+  const priority = new Set(nftUserRows.map((r) => Object.values(r)[0]).filter(Boolean));
+
+  userIds.sort((a, b) => {
+    const pa = priority.has(a) ? 1 : 0;
+    const pb = priority.has(b) ? 1 : 0;
+    if (pb !== pa) return pb - pa;
+    return String(a).localeCompare(String(b));
+  });
+  userIds = userIds.slice(0, maxUsers);
+
+  const nodesByUser = new Map();
+  for (const uid of userIds) {
+    const nids = db.prepare(`SELECT node_id FROM graph_nodes WHERE owner_user_id = ?`).all(uid).map((r) => r.node_id);
+    nodesByUser.set(uid, new Set(nids));
+  }
+
+  const posStmt = db.prepare(`SELECT node_id, x, y FROM node_embeddings WHERE epoch = ?`);
+  const paths = [];
+
+  for (const userId of userIds) {
+    const nodeSet = nodesByUser.get(userId);
+    if (!nodeSet || nodeSet.size === 0) continue;
+    const points = [];
+    for (const epoch of epochs) {
+      const rows = posStmt.all(epoch);
+      let sx = 0;
+      let sy = 0;
+      let n = 0;
+      for (const r of rows) {
+        if (!nodeSet.has(r.node_id)) continue;
+        sx += r.x;
+        sy += r.y;
+        n += 1;
+      }
+      if (n > 0) points.push({ epoch, x: sx / n, y: sy / n });
+    }
+    if (points.length < 2) continue;
+    const tokenRows = db
+      .prepare(
+        `
+      SELECT token_id FROM nft_tokens
+      WHERE minted_by_user_id = ? OR TRIM(COALESCE(current_owner_user_id,'')) = ?
+      LIMIT 12
+    `,
+      )
+      .all(userId, userId);
+    paths.push({
+      userId,
+      points,
+      tokenIds: tokenRows.map((r) => r.token_id),
+    });
+  }
+
+  return { epochs, paths };
+}
+
+/** Single NFT node's coordinates across epochs (temporal Tutte trail). */
+export function computeNftTemporalTrail(db, tokenId) {
+  const tok = db.prepare(`SELECT token_id, node_id FROM nft_tokens WHERE token_id = ?`).get(tokenId);
+  if (!tok) return null;
+  const rows = db
+    .prepare(
+      `
+    SELECT epoch, x, y, stress FROM node_embeddings WHERE node_id = ? ORDER BY epoch ASC
+  `,
+    )
+    .all(tok.node_id);
+  return {
+    tokenId: tok.token_id,
+    nodeId: tok.node_id,
+    points: rows.map((r) => ({
+      epoch: r.epoch,
+      x: r.x,
+      y: r.y,
+      stress: r.stress,
+    })),
+  };
+}
+

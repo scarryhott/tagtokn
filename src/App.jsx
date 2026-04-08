@@ -67,6 +67,7 @@ const TrendArrow = ({ value, label, invert = false }) => {
 const App = () => {
     // --- Core State ---
     const [activeView, setActiveView] = useState('dashboard');
+    const [tutteFocusToken, setTutteFocusToken] = useState('');
     const [worldIntel, setWorldIntel] = useState([]);
     const [subApps, setSubApps] = useState(() => subAppEngine.getAllApps());
     const [proposals, setProposals] = useState(() => votingEngine.getAllProposals());
@@ -184,6 +185,18 @@ const App = () => {
             setPublicProfileUserId(new URLSearchParams(window.location.search).get('u') || null);
         window.addEventListener('popstate', sync);
         return () => window.removeEventListener('popstate', sync);
+    }, []);
+
+    useEffect(() => {
+        const applyTutteQuery = () => {
+            const p = new URLSearchParams(window.location.search);
+            if (p.get('view') === 'tutte-atlas') setActiveView('tutte-atlas');
+            const tn = p.get('tutteNft');
+            if (tn) setTutteFocusToken(tn);
+        };
+        applyTutteQuery();
+        window.addEventListener('popstate', applyTutteQuery);
+        return () => window.removeEventListener('popstate', applyTutteQuery);
     }, []);
 
     // --- Human-Agent Sync ---
@@ -1619,11 +1632,17 @@ const App = () => {
                     )}
 
                     {activeView === 'tutte-atlas' && (
-                        <TutteAtlas currentUserId={currentUser?.id || ''} />
+                        <TutteAtlas currentUserId={currentUser?.id || ''} focusTokenId={tutteFocusToken} />
                     )}
 
                     {activeView === 'nfc-hub' && (
-                        <NfcMarketplace currentUserId={currentUser?.id || ''} />
+                        <NfcMarketplace
+                            currentUserId={currentUser?.id || ''}
+                            onOpenTutteForNft={(tokenId) => {
+                                setTutteFocusToken(tokenId);
+                                setActiveView('tutte-atlas');
+                            }}
+                        />
                     )}
 
                     {activeView === 'joint-kimi' && (

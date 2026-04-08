@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Globe, Link2, RefreshCw, Hexagon, Circle } from 'lucide-react';
+import { Globe, Link2, RefreshCw, Hexagon, Circle, Sparkles } from 'lucide-react';
 import { nfcAuthHeaders } from '../engine/user-accounts';
 
 const API = '';
@@ -31,8 +31,8 @@ function buildPosMap(positions) {
   return m;
 }
 
-function normalizeLayout(positions, pad = 40, size = 420) {
-  const pts = [...positions.values()];
+function normalizeLayout(positions, pad = 40, size = 420, extraPoints = []) {
+  const pts = [...positions.values(), ...extraPoints];
   if (!pts.length) {
     return {
       map: new Map(),
@@ -65,7 +65,79 @@ function normalizeLayout(positions, pad = 40, size = 420) {
   return { map, scale, ox: minX, oy: minY, toPixel };
 }
 
-export default function TutteAtlas({ currentUserId = '' }) {
+function hueFromUserId(userId) {
+  let h = 216109;
+  const s = String(userId);
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
+  return h % 360;
+}
+
+function PrimeWheelNav({ neighbors = [], selectedBucket, onSelectBucket }) {
+  const counts = useMemo(() => {
+    const c = { '-1': 0, '0': 0, '1': 0 };
+    for (const n of neighbors) {
+      const b = n.prime_bucket;
+      const k = b < 0 ? '-1' : b > 0 ? '1' : '0';
+      c[k] += 1;
+    }
+    return c;
+  }, [neighbors]);
+
+  const R = 54;
+  const cx = 62;
+  const cy = 62;
+  const sectors = [
+    { bucket: -1, label: '−1', start: -Math.PI / 2, end: Math.PI / 6, color: 'rgba(56,189,248,0.45)' },
+    { bucket: 0, label: '0', start: Math.PI / 6, end: 5 * Math.PI / 6, color: 'rgba(167,139,250,0.45)' },
+    { bucket: 1, label: '+1', start: 5 * Math.PI / 6, end: 3 * Math.PI / 2, color: 'rgba(251,191,36,0.4)' },
+  ];
+
+  function arcPath(s, e) {
+    const x1 = cx + R * Math.cos(s);
+    const y1 = cy + R * Math.sin(s);
+    const x2 = cx + R * Math.cos(e);
+    const y2 = cy + R * Math.sin(e);
+    const large = e - s > Math.PI ? 1 : 0;
+    return `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: '0.72rem', color: '#71717a', marginBottom: 6 }}>
+        Prime wheel (neighbor angles → buckets). Tap a sector to highlight bucket.
+      </div>
+      <svg width={124} height={124} viewBox="0 0 124 124" style={{ display: 'block' }}>
+        <circle cx={cx} cy={cy} r={R + 6} fill="none" stroke="#27272a" strokeWidth={1} />
+        {sectors.map((sec) => {
+          const k = sec.bucket < 0 ? '-1' : sec.bucket > 0 ? '1' : '0';
+          const sel = selectedBucket === sec.bucket;
+          return (
+            <path
+              key={sec.bucket}
+              d={arcPath(sec.start, sec.end)}
+              fill={sec.color}
+              stroke={sel ? '#fafafa' : 'rgba(63,63,70,0.6)'}
+              strokeWidth={sel ? 2 : 0.8}
+              style={{ cursor: 'pointer' }}
+              onClick={() => onSelectBucket(sel ? null : sec.bucket)}
+            />
+          );
+        })}
+        <text x={cx} y={cy - 8} textAnchor="middle" fill="#a1a1aa" fontSize="10">Σ</text>
+        <text x={cx} y={cy + 6} textAnchor="middle" fill="#e4e4e7" fontSize="11" fontWeight={700}>
+          {neighbors.length}
+        </text>
+      </svg>
+      <div style={{ fontSize: '0.68rem', color: '#52525b', marginTop: 6, display: 'flex', gap: 10 }}>
+        <span style={{ color: '#38bdf8' }}>−1: {counts['-1']}</span>
+        <span style={{ color: '#a78bfa' }}>0: {counts['0']}</span>
+        <span style={{ color: '#fbbf24' }}>+1: {counts['1']}</span>
+      </div>
+    </div>
+  );
+}
+
+export default function TutteAtlas({ currentUserId = '', focusTokenId = '' }) {
   const [globalData, setGlobalData] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,23 +151,34 @@ export default function TutteAtlas({ currentUserId = '' }) {
     fromNodeId: '',
     toNodeId: '',
   });
+  const [perspectival, setPerspectival] = useState({ paths: [] });
+  const [showLightCurves, setShowLightCurves] = useState(true);
+  const [nftTemporal, setNftTemporal] = useState(null);
+  const [wheelFilter, setWheelFilter] = useState(null);
 
   useEffect(() => {
     const id = currentUserId || '';
     setGuideUserId(id);
   }, [currentUserId]);
 
+  useEffect(() => {
+    if (!focusTokenId) return;
+    setSelectedToken(focusTokenId);
+  }, [focusTokenId]);
+
   const load = useCallback(async (guideId = '') => {
     setLoading(true);
     setErr('');
     try {
       const q = guideId.trim() ? `?guideUserId=${encodeURIComponent(guideId.trim())}` : '';
-      const [g, h] = await Promise.all([
+      const [g, h, pv] = await Promise.all([
         fetchJson(`/api/tutte/global${q}`),
         fetchJson('/api/barbour/history?limit=120'),
+        fetchJson('/api/tutte/perspectival-paths?maxUsers=28'),
       ]);
       setGlobalData(g);
       setHistory(h.snapshots || []);
+      setPerspectival(pv);
     } catch (e) {
       setErr(e.message || String(e));
     } finally {
@@ -123,8 +206,36 @@ export default function TutteAtlas({ currentUserId = '' }) {
     return () => { cancelled = true; };
   }, [selectedToken]);
 
+  useEffect(() => {
+    if (!selectedToken) {
+      setNftTemporal(null);
+      return;
+    }
+    let cancelled = false;
+    fetchJson(`/api/tutte/nft/${encodeURIComponent(selectedToken)}/temporal`)
+      .then((t) => {
+        if (!cancelled && t?.points) setNftTemporal(t);
+      })
+      .catch(() => {
+        if (!cancelled) setNftTemporal(null);
+      });
+    return () => { cancelled = true; };
+  }, [selectedToken]);
+
+  const pathExtraPoints = useMemo(() => {
+    if (!showLightCurves || !perspectival?.paths?.length) return [];
+    const out = [];
+    for (const p of perspectival.paths) {
+      for (const pt of p.points || []) out.push({ x: pt.x, y: pt.y });
+    }
+    return out;
+  }, [showLightCurves, perspectival]);
+
   const posMap = useMemo(() => buildPosMap(globalData?.positions), [globalData]);
-  const layout = useMemo(() => normalizeLayout(posMap, 48, 460), [posMap]);
+  const layout = useMemo(
+    () => normalizeLayout(posMap, 48, 460, pathExtraPoints),
+    [posMap, pathExtraPoints],
+  );
   const ug = globalData?.userGuides;
   const nodeById = useMemo(() => {
     const m = new Map();
@@ -177,8 +288,8 @@ export default function TutteAtlas({ currentUserId = '' }) {
             <Hexagon size={22} color="#38bdf8" /> Tutte Atlas
           </h2>
           <p style={{ margin: '6px 0 0', color: '#71717a', fontSize: '0.85rem', maxWidth: 720 }}>
-            Global harmonic Tutte embedding, face-admissible NFTs (exactly one NFT on a Tutte face cycle), Barbour shape-sphere
-            trail over epochs, and local–global overlays per token.
+            Temporal chain-ledger geometry: Tutte harmonic embedding, Julian Barbour–style shape-sphere snapshots,
+            prime-wheel neighbor buckets, and perspectival light curves (user centroids across epochs).
           </p>
         </div>
         <button
@@ -234,6 +345,25 @@ export default function TutteAtlas({ currentUserId = '' }) {
           style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #3b82f6', background: '#1e3a5f', color: '#e0f2fe', cursor: 'pointer' }}
         >
           Load guides
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowLightCurves((v) => !v)}
+          style={{
+            padding: '8px 14px',
+            borderRadius: 8,
+            border: showLightCurves ? '1px solid #f472b6' : '1px solid #3f3f46',
+            background: showLightCurves ? 'rgba(244,114,182,0.15)' : '#18181b',
+            color: showLightCurves ? '#fce7f3' : '#a1a1aa',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: '0.78rem',
+          }}
+        >
+          <Sparkles size={14} />
+          Light curves
         </button>
         <div style={{ borderLeft: '1px solid #27272a', paddingLeft: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' }}>
           <input placeholder="from node" value={connectForm.fromNodeId} onChange={(e) => setConnectForm((s) => ({ ...s, fromNodeId: e.target.value }))} style={{ width: 120, padding: 8, borderRadius: 8, border: '1px solid #3f3f46', background: '#18181b', color: '#fff' }} />
@@ -296,7 +426,7 @@ export default function TutteAtlas({ currentUserId = '' }) {
               <Globe size={14} /> Global Tutte · epoch {globalData?.epoch ?? '—'}
             </span>
             <span style={{ fontSize: '0.7rem', color: '#52525b' }}>
-              Gold ring = face NFT · Cyan arrow = guide · Gold = your centroid
+              Gold ring = face NFT · Cyan = guide · Gold = centroid · Colored trails = perspectival paths
             </span>
           </div>
           {loading ? (
@@ -307,8 +437,35 @@ export default function TutteAtlas({ currentUserId = '' }) {
                 <marker id="arrowG" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                   <path d="M0,0 L6,3 L0,6 Z" fill="#38bdf8" />
                 </marker>
+                <filter id="curveGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="2.2" result="b" />
+                  <feMerge>
+                    <feMergeNode in="b" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
               </defs>
               <rect width="460" height="460" fill="#09090b" rx="12" />
+              {showLightCurves && layout.toPixel && (perspectival.paths || []).map((pathRow) => {
+                const pts = (pathRow.points || []).map((pt) => layout.toPixel({ x: pt.x, y: pt.y }));
+                if (pts.length < 2) return null;
+                const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+                const hue = hueFromUserId(pathRow.userId);
+                const ownsSel = selectedToken && (pathRow.tokenIds || []).includes(selectedToken);
+                const stroke = `hsla(${hue}, 72%, 58%, ${ownsSel ? 0.92 : 0.42})`;
+                return (
+                  <path
+                    key={pathRow.userId}
+                    d={d}
+                    fill="none"
+                    stroke={stroke}
+                    strokeWidth={ownsSel ? 4 : 2.2}
+                    filter="url(#curveGlow)"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                );
+              })}
               {(globalData?.edges || []).map((e) => {
                 const a = layout.map.get(e.from_node_id);
                 const b = layout.map.get(e.to_node_id);
@@ -394,7 +551,9 @@ export default function TutteAtlas({ currentUserId = '' }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ background: '#0c0c0f', borderRadius: 16, border: '1px solid #27272a', padding: 16 }}>
-            <div style={{ fontSize: '0.75rem', color: '#a1a1aa', marginBottom: 8 }}>Barbour shape sphere (centroid trail · radius / stress)</div>
+            <div style={{ fontSize: '0.75rem', color: '#a1a1aa', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              Barbour shape sphere (configuration-time snapshots)
+            </div>
             <svg width={sphereSize} height={sphereSize} viewBox={`0 0 ${sphereSize} ${sphereSize}`} style={{ display: 'block', margin: '0 auto' }}>
               <circle cx={sphereSize / 2} cy={sphereSize / 2} r={sphereSize / 2 - spherePad} fill="none" stroke="#27272a" strokeWidth={1} />
               {spherePath ? (
@@ -416,12 +575,46 @@ export default function TutteAtlas({ currentUserId = '' }) {
             )}
           </div>
 
+          <div style={{ background: '#0c0c0f', borderRadius: 16, border: '1px solid #27272a', padding: 16 }}>
+            <div style={{ fontSize: '0.75rem', color: '#a1a1aa', marginBottom: 8 }}>Prime wheel navigator (guide neighbors)</div>
+            {ug?.neighbors?.length ? (
+              <>
+                <PrimeWheelNav
+                  neighbors={ug.neighbors}
+                  selectedBucket={wheelFilter}
+                  onSelectBucket={setWheelFilter}
+                />
+                <div style={{ maxHeight: 120, overflow: 'auto', marginTop: 8, fontSize: '0.68rem', color: '#71717a' }}>
+                  {(wheelFilter == null
+                    ? ug.neighbors
+                    : ug.neighbors.filter((n) => n.prime_bucket === wheelFilter)
+                  ).slice(0, 14).map((n) => (
+                    <div key={`${n.anchor_node_id}-${n.neighbor_node_id}`} style={{ marginBottom: 4 }}>
+                      <code style={{ color: '#a1a1aa' }}>{n.neighbor_node_id}</code>
+                      <span style={{ marginLeft: 6, opacity: 0.85 }}>{n.bucket_label}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ color: '#52525b', fontSize: '0.78rem' }}>Set user id and load guides, or run global recompute.</div>
+            )}
+          </div>
+
           <div style={{ background: '#0c0c0f', borderRadius: 16, border: '1px solid #27272a', padding: 16, flex: 1, minHeight: 160 }}>
-            <div style={{ fontSize: '0.75rem', color: '#a1a1aa', marginBottom: 8 }}>Selected NFT · local vs global</div>
+            <div style={{ fontSize: '0.75rem', color: '#a1a1aa', marginBottom: 8 }}>Selected NFT · temporal Tutte trail</div>
             {!selectedToken && <div style={{ color: '#52525b', fontSize: '0.8rem' }}>Click an NFT node on the graph.</div>}
             {selectedToken && overlay && (
               <div style={{ fontSize: '0.78rem', lineHeight: 1.6 }}>
                 <div><strong>Token</strong> {selectedToken}</div>
+                {nftTemporal?.points?.length > 0 ? (
+                  <div style={{ marginTop: 6, color: '#a78bfa' }}>
+                    Epoch trail: {nftTemporal.points.length} sample(s){' '}
+                    (e{nftTemporal.points[0].epoch}→e{nftTemporal.points[nftTemporal.points.length - 1].epoch})
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 6, color: '#52525b' }}>Recompute global Tutte again to accumulate epoch history for this node.</div>
+                )}
                 <div>Global face flag: {overlay.isFaceNftOnGlobal ? 'yes (face-admissible)' : 'no'}</div>
                 <div>Local faces (NFT count on cycle): {overlay.localFaces?.filter((f) => f.nftNodeCount >= 1).length ?? 0} with cycles</div>
                 <div>Local stress: {overlay.localStress?.toFixed?.(5) ?? overlay.localStress}</div>

@@ -21,6 +21,8 @@ import {
     runTutteRelaxation,
     scoreCandidateConnectivity,
     updateUserReputationFromEpoch,
+    computePerspectivalPaths,
+    computeNftTemporalTrail,
 } from './engine.js';
 import { id as makeId, nowIso } from './ids.js';
 import { renderNftFacesSvg } from './render.js';
@@ -1065,6 +1067,32 @@ app.get('/api/tutte/guides/:userId', (req, res) => {
     try {
         const guides = computeUserGuideVectors(db, req.params.userId);
         res.json(guides);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * GET /api/tutte/perspectival-paths — User centroids over epochs (global map light curves)
+ */
+app.get('/api/tutte/perspectival-paths', (req, res) => {
+    try {
+        const maxUsers = Math.min(64, Math.max(1, parseInt(req.query.maxUsers || '24', 10)));
+        const out = computePerspectivalPaths(db, { maxUsers });
+        res.json(out);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * GET /api/tutte/nft/:tokenId/temporal — Node positions across epochs for one NFT
+ */
+app.get('/api/tutte/nft/:tokenId/temporal', (req, res) => {
+    try {
+        const trail = computeNftTemporalTrail(db, req.params.tokenId);
+        if (!trail) return res.status(404).json({ error: 'not_found' });
+        res.json(trail);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

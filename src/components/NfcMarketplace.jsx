@@ -20,7 +20,7 @@ async function api(path, opts = {}) {
   return json;
 }
 
-function NfcMarketplaceBody({ currentUserId, stdb = null }) {
+function NfcMarketplaceBody({ currentUserId, stdb = null, onOpenTutteForNft }) {
   const [tab, setTab] = useState('inventory');
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -352,6 +352,24 @@ function NfcMarketplaceBody({ currentUserId, stdb = null }) {
                   <div style={{ color: '#71717a', marginTop: 4 }}>
                     node {n.nodeId} · {n.acquisitionSource || 'mint'}
                   </div>
+                  {typeof onOpenTutteForNft === 'function' ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenTutteForNft(n.tokenId)}
+                      style={{
+                        marginTop: 8,
+                        padding: '6px 10px',
+                        borderRadius: 8,
+                        border: '1px solid #52525b',
+                        background: '#1e293b',
+                        color: '#bae6fd',
+                        cursor: 'pointer',
+                        fontSize: '0.72rem',
+                      }}
+                    >
+                      Open in Tutte Atlas (temporal / Barbour)
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>
