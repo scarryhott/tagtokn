@@ -27,7 +27,13 @@ import {
 import { id as makeId, nowIso } from './ids.js';
 import { appendNrrEpochObservations, getNrrLedger } from './nrr-identity.js';
 import { renderNftFacesSvg } from './render.js';
-import { computeUserGuideVectors, previewConnectionImpact, applyConnectionWithCollapse } from './guides-collapse.js';
+import {
+    computeUserGuideVectors,
+    previewConnectionImpact,
+    applyConnectionWithCollapse,
+    applyInadmissibleInterconnectTax,
+    NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA,
+} from './guides-collapse.js';
 import {
     registerUser,
     loginUser,
@@ -1059,7 +1065,9 @@ app.get('/api/tutte/global', (req, res) => {
             FROM nft_tokens
         `).all();
         const interconnects = db.prepare(`
-            SELECT link_id, from_token_id, to_token_id, link_type, meta_json, created_at
+            SELECT link_id, from_token_id, to_token_id, link_type, meta_json, created_at,
+                   COALESCE(route_highlight, 1) AS route_highlight,
+                   vitiated_reason, vitiated_at
             FROM nft_interconnects ORDER BY created_at DESC LIMIT 500
         `).all();
         const barbour = db.prepare(`SELECT * FROM barbour_snapshots WHERE epoch = ?`).get(epoch);
@@ -1249,16 +1257,45 @@ app.post('/api/nft/interconnect', requireSession, (req, res) => {
         if (fromOwner !== req.auth.userId) {
             return res.status(403).json({ error: 'not_owner_of_from_token' });
         }
-        if (!a.is_face_nft || !b.is_face_nft) {
-            return res.status(403).json({ error: 'face_nft_required', message: 'Both endpoints must be Tutte face-admissible NFTs' });
+        const faceA = !!a.is_face_nft;
+        const faceB = !!b.is_face_nft;
+        const payInadmissibleTax = !!req.body?.payInadmissibleTax;
+
+        if ((!faceA || !faceB) && !payInadmissibleTax) {
+            return res.status(403).json({
+                error: 'not_face_admissible',
+                message:
+                    'Both endpoints should be Tutte face-admissible for free joint routes. Or set payInadmissibleTax to pay an α tax and still open the link.',
+                taxAlpha: NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA,
+            });
         }
+
+        if ((!faceA || !faceB) && payInadmissibleTax) {
+            applyInadmissibleInterconnectTax(db, req.auth.userId, NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA);
+        }
+
         const linkId = makeId('link');
-        const metaJson = JSON.stringify(meta && typeof meta === 'object' ? meta : {});
+        const metaObj =
+            meta && typeof meta === 'object' && !Array.isArray(meta) ? { ...meta } : {};
+        if ((!faceA || !faceB) && payInadmissibleTax) {
+            metaObj.inadmissibleTaxAlpha = NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA;
+        }
+        const routeHighlight = faceA && faceB ? 1 : 0;
+        const metaJson = JSON.stringify(metaObj);
         db.prepare(`
-            INSERT INTO nft_interconnects (link_id, from_token_id, to_token_id, link_type, meta_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `).run(linkId, fromTokenId, toTokenId, linkType, metaJson, nowIso());
-        res.status(201).json({ success: true, linkId });
+            INSERT INTO nft_interconnects (
+              link_id, from_token_id, to_token_id, link_type, meta_json, created_at,
+              route_highlight, vitiated_reason, vitiated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, '', '')
+        `).run(linkId, fromTokenId, toTokenId, linkType, metaJson, nowIso(), routeHighlight);
+        res.status(201).json({
+            success: true,
+            linkId,
+            inadmissibleTaxPaid:
+                (!faceA || !faceB) && payInadmissibleTax ? NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA : 0,
+            routeHighlight,
+        });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

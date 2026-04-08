@@ -184,6 +184,75 @@ function primeBucketLabel(b) {
 
 const COLLAPSE_WEIGHT = 0.08;
 const ALIGN_BONUS = 0.12;
+/** Extra α destruction per collapsed face — admission to prior joint geometry is taxed. */
+const COLLAPSE_ADMISSION_SURCHARGE_PER_FACE = 0.035;
+
+/** Paid when creating interconnect without current face admissibility on either endpoint. */
+export const NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA = 0.18;
+
+/**
+ * Face collapse vitiates highlighted joint routes (interconnects) touching collapsed faces —
+ * they remain in history but are no longer promoted as admissible channels.
+ */
+export function vitiateJointRoutesForCollapsedFaces(db, epoch, collapsedFaceObjs) {
+  if (!epoch || !collapsedFaceObjs?.length) return { vitiatedLinks: 0 };
+  const nodeHit = new Set();
+  const stmt = db.prepare(`SELECT nodes_json FROM tutte_face_cache WHERE epoch = ? AND face_key = ?`);
+  for (const f of collapsedFaceObjs) {
+    const fk = f.face_key;
+    if (!fk) continue;
+    const row = stmt.get(epoch, fk);
+    if (!row?.nodes_json) continue;
+    try {
+      for (const n of JSON.parse(row.nodes_json)) nodeHit.add(n);
+    } catch (_) {
+      /* ignore */
+    }
+  }
+  if (nodeHit.size === 0) return { vitiatedLinks: 0 };
+
+  const tokRows = db.prepare(`SELECT token_id, node_id FROM nft_tokens`).all();
+  const tokenHit = new Set();
+  for (const t of tokRows) {
+    if (nodeHit.has(t.node_id)) tokenHit.add(t.token_id);
+  }
+  if (tokenHit.size === 0) return { vitiatedLinks: 0 };
+
+  const links = db
+    .prepare(`SELECT link_id, from_token_id, to_token_id FROM nft_interconnects WHERE COALESCE(route_highlight, 1) = 1`)
+    .all();
+  const ts = nowIso();
+  const upd = db.prepare(`
+    UPDATE nft_interconnects
+    SET route_highlight = 0, vitiated_reason = 'face_collapse', vitiated_at = ?
+    WHERE link_id = ?
+  `);
+  let vitiatedLinks = 0;
+  for (const l of links) {
+    if (tokenHit.has(l.from_token_id) || tokenHit.has(l.to_token_id)) {
+      upd.run(ts, l.link_id);
+      vitiatedLinks += 1;
+    }
+  }
+  return { vitiatedLinks };
+}
+
+export function applyInadmissibleInterconnectTax(db, userId, taxAlpha = NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA) {
+  const epoch = getLatestGraphEpoch(db);
+  const prev = db.prepare(`SELECT alpha FROM user_reputation WHERE user_id = ?`).get(userId);
+  const nextAlpha = (prev?.alpha ?? 0) - taxAlpha;
+  db.prepare(
+    `
+    INSERT INTO user_reputation (user_id, alpha, inertia_x, inertia_y, last_epoch, updated_at)
+    VALUES (?, ?, 0, 0, ?, ?)
+    ON CONFLICT(user_id) DO UPDATE SET
+      alpha = excluded.alpha,
+      last_epoch = excluded.last_epoch,
+      updated_at = excluded.updated_at
+  `,
+  ).run(userId, nextAlpha, epoch, nowIso());
+  return { taxAlpha, alphaAfter: nextAlpha };
+}
 
 export function previewConnectionImpact(db, { userId, fromNodeId, toNodeId }) {
   const epoch = getLatestGraphEpoch(db);
@@ -219,7 +288,8 @@ export function previewConnectionImpact(db, { userId, fromNodeId, toNodeId }) {
   const cached = loadCachedFaces(db, epoch);
   const collapsed = facesCollapsedByChord(cached, fromNodeId, toNodeId);
   const collapseWeight = collapsed.reduce((s, f) => s + f.complexity, 0);
-  const alphaDelta = ALIGN_BONUS * alignment - COLLAPSE_WEIGHT * collapseWeight;
+  const collapseSurcharge = collapsed.length * COLLAPSE_ADMISSION_SURCHARGE_PER_FACE;
+  const alphaDelta = ALIGN_BONUS * alignment - COLLAPSE_WEIGHT * collapseWeight - collapseSurcharge;
 
   return {
     ok: true,
@@ -232,6 +302,7 @@ export function previewConnectionImpact(db, { userId, fromNodeId, toNodeId }) {
     })),
     guideAlignment: alignment,
     collapseWeight,
+    collapseSurcharge,
     projectedAlphaDelta: alphaDelta,
     guides: {
       primaryGuide: guides.primaryGuide,
@@ -245,21 +316,24 @@ export function applyConnectionWithCollapse(db, { userId, fromNodeId, toNodeId, 
   if (!preview.ok) return { ok: false, error: preview.error };
 
   const edgeId = id('edge');
-  db.prepare(
-    `
-    INSERT INTO graph_edges (edge_id, from_node_id, to_node_id, edge_type, weight, created_at)
-    VALUES (?, ?, ?, ?, 1.0, ?)
-  `,
-  ).run(edgeId, fromNodeId, toNodeId, edgeType, nowIso());
-
   const epoch = preview.epoch;
   const alphaDelta = preview.projectedAlphaDelta;
   const eventId = id('rcol');
 
-  const prevRep = db.prepare(`SELECT alpha FROM user_reputation WHERE user_id = ?`).get(userId);
-  const nextAlpha = (prevRep?.alpha ?? 0) + alphaDelta;
-  db.prepare(
-    `
+  let vitiatedLinks = 0;
+
+  const run = db.transaction(() => {
+    db.prepare(
+      `
+    INSERT INTO graph_edges (edge_id, from_node_id, to_node_id, edge_type, weight, created_at)
+    VALUES (?, ?, ?, ?, 1.0, ?)
+  `,
+    ).run(edgeId, fromNodeId, toNodeId, edgeType, nowIso());
+
+    const prevRep = db.prepare(`SELECT alpha FROM user_reputation WHERE user_id = ?`).get(userId);
+    const nextAlpha = (prevRep?.alpha ?? 0) + alphaDelta;
+    db.prepare(
+      `
     INSERT INTO user_reputation (user_id, alpha, inertia_x, inertia_y, last_epoch, updated_at)
     VALUES (?, ?, 0, 0, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
@@ -267,28 +341,34 @@ export function applyConnectionWithCollapse(db, { userId, fromNodeId, toNodeId, 
       last_epoch = excluded.last_epoch,
       updated_at = excluded.updated_at
   `,
-  ).run(userId, nextAlpha, epoch, nowIso());
+    ).run(userId, nextAlpha, epoch, nowIso());
 
-  db.prepare(
-    `
+    db.prepare(
+      `
     INSERT INTO reputation_collapse_events (
       event_id, user_id, from_node_id, to_node_id, edge_id, epoch,
       collapsed_face_keys_json, collapse_weight, guide_alignment, alpha_delta, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `,
-  ).run(
-    eventId,
-    userId,
-    fromNodeId,
-    toNodeId,
-    edgeId,
-    epoch,
-    JSON.stringify(preview.collapsedFaces.map((f) => f.face_key)),
-    preview.collapseWeight,
-    preview.guideAlignment,
-    alphaDelta,
-    nowIso(),
-  );
+    ).run(
+      eventId,
+      userId,
+      fromNodeId,
+      toNodeId,
+      edgeId,
+      epoch,
+      JSON.stringify(preview.collapsedFaces.map((f) => f.face_key)),
+      preview.collapseWeight,
+      preview.guideAlignment,
+      alphaDelta,
+      nowIso(),
+    );
+
+    const vit = vitiateJointRoutesForCollapsedFaces(db, epoch, preview.collapsedFaces);
+    vitiatedLinks = vit.vitiatedLinks;
+  });
+
+  run();
 
   return {
     ok: true,
@@ -297,6 +377,8 @@ export function applyConnectionWithCollapse(db, { userId, fromNodeId, toNodeId, 
     collapsedFaces: preview.collapsedFaces,
     guideAlignment: preview.guideAlignment,
     collapseWeight: preview.collapseWeight,
+    collapseSurcharge: preview.collapseSurcharge,
     alphaDelta,
+    vitiatedLinks,
   };
 }

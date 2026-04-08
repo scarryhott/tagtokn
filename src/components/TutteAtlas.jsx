@@ -155,6 +155,7 @@ export default function TutteAtlas({ currentUserId = '', focusTokenId = '' }) {
   const [showLightCurves, setShowLightCurves] = useState(true);
   const [nftTemporal, setNftTemporal] = useState(null);
   const [wheelFilter, setWheelFilter] = useState(null);
+  const [graphActionNote, setGraphActionNote] = useState('');
 
   useEffect(() => {
     const id = currentUserId || '';
@@ -390,13 +391,20 @@ export default function TutteAtlas({ currentUserId = '', focusTokenId = '' }) {
             type="button"
             onClick={async () => {
               setErr('');
+              setGraphActionNote('');
               setBusy(true);
               try {
-                await fetchJson('/api/graph/connect', {
+                const out = await fetchJson('/api/graph/connect', {
                   method: 'POST',
                   body: JSON.stringify({ ...connectForm, edgeType: 'user_connect' }),
                 });
                 setConnectPreview(null);
+                const v = out?.vitiatedLinks ?? 0;
+                setGraphActionNote(
+                  v > 0
+                    ? `Edge applied. ${v} joint route(s) no longer highlighted (face collapse).`
+                    : 'Edge applied.',
+                );
                 await load(guideUserId);
               } catch (e) {
                 setErr(e.message || String(e));
@@ -414,8 +422,12 @@ export default function TutteAtlas({ currentUserId = '', focusTokenId = '' }) {
           <div style={{ width: '100%', color: '#a1a1aa', fontSize: '0.72rem' }}>
             Δα ≈ {connectPreview.projectedAlphaDelta?.toFixed(4)} (alignment {connectPreview.guideAlignment?.toFixed(3)},
             collapse weight {connectPreview.collapseWeight?.toFixed(3)},
-            faces {connectPreview.collapsedFaces.length})
+            admission surcharge {connectPreview.collapseSurcharge?.toFixed(3) ?? '0'},
+            faces {connectPreview.collapsedFaces.length}) — vitiates highlighted joint interconnects through those faces.
           </div>
+        ) : null}
+        {graphActionNote ? (
+          <div style={{ width: '100%', color: '#86efac', fontSize: '0.72rem' }}>{graphActionNote}</div>
         ) : null}
       </div>
 
@@ -426,7 +438,7 @@ export default function TutteAtlas({ currentUserId = '', focusTokenId = '' }) {
               <Globe size={14} /> Global Tutte · epoch {globalData?.epoch ?? '—'}
             </span>
             <span style={{ fontSize: '0.7rem', color: '#52525b' }}>
-              Gold ring = face NFT · Cyan = guide · Gold = centroid · Colored trails = perspectival paths
+              Gold ring = face NFT · Cyan = guide · Gold = centroid · Bright purple = live joint route · Muted = collapsed / taxed
             </span>
           </div>
           {loading ? (
@@ -488,14 +500,16 @@ export default function TutteAtlas({ currentUserId = '', focusTokenId = '' }) {
                 const pa = na ? layout.map.get(na) : null;
                 const pb = nb ? layout.map.get(nb) : null;
                 if (!pa || !pb) return null;
+                const live =
+                  l.route_highlight == null || l.route_highlight === undefined || Number(l.route_highlight) === 1;
                 return (
                   <path
                     key={l.link_id}
                     d={`M ${pa.x} ${pa.y} Q ${(pa.x + pb.x) / 2} ${(pa.y + pb.y) / 2 - 28} ${pb.x} ${pb.y}`}
                     fill="none"
-                    stroke="rgba(167,139,250,0.75)"
-                    strokeWidth={2}
-                    strokeDasharray="6 4"
+                    stroke={live ? 'rgba(167,139,250,0.78)' : 'rgba(82,82,91,0.42)'}
+                    strokeWidth={live ? 2 : 1}
+                    strokeDasharray={live ? '6 4' : '3 8'}
                   />
                 );
               })}
@@ -545,7 +559,7 @@ export default function TutteAtlas({ currentUserId = '', focusTokenId = '' }) {
           <div style={{ marginTop: 12, fontSize: '0.72rem', color: '#52525b', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Circle size={12} fill="#fbbf24" /> Face NFT (interconnect admissible)</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Circle size={12} fill="#a78bfa" /> Non-face NFT</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Link2 size={12} /> Dashed purple = interconnect (contracts / comms)</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Link2 size={12} /> Purple = admissible joint route; gray dash = vitiated or taxed</span>
           </div>
         </div>
 

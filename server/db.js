@@ -148,6 +148,9 @@ export function initDb(db) {
       link_type TEXT NOT NULL,
       meta_json TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL,
+      route_highlight INTEGER NOT NULL DEFAULT 1,
+      vitiated_reason TEXT NOT NULL DEFAULT '',
+      vitiated_at TEXT NOT NULL DEFAULT '',
       FOREIGN KEY(from_token_id) REFERENCES nft_tokens(token_id),
       FOREIGN KEY(to_token_id) REFERENCES nft_tokens(token_id)
     );
@@ -366,6 +369,17 @@ function migrateNfcDb(db) {
   }
   if (!userCols.includes('show_social_public')) {
     db.exec(`ALTER TABLE users ADD COLUMN show_social_public INTEGER NOT NULL DEFAULT 1`);
+  }
+
+  const interCols = db.prepare(`PRAGMA table_info(nft_interconnects)`).all().map((c) => c.name);
+  if (!interCols.includes('route_highlight')) {
+    db.exec(`ALTER TABLE nft_interconnects ADD COLUMN route_highlight INTEGER NOT NULL DEFAULT 1`);
+  }
+  if (!interCols.includes('vitiated_reason')) {
+    db.exec(`ALTER TABLE nft_interconnects ADD COLUMN vitiated_reason TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!interCols.includes('vitiated_at')) {
+    db.exec(`ALTER TABLE nft_interconnects ADD COLUMN vitiated_at TEXT NOT NULL DEFAULT ''`);
   }
 
   const linkCols = db.prepare(`PRAGMA table_info(user_social_links)`).all().map((c) => c.name);

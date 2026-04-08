@@ -50,6 +50,7 @@ function NfcMarketplaceBody({ currentUserId, stdb = null, onOpenTutteForNft }) {
 
   const [inter, setInter] = useState({ fromTokenId: '', toTokenId: '', linkType: 'comms' });
   const [interToManual, setInterToManual] = useState('');
+  const [interPayInadmissibleTax, setInterPayInadmissibleTax] = useState(false);
 
   const load = useCallback(async () => {
     setErr('');
@@ -238,16 +239,19 @@ function NfcMarketplaceBody({ currentUserId, stdb = null, onOpenTutteForNft }) {
           fromTokenId: inter.fromTokenId,
           toTokenId,
           linkType: inter.linkType,
+          payInadmissibleTax: interPayInadmissibleTax,
           meta: {},
         }),
       });
-      showOk('Interconnect created.');
+      showOk('Interconnect created.' + (interPayInadmissibleTax ? ' (α tax paid — route stays dim on Tutte map until face-admissible.)' : ''));
     } catch (e) {
       setErr(e.message || String(e));
     }
   };
 
   const faceNfts = inventory.filter((n) => n.isFaceNft);
+  const interFromChoices = interPayInadmissibleTax ? inventory : faceNfts;
+  const interToChoices = interPayInadmissibleTax ? inventory : faceNfts;
 
   if (!currentUserId) {
     return (
@@ -514,18 +518,29 @@ function NfcMarketplaceBody({ currentUserId, stdb = null, onOpenTutteForNft }) {
           </div>
           <div style={{ background: '#0c0c0f', border: '1px solid #27272a', borderRadius: 12, padding: 16 }}>
             <h3 style={{ marginTop: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Link2 size={18} /> Face NFT interconnect
+              <Link2 size={18} /> Joint routes (interconnects)
             </h3>
-            <p style={{ fontSize: '0.72rem', color: '#71717a' }}>You must own the <strong>from</strong> token. Both must be face-admissible.</p>
+            <p style={{ fontSize: '0.72rem', color: '#71717a' }}>
+              You must own the <strong>from</strong> token. Face-admissible pairs get a <strong>highlighted</strong> route on Tutte Atlas.
+              Graph <strong>collapse</strong> vitiates prior highlighted routes through destroyed faces. Non-admissible links require an <strong>α tax</strong> and stay dim.
+            </p>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: '#a1a1aa', marginBottom: 8 }}>
+              <input
+                type="checkbox"
+                checked={interPayInadmissibleTax}
+                onChange={(e) => setInterPayInadmissibleTax(e.target.checked)}
+              />
+              Pay inadmissible tax (α) — allow non–face-admissible endpoints; route not promoted
+            </label>
             <select
               value={inter.fromTokenId}
               onChange={(e) => setInter((s) => ({ ...s, fromTokenId: e.target.value }))}
               style={{ ...inp, marginBottom: 8 }}
             >
-              <option value="">From (your face NFT)</option>
-              {faceNfts.map((n) => (
+              <option value="">{interPayInadmissibleTax ? 'From (your token)' : 'From (your face NFT)'}</option>
+              {interFromChoices.map((n) => (
                 <option key={n.tokenId} value={n.tokenId}>
-                  {n.tokenId.slice(0, 20)}…
+                  {n.tokenId.slice(0, 20)}…{n.isFaceNft ? ' · face' : ''}
                 </option>
               ))}
             </select>
@@ -534,10 +549,10 @@ function NfcMarketplaceBody({ currentUserId, stdb = null, onOpenTutteForNft }) {
               onChange={(e) => setInter((s) => ({ ...s, toTokenId: e.target.value }))}
               style={{ ...inp, marginBottom: 8 }}
             >
-              <option value="">To token (yours)</option>
-              {inventory.filter((i) => i.isFaceNft).map((n) => (
+              <option value="">{interPayInadmissibleTax ? 'To token' : 'To (face NFT)'}</option>
+              {interToChoices.map((n) => (
                 <option key={n.tokenId} value={n.tokenId}>
-                  {n.tokenId.slice(0, 20)}…
+                  {n.tokenId.slice(0, 20)}…{n.isFaceNft ? ' · face' : ''}
                 </option>
               ))}
             </select>
