@@ -94,6 +94,11 @@ export class IVIEngine {
             score *= (0.5 + 0.5 * loop.routePlausibility);
         }
 
+        // Physical NFC tap: stronger integration prior (high-trust channel)
+        if (loop.nfcPhyBoost) {
+            score = Math.min(1.0, score + 0.14);
+        }
+
         const isClosure = score >= this.tau;
 
         // Fees: 2% (Rule 98 in code)

@@ -255,3 +255,26 @@ export class ICRAgent {
         return this.balance;
     }
 }
+
+/**
+ * HumanAgent: A personal proxy for a human user.
+ * Decisions can be autonomous or user-directed.
+ */
+export class HumanAgent extends ICRAgent {
+    constructor(nodeId, name, ownerId, x, y, balance) {
+        super(nodeId, name, 'human_proxy', x, y, balance);
+        this.ownerId = ownerId;
+        this.isUserDirected = false; // User can override autonomous behavior
+        this.currentTask = null;
+    }
+
+    setTask(task) {
+        this.currentTask = task;
+        this.isUserDirected = true;
+    }
+
+    clearTask() {
+        this.currentTask = null;
+        this.isUserDirected = false;
+    }
+}

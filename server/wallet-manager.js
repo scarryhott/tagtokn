@@ -21,23 +21,14 @@ export class WalletManager {
     }
 
     /**
-     * Initialize wallets from mnemonic. If none exists, generate one.
+     * Initialize wallets from mnemonic.
      * Derives 6 wallets using BIP44 path: m/44'/60'/0'/0/{index}
      */
     async initialize(existingMnemonic, agentIds) {
         if (existingMnemonic && existingMnemonic.trim()) {
             this.mnemonic = existingMnemonic.trim();
         } else {
-            // Generate a new mnemonic
-            const wallet = ethers.Wallet.createRandom();
-            this.mnemonic = wallet.mnemonic.phrase;
-            console.log('═══════════════════════════════════════════════');
-            console.log('🔑 NEW MNEMONIC GENERATED — SAVE THIS:');
-            console.log(`   ${this.mnemonic}`);
-            console.log('═══════════════════════════════════════════════');
-
-            // Write it back to .env
-            this._saveMnemonicToEnv(this.mnemonic);
+            throw new Error('AGENT_MNEMONIC is required (refusing to auto-generate or write secrets)');
         }
 
         // Derive a wallet for each agent
@@ -283,23 +274,5 @@ export class WalletManager {
         return [...this.txHistory];
     }
 
-    /**
-     * Save mnemonic back to .env file
-     */
-    _saveMnemonicToEnv(mnemonic) {
-        try {
-            const envPath = path.join(__dirname, '..', '.env');
-            let envContent = fs.readFileSync(envPath, 'utf-8');
-            envContent = envContent.replace(
-                /AGENT_MNEMONIC=.*/,
-                `AGENT_MNEMONIC=${mnemonic}`
-            );
-            fs.writeFileSync(envPath, envContent);
-            console.log('✅ Mnemonic saved to .env');
-        } catch (err) {
-            console.error('⚠️  Could not save mnemonic to .env:', err.message);
-            console.log('   Please manually add to .env:');
-            console.log(`   AGENT_MNEMONIC=${mnemonic}`);
-        }
-    }
+    // Intentionally no persistence helpers for secrets.
 }

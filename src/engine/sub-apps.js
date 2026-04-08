@@ -27,7 +27,7 @@ export class SubAppEngine {
             deployedAt: Date.now(),
             totalRevenue: 0,
             useCount: 0,
-            status: 'active'
+            status: 'pending'
         };
         this.apps.set(appId, app);
         return app;

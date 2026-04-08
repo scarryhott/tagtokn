@@ -8,6 +8,7 @@ import { ShoppingBag, Star, ShieldCheck, Zap, ArrowRight, ExternalLink } from 'l
  */
 const SubAppStore = ({ apps, onUseApp, isLiveEconomy }) => {
     const [selectedApp, setSelectedApp] = useState(null);
+    const activeApps = apps.filter(a => a.status === 'active');
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -32,7 +33,7 @@ const SubAppStore = ({ apps, onUseApp, isLiveEconomy }) => {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
                 gap: '1.5rem'
             }}>
-                {apps.length === 0 ? (
+                {activeApps.length === 0 ? (
                     <div style={{
                         gridColumn: '1 / -1',
                         padding: '4rem',
@@ -47,7 +48,7 @@ const SubAppStore = ({ apps, onUseApp, isLiveEconomy }) => {
                         </div>
                     </div>
                 ) : (
-                    apps.map(app => (
+                    activeApps.map(app => (
                         <motion.div
                             key={app.id}
                             whileHover={{ y: -5 }}

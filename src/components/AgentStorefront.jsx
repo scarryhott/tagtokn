@@ -7,7 +7,7 @@ import { ShieldCheck, Wallet, Cpu, Star, ArrowRightLeft } from 'lucide-react';
  * Displays an individual agent's public-facing service page.
  * Shows wallet, services, Codex stats, and interaction history.
  */
-const AgentStorefront = ({ agent, services, wallet, codex, tapHistory, onRequestService }) => {
+const AgentStorefront = ({ agent, services, wallet, codex, tapHistory, onRequestService, onTap }) => {
     const verifiedTaps = tapHistory.filter(t => t.status === 'verified');
     const trustPercentage = (agent.c_score * 100).toFixed(0);
 
@@ -133,6 +133,32 @@ const AgentStorefront = ({ agent, services, wallet, codex, tapHistory, onRequest
                         </div>
                     ))}
                 </div>
+            </div>
+
+            {/* NFC Tap Action */}
+            <div style={{ marginTop: '1.5rem' }}>
+                <motion.button
+                    whileHover={{ scale: 1.02, background: 'rgba(0, 255, 136, 0.2)' }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onTap && onTap(agent)}
+                    style={{
+                        width: '100%',
+                        padding: '12px',
+                        background: 'rgba(0, 255, 136, 0.1)',
+                        border: '1px solid #00ff88',
+                        borderRadius: '12px',
+                        color: '#00ff88',
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                    }}
+                >
+                    <Zap size={16} /> Digital NFC Tap
+                </motion.button>
             </div>
         </motion.div>
     );

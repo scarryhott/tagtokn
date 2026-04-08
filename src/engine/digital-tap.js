@@ -34,10 +34,10 @@ export class DigitalTapProtocol {
      * @returns {Object} Digital Tap proof object
      */
     createTap(params) {
-        const { from, to, serviceId, amount, channel = 'marketplace' } = params;
+        const { from, to, serviceId, amount, channel = 'marketplace', tapChannel = 'standard' } = params;
 
         // 1. Generate digital fingerprint (simulates IP/timing verification)
-        const fingerprint = this._generateFingerprint(from, to);
+        const fingerprint = this._generateFingerprint(from, to, tapChannel);
 
         // 2. Calculate shared context from prior interactions
         const sharedContext = this._calculateSharedContext(from, to);
@@ -63,8 +63,9 @@ export class DigitalTapProtocol {
                 trustScore: to.c_score
             },
             serviceId,
-            amount,
+            amount: tapChannel === 'nfc_phy' ? amount * 6 : amount,
             channel,
+            tapChannel,
             proof: {
                 fingerprint,
                 sharedContext,
@@ -93,14 +94,14 @@ export class DigitalTapProtocol {
                 from: t.from.agentId,
                 to: t.to.agentId,
                 amount: t.amount,
-                weight: 3,
+                weight: t.tapChannel === 'nfc_phy' ? 8 : 3,
                 timestamp: t.proof.timestamp
             })),
             {
                 from: tap.from.agentId,
                 to: tap.to.agentId,
                 amount: tap.amount,
-                weight: 3,
+                weight: tap.tapChannel === 'nfc_phy' ? 8 : 3,
                 timestamp: tap.proof.timestamp
             }
         ];
@@ -114,12 +115,15 @@ export class DigitalTapProtocol {
         const secretFactor = tap.proof.sharedContext.depth;
         const isNovel = tap.proof.sharedContext.isNovel;
 
+        const nfcPhyBoost = tap.tapChannel === 'nfc_phy';
+
         const auditResult = this.engine.audit({
             events: loopEvents,
             nodes: loopNodes,
             secretFactor,
             isNovel,
-            routePlausibility
+            routePlausibility,
+            nfcPhyBoost
         }, networkStats);
 
         // Settlement
@@ -145,14 +149,17 @@ export class DigitalTapProtocol {
      * Generate a digital fingerprint simulating IP/timing/device verification.
      * In a real system, this would involve actual device attestation.
      */
-    _generateFingerprint(from, to) {
+    _generateFingerprint(from, to, tapChannel = 'standard') {
         // Simulate digital proximity via shared network session
         const timingJitter = Math.random() * 0.3; // Network latency simulation
         const sessionOverlap = this.sessionRegistry.has(from.nodeId) &&
             this.sessionRegistry.has(to.nodeId) ? 0.8 : 0.4;
 
+        const base = Math.min(1.0, sessionOverlap + (1 - timingJitter) * 0.3);
+        const quality = tapChannel === 'nfc_phy' ? Math.min(1.0, base + 0.25) : base;
+
         return {
-            quality: Math.min(1.0, sessionOverlap + (1 - timingJitter) * 0.3),
+            quality,
             latency: Math.floor(timingJitter * 200), // ms
             sessionOverlap,
             verified: sessionOverlap > 0.5

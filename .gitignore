@@ -10,6 +10,10 @@ node_modules/
 # Build output
 dist/
 
+# Local SQLite / runtime data
+data/
+*.db
+
 # OS files
 .DS_Store
 Thumbs.db
