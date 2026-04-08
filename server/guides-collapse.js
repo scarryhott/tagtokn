@@ -50,6 +50,80 @@ function perp(v) {
 }
 
 /**
+ * Global perspectival tax field: chord direction in Tutte / token space. Other users' guides are
+ * deflected away from alignment with this domain (they do not "look along" the mutator's collapse lane).
+ */
+export function recordPerspectivalTaxVector(db, { epoch, sourceUserId, kind, ref, vx, vy, weight }) {
+  const n = norm2({ x: vx, y: vy });
+  if (n < 1e-10) return;
+  const u = normalize2({ x: vx, y: vy });
+  const w = Math.min(2.5, Math.max(0.05, weight));
+  db.prepare(
+    `
+    INSERT INTO perspectival_tax_vectors (
+      vector_id, epoch, source_user_id, kind, ref_json, vx, vy, weight, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `,
+  ).run(id('ptax'), epoch, sourceUserId, kind, JSON.stringify(ref ?? {}), u.x, u.y, w, nowIso());
+}
+
+export function recordInadmissibleTaxPerspectivalDomain(db, { payerUserId, fromTokenId, toTokenId, taxAlpha }) {
+  const epoch = getLatestGraphEpoch(db);
+  if (!epoch) return { ok: false, error: 'no_epoch' };
+  const na = db.prepare(`SELECT node_id FROM nft_tokens WHERE token_id = ?`).get(fromTokenId);
+  const nb = db.prepare(`SELECT node_id FROM nft_tokens WHERE token_id = ?`).get(toTokenId);
+  if (!na?.node_id || !nb?.node_id) return { ok: false, error: 'token_nodes' };
+  const pos = loadPositionsForEpoch(db, epoch);
+  const pf = pos.get(na.node_id);
+  const pt = pos.get(nb.node_id);
+  if (!pf || !pt) return { ok: false, error: 'no_positions' };
+  const connU = normalize2(sub(pt, pf));
+  const weight = Math.max(0.12, taxAlpha * 1.15);
+  recordPerspectivalTaxVector(db, {
+    epoch,
+    sourceUserId: payerUserId,
+    kind: 'inadmissible_interconnect',
+    ref: { fromTokenId, toTokenId },
+    vx: connU.x,
+    vy: connU.y,
+    weight,
+  });
+  return { ok: true };
+}
+
+function applyPerspectivalDeflectionToGuides(db, viewerUserId, epoch, primaryGuide, secondaryGuide) {
+  const rows = db
+    .prepare(
+      `
+    SELECT source_user_id, vx, vy, weight, epoch AS created_epoch
+    FROM perspectival_tax_vectors
+    ORDER BY created_at DESC
+    LIMIT 120
+  `,
+    )
+    .all();
+  let pg = { x: primaryGuide.x, y: primaryGuide.y };
+  let applied = 0;
+  for (const r of rows) {
+    if (r.source_user_id === viewerUserId) continue;
+    const age = Math.max(0, epoch - (r.created_epoch ?? epoch));
+    const decay = Math.exp(-0.045 * age);
+    const w = r.weight * decay * 0.52;
+    if (w < 0.012) continue;
+    const dot = pg.x * r.vx + pg.y * r.vy;
+    if (dot > 0) {
+      pg = normalize2({
+        x: pg.x - w * dot * r.vx,
+        y: pg.y - w * dot * r.vy,
+      });
+      applied += 1;
+    }
+  }
+  const sg = normalize2(perp(pg));
+  return { primaryGuide: pg, secondaryGuide: sg, perspectivalRepellorsApplied: applied };
+}
+
+/**
  * Prime-wheel style triangulation bucket on S^1 for generator-node labeling: {-1, 0, +1}.
  */
 export function primeWheelBucketFromAngle(theta) {
@@ -111,6 +185,7 @@ export function computeUserGuideVectors(db, userId) {
       userCentroid: { x: 0, y: 0 },
       globalMass: { x: 0, y: 0 },
       neighbors: [],
+      perspectivalRepellorsApplied: 0,
     };
   }
 
@@ -165,14 +240,17 @@ export function computeUserGuideVectors(db, userId) {
     }
   }
 
+  const deflected = applyPerspectivalDeflectionToGuides(db, userId, epoch, primaryGuide, secondaryGuide);
+
   return {
     epoch,
     userCentroid: userCom,
     globalMass,
     barbourHint2d: { x: barbourHint2d.x, y: barbourHint2d.y },
-    primaryGuide,
-    secondaryGuide,
+    primaryGuide: deflected.primaryGuide,
+    secondaryGuide: deflected.secondaryGuide,
     neighbors: neighbors.slice(0, 48),
+    perspectivalRepellorsApplied: deflected.perspectivalRepellorsApplied,
   };
 }
 
@@ -366,6 +444,35 @@ export function applyConnectionWithCollapse(db, { userId, fromNodeId, toNodeId, 
 
     const vit = vitiateJointRoutesForCollapsedFaces(db, epoch, preview.collapsedFaces);
     vitiatedLinks = vit.vitiatedLinks;
+
+    if (preview.collapsedFaces.length > 0) {
+      const posAfter = loadPositionsForEpoch(db, epoch);
+      const pf = posAfter.get(fromNodeId);
+      const pt = posAfter.get(toNodeId);
+      if (pf && pt) {
+        const connU = normalize2(sub(pt, pf));
+        const weight = Math.max(
+          0.14,
+          preview.collapseWeight * 0.22 +
+            preview.collapseSurcharge * 2.85 +
+            0.055 * preview.collapsedFaces.length,
+        );
+        recordPerspectivalTaxVector(db, {
+          epoch,
+          sourceUserId: userId,
+          kind: 'collapse_domain',
+          ref: {
+            fromNodeId,
+            toNodeId,
+            edgeId,
+            faceKeys: preview.collapsedFaces.map((f) => f.face_key),
+          },
+          vx: connU.x,
+          vy: connU.y,
+          weight,
+        });
+      }
+    }
   });
 
   run();

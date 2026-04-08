@@ -591,6 +591,12 @@ export default function TutteAtlas({ currentUserId = '', focusTokenId = '' }) {
 
           <div style={{ background: '#0c0c0f', borderRadius: 16, border: '1px solid #27272a', padding: 16 }}>
             <div style={{ fontSize: '0.75rem', color: '#a1a1aa', marginBottom: 8 }}>Prime wheel navigator (guide neighbors)</div>
+            {ug?.perspectivalRepellorsApplied > 0 ? (
+              <div style={{ fontSize: '0.68rem', color: '#a78bfa', marginBottom: 8, lineHeight: 1.4 }}>
+                Perspectival tax field: your primary guide is steered away from <strong>{ug.perspectivalRepellorsApplied}</strong> active
+                collapse / inadmissible domain(s) owned by others (token-space chords you are not encouraged to align with).
+              </div>
+            ) : null}
             {ug?.neighbors?.length ? (
               <>
                 <PrimeWheelNav

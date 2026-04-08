@@ -33,6 +33,7 @@ import {
     applyConnectionWithCollapse,
     applyInadmissibleInterconnectTax,
     NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA,
+    recordInadmissibleTaxPerspectivalDomain,
 } from './guides-collapse.js';
 import {
     registerUser,
@@ -1272,6 +1273,12 @@ app.post('/api/nft/interconnect', requireSession, (req, res) => {
 
         if ((!faceA || !faceB) && payInadmissibleTax) {
             applyInadmissibleInterconnectTax(db, req.auth.userId, NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA);
+            recordInadmissibleTaxPerspectivalDomain(db, {
+                payerUserId: req.auth.userId,
+                fromTokenId,
+                toTokenId,
+                taxAlpha: NON_ADMISSIBLE_INTERCONNECT_TAX_ALPHA,
+            });
         }
 
         const linkId = makeId('link');

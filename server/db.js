@@ -293,6 +293,20 @@ export function initDb(db) {
       FOREIGN KEY(token_id) REFERENCES nft_tokens(token_id)
     );
     CREATE INDEX IF NOT EXISTS idx_id_mut_token ON identity_mutations(token_id);
+
+    CREATE TABLE IF NOT EXISTS perspectival_tax_vectors (
+      vector_id TEXT PRIMARY KEY,
+      epoch INTEGER NOT NULL,
+      source_user_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      ref_json TEXT NOT NULL DEFAULT '{}',
+      vx REAL NOT NULL,
+      vy REAL NOT NULL,
+      weight REAL NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_persp_tax_epoch ON perspectival_tax_vectors(epoch);
+    CREATE INDEX IF NOT EXISTS idx_persp_tax_source ON perspectival_tax_vectors(source_user_id);
   `);
   migrateNfcDb(db);
 }

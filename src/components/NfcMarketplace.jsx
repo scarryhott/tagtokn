@@ -522,7 +522,8 @@ function NfcMarketplaceBody({ currentUserId, stdb = null, onOpenTutteForNft }) {
             </h3>
             <p style={{ fontSize: '0.72rem', color: '#71717a' }}>
               You must own the <strong>from</strong> token. Face-admissible pairs get a <strong>highlighted</strong> route on Tutte Atlas.
-              Graph <strong>collapse</strong> vitiates prior highlighted routes through destroyed faces. Non-admissible links require an <strong>α tax</strong> and stay dim.
+              Graph <strong>collapse</strong> vitiates prior highlighted routes and registers a <strong>global perspectival vector</strong> so other users&apos; guides steer away from your collapse chord in token space.
+              Non-admissible links require an <strong>α tax</strong> (same field), stay dim, and publish the taxed chord as a shared repellor.
             </p>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: '#a1a1aa', marginBottom: 8 }}>
               <input
