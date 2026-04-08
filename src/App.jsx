@@ -255,6 +255,23 @@ const App = () => {
         }
     }, [realWallets, isLiveEconomy]);
 
+    const networkStats = useMemo(() => {
+        const nodeDegrees = {}, nodeVolumes = {};
+        let totalVolume = 0;
+        transactions.forEach(tx => {
+            nodeDegrees[tx.from] = (nodeDegrees[tx.from] || 0) + 1;
+            nodeDegrees[tx.to] = (nodeDegrees[tx.to] || 0) + 1;
+            nodeVolumes[tx.from] = (nodeVolumes[tx.from] || 0) + tx.amount;
+            nodeVolumes[tx.to] = (nodeVolumes[tx.to] || 0) + tx.amount;
+            totalVolume += tx.amount;
+        });
+        const networkAvgDegree = Object.values(nodeDegrees).length ?
+            Object.values(nodeDegrees).reduce((a, b) => a + b, 0) / INITIAL_NODES.length : 0;
+        const globalVelocity = transactions.length > 1 ?
+            totalVolume / (transactions[transactions.length - 1].timestamp - transactions[0].timestamp) : 0;
+        return { nodeDegrees, nodeVolumes, totalVolume, networkAvgDegree, globalVelocity };
+    }, [transactions]);
+
     // --- IVI Data Mechanism: On-Chain Transaction Monitor ---
     useEffect(() => {
         if (!isLiveEconomy || !isSimulating) return;
@@ -346,22 +363,6 @@ const App = () => {
 
         return () => clearInterval(monitorInterval);
     }, [isLiveEconomy, isSimulating, processedTxHashes, networkStats]);
-    const networkStats = useMemo(() => {
-        const nodeDegrees = {}, nodeVolumes = {};
-        let totalVolume = 0;
-        transactions.forEach(tx => {
-            nodeDegrees[tx.from] = (nodeDegrees[tx.from] || 0) + 1;
-            nodeDegrees[tx.to] = (nodeDegrees[tx.to] || 0) + 1;
-            nodeVolumes[tx.from] = (nodeVolumes[tx.from] || 0) + tx.amount;
-            nodeVolumes[tx.to] = (nodeVolumes[tx.to] || 0) + tx.amount;
-            totalVolume += tx.amount;
-        });
-        const networkAvgDegree = Object.values(nodeDegrees).length ?
-            Object.values(nodeDegrees).reduce((a, b) => a + b, 0) / INITIAL_NODES.length : 0;
-        const globalVelocity = transactions.length > 1 ?
-            totalVolume / (transactions[transactions.length - 1].timestamp - transactions[0].timestamp) : 0;
-        return { nodeDegrees, nodeVolumes, totalVolume, networkAvgDegree, globalVelocity };
-    }, [transactions]);
 
     // --- Layer 1: Physical NFC Simulation Loop (stable refs, no stale closures) ---
     useEffect(() => {
