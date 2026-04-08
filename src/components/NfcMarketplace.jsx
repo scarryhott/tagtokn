@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { nfcAuthHeaders } from '../engine/user-accounts';
+import { useNfcStdbNft } from '../spacetimedb/useNfcStdbNft';
 import { Gem, RefreshCw, ShoppingCart, Tags, Network, Link2 } from 'lucide-react';
 
 async function api(path, opts = {}) {
@@ -19,7 +20,7 @@ async function api(path, opts = {}) {
   return json;
 }
 
-export default function NfcMarketplace({ currentUserId }) {
+function NfcMarketplaceBody({ currentUserId, stdb = null }) {
   const [tab, setTab] = useState('inventory');
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -37,6 +38,7 @@ export default function NfcMarketplace({ currentUserId }) {
     verified: false,
     adminKey: '',
   });
+  const [scrapeHint, setScrapeHint] = useState(null);
 
   const [mintPostId, setMintPostId] = useState('');
   const [mintMeta, setMintMeta] = useState({ title: '', body: '' });
@@ -73,6 +75,30 @@ export default function NfcMarketplace({ currentUserId }) {
   const showOk = (m) => {
     setMsg(m);
     setTimeout(() => setMsg(''), 4000);
+  };
+
+  const runScrapePreview = async () => {
+    setErr('');
+    setScrapeHint(null);
+    const url = String(ingest.url || '').trim();
+    if (!url) {
+      setErr('Set profile/post URL first');
+      return;
+    }
+    try {
+      const j = await api('/api/social/scrape', {
+        method: 'POST',
+        body: JSON.stringify({ url }),
+      });
+      setScrapeHint({
+        title: j.title,
+        ogDescription: j.ogDescription,
+        textSample: (j.textSample || '').slice(0, 1200),
+      });
+      showOk('Scrape OK — see preview below (does not auto-fill ingest).');
+    } catch (e) {
+      setErr(e.message || String(e));
+    }
   };
 
   const submitIngest = async () => {
@@ -124,6 +150,19 @@ export default function NfcMarketplace({ currentUserId }) {
       });
       setMintResult(out);
       showOk(`Minted ${out.tokenId}. Add this id to social posts as nft_<hex> to tag.`);
+      if (stdb?.isActive && out?.tokenId) {
+        try {
+          await stdb.registerPublicGraphNft({
+            tokenId: out.tokenId,
+            ownerUserId: currentUserId,
+            nodeId: out.nodeId || '',
+            title: mintMeta.title || '',
+            body: mintMeta.body || '',
+          });
+        } catch (e) {
+          console.warn('[spacetimedb] register_public_graph_nft', e);
+        }
+      }
       load();
     } catch (e) {
       setErr(e.message || String(e));
@@ -142,6 +181,17 @@ export default function NfcMarketplace({ currentUserId }) {
         method: 'POST',
         body: JSON.stringify({ tokenId: sell.tokenId, priceCents: cents, currency: 'USD' }),
       });
+      if (stdb?.isActive && sell.tokenId) {
+        try {
+          await stdb.setPublicGraphNftListing({
+            tokenId: sell.tokenId,
+            listed: true,
+            priceCents: BigInt(cents),
+          });
+        } catch (e) {
+          console.warn('[spacetimedb] set_public_graph_nft_listing', e);
+        }
+      }
       showOk('Listing created.');
       load();
     } catch (e) {
@@ -377,6 +427,16 @@ export default function NfcMarketplace({ currentUserId }) {
             <input placeholder="platform" value={ingest.platform} onChange={(e) => setIngest((s) => ({ ...s, platform: e.target.value }))} style={inp} />
             <input placeholder="author_handle" value={ingest.author_handle} onChange={(e) => setIngest((s) => ({ ...s, author_handle: e.target.value }))} style={inp} />
             <input placeholder="url" value={ingest.url} onChange={(e) => setIngest((s) => ({ ...s, url: e.target.value }))} style={inp} />
+            <button type="button" onClick={runScrapePreview} style={{ marginBottom: 8, padding: '6px 12px', borderRadius: 8, background: '#27272a', color: '#e4e4e7', border: '1px solid #3f3f46', cursor: 'pointer', fontSize: '0.75rem' }}>
+              Scrape URL (preview text for tagging / bio checks)
+            </button>
+            {scrapeHint ? (
+              <div style={{ marginBottom: 8, padding: 10, borderRadius: 8, background: '#0c0c0f', border: '1px solid #27272a', fontSize: '0.7rem', color: '#a1a1aa', maxHeight: 160, overflow: 'auto' }}>
+                <div style={{ color: '#86efac', marginBottom: 4 }}>{scrapeHint.title}</div>
+                <div style={{ marginBottom: 6 }}>{scrapeHint.ogDescription}</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{scrapeHint.textSample}</div>
+              </div>
+            ) : null}
             <textarea placeholder="content_text" value={ingest.content_text} onChange={(e) => setIngest((s) => ({ ...s, content_text: e.target.value }))} style={{ ...inp, minHeight: 72 }} />
             <input placeholder="posted_at ISO" value={ingest.posted_at} onChange={(e) => setIngest((s) => ({ ...s, posted_at: e.target.value }))} style={inp} />
             <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.8rem', color: '#a1a1aa', marginBottom: 8 }}>
@@ -464,6 +524,18 @@ export default function NfcMarketplace({ currentUserId }) {
       )}
     </div>
   );
+}
+
+function NfcMarketplaceWithStdb(props) {
+  const stdb = useNfcStdbNft();
+  return <NfcMarketplaceBody {...props} stdb={stdb} />;
+}
+
+export default function NfcMarketplace(props) {
+  if (import.meta.env.VITE_SPACETIMEDB_URI) {
+    return <NfcMarketplaceWithStdb {...props} />;
+  }
+  return <NfcMarketplaceBody {...props} stdb={null} />;
 }
 
 const inp = {

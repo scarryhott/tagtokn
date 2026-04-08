@@ -40,6 +40,7 @@ import {
     generateBioVerificationCode,
     bioTextContainsVerificationCode,
 } from './social-identity.js';
+import { scrapePublicProfilePage, parseScrapeUrl } from './social-scrape.js';
 import { computeTutteBarbourNovelty } from './novelty-tutte.js';
 
 dotenv.config();
@@ -300,6 +301,83 @@ app.post('/api/me/social-links/:linkId/regenerate-code', requireSession, (req, r
 });
 
 /**
+ * POST /api/social/scrape — fetch a public profile URL and return text/meta (basic scraper; no OAuth).
+ * Body: { url }
+ */
+app.post('/api/social/scrape', async (req, res) => {
+    try {
+        const { url } = req.body || {};
+        const out = await scrapePublicProfilePage(url);
+        if (!out.ok) {
+            return res.status(400).json({ ok: false, error: out.error || 'scrape_failed', url: out.url });
+        }
+        res.json({
+            ok: true,
+            url: out.url,
+            title: out.title || '',
+            ogDescription: out.ogDescription || '',
+            textSample: out.textSample || '',
+            status: out.status,
+        });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+/**
+ * GET /api/social/scrape-check?url= — validate URL without fetching (SSRF guard preview)
+ */
+app.get('/api/social/scrape-check', (req, res) => {
+    const parsed = parseScrapeUrl(req.query.url);
+    res.json({ ok: parsed.ok, error: parsed.error || null, url: parsed.url || null });
+});
+
+/**
+ * POST /api/me/social-links/:linkId/verify-bio-scrape — fetch profile_url, look for bio code (same rules as paste).
+ */
+app.post('/api/me/social-links/:linkId/verify-bio-scrape', requireSession, async (req, res) => {
+    try {
+        const uid = req.auth.userId;
+        const { linkId } = req.params;
+        const row = db.prepare(`SELECT * FROM user_social_links WHERE link_id = ? AND user_id = ?`).get(linkId, uid);
+        if (!row) return res.status(404).json({ error: 'not_found' });
+        if (row.verified_admin) {
+            return res.json({ success: true, bioVerifiedAt: row.bio_verified_at, alreadyVerified: true });
+        }
+        if (!row.verification_code || !String(row.verification_code).trim()) {
+            return res.status(400).json({ error: 'no_verification_code', message: 'Regenerate a code first.' });
+        }
+        const profileUrl = String(row.profile_url || '').trim();
+        if (!profileUrl) {
+            return res.status(400).json({
+                error: 'no_profile_url',
+                message: 'Add a profile URL on this link to enable fetch-verify, or use paste-bio.',
+            });
+        }
+        const scraped = await scrapePublicProfilePage(profileUrl);
+        if (!scraped.ok) {
+            return res.status(502).json({
+                error: 'scrape_failed',
+                message: scraped.error || 'Could not fetch profile page',
+                url: scraped.url,
+            });
+        }
+        const haystack = `${scraped.title || ''}\n${scraped.ogDescription || ''}\n${scraped.textSample || ''}`;
+        if (!bioTextContainsVerificationCode(haystack, row.verification_code)) {
+            return res.status(400).json({
+                error: 'code_not_found_in_page',
+                message: 'Verification code not found in fetched page text. Paste bio manually or fix profile URL.',
+            });
+        }
+        const ts = nowIso();
+        db.prepare(`UPDATE user_social_links SET bio_verified_at = ? WHERE link_id = ? AND user_id = ?`).run(ts, linkId, uid);
+        res.json({ success: true, bioVerifiedAt: ts, scrapeStatus: scraped.status });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
  * DELETE /api/me/social-links/:linkId
  */
 app.delete('/api/me/social-links/:linkId', requireSession, (req, res) => {
@@ -352,6 +430,63 @@ app.post('/api/auth/logout', (req, res) => {
     const token = parseBearer(req);
     if (token) db.prepare(`DELETE FROM sessions WHERE token = ?`).run(token);
     res.json({ success: true });
+});
+
+/**
+ * POST /api/nfc/tap — record a physical-style NFC tap session (server log alongside in-browser Digital Tap).
+ * Body: { targetAgentId, serviceId?, tapChannel?, proof? }
+ */
+app.post('/api/nfc/tap', requireSession, (req, res) => {
+    try {
+        const uid = req.auth.userId;
+        const { targetAgentId, serviceId, tapChannel, proof } = req.body || {};
+        if (!targetAgentId || typeof targetAgentId !== 'string') {
+            return res.status(400).json({ error: 'invalid_payload', required: ['targetAgentId'] });
+        }
+        const tapId = makeId('tap');
+        const proofJson = JSON.stringify(proof && typeof proof === 'object' ? proof : { clientHint: 'tap' });
+        db.prepare(
+            `
+          INSERT INTO nfc_phy_taps (tap_id, initiator_user_id, target_agent_id, service_id, tap_channel, proof_json, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `,
+        ).run(
+            tapId,
+            uid,
+            String(targetAgentId).slice(0, 128),
+            String(serviceId || 'nfc-direct-connection').slice(0, 120),
+            String(tapChannel || 'nfc_phy').slice(0, 64),
+            proofJson.slice(0, 8000),
+            nowIso(),
+        );
+        res.status(201).json({ tapId, success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * GET /api/nfc/taps — recent taps initiated by the current user
+ */
+app.get('/api/nfc/taps', requireSession, (req, res) => {
+    try {
+        const uid = req.auth.userId;
+        const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || '30'), 10) || 30));
+        const rows = db
+            .prepare(
+                `
+          SELECT tap_id, target_agent_id, service_id, tap_channel, created_at
+          FROM nfc_phy_taps
+          WHERE initiator_user_id = ?
+          ORDER BY created_at DESC
+          LIMIT ?
+        `,
+            )
+            .all(uid, limit);
+        res.json({ taps: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 /**

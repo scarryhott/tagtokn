@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { SpacetimeDBProvider, useSpacetimeDB, useTable, useReducer } from 'spacetimedb/react';
+import { useSpacetimeDB, useTable, useReducer } from 'spacetimedb/react';
 import { Radio, Send, Wifi, WifiOff } from 'lucide-react';
 import {
-  createNfcStdbConnectionBuilder,
   nfcTables,
   postLivePingReducer,
 } from '../spacetimedb/nfcModule';
@@ -21,9 +20,19 @@ function formatRow(row) {
   return { who, when, body: row.body };
 }
 
+function nftWhen(row) {
+  try {
+    if (row.updatedAt?.toISOString) return row.updatedAt.toISOString();
+  } catch {
+    /* ignore */
+  }
+  return '—';
+}
+
 function SpacetimeNfcPanelConnected() {
   const ctx = useSpacetimeDB();
   const [rows, ready] = useTable(nfcTables.nfcLivePing);
+  const [nfts, nftsReady] = useTable(nfcTables.publicGraphNft);
   const postPing = useReducer(postLivePingReducer);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -31,14 +40,20 @@ function SpacetimeNfcPanelConnected() {
   const sorted = useMemo(() => {
     const r = [...rows];
     r.sort((a, b) => {
-      const ba = BigInt(a.id ?? 0);
       const bb = BigInt(b.id ?? 0);
+      const ba = BigInt(a.id ?? 0);
       if (bb > ba) return 1;
       if (bb < ba) return -1;
       return 0;
     });
     return r;
   }, [rows]);
+
+  const nftSorted = useMemo(() => {
+    const r = [...nfts];
+    r.sort((a, b) => String(a.tokenId).localeCompare(String(b.tokenId)));
+    return r;
+  }, [nfts]);
 
   const send = async () => {
     const t = draft.trim();
@@ -53,7 +68,7 @@ function SpacetimeNfcPanelConnected() {
   };
 
   return (
-    <div style={{ color: '#e4e4e7', maxWidth: 720 }}>
+    <div style={{ color: '#e4e4e7', maxWidth: 860 }}>
       <div
         style={{
           display: 'flex',
@@ -90,14 +105,51 @@ function SpacetimeNfcPanelConnected() {
             </div>
           ) : null}
         </div>
-        <div style={{ fontSize: '0.75rem', color: ready ? '#4ade80' : '#fbbf24' }}>
-          {ready ? 'subscribed' : 'waiting…'}
+        <div style={{ fontSize: '0.75rem', color: ready && nftsReady ? '#4ade80' : '#fbbf24' }}>
+          {ready && nftsReady ? 'subscribed' : 'waiting…'}
         </div>
       </div>
 
+      <h3 style={{ fontSize: '1rem', color: '#c084fc', margin: '0 0 12px' }}>Public graph NFTs (realtime)</h3>
+      <p style={{ fontSize: '0.8rem', color: '#71717a', marginTop: 0, lineHeight: 1.5 }}>
+        Rows sync from the Graph NFT hub when you mint or list with Spacetime enabled. Ownership is your STDB identity;{' '}
+        <code style={{ color: '#94a3b8' }}>ownerUserId</code> mirrors NFC login for display.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
+        {nftSorted.length === 0 ? (
+          <div style={{ color: '#52525b', fontSize: '0.9rem' }}>No public NFT rows yet.</div>
+        ) : (
+          nftSorted.map((row) => (
+            <div
+              key={row.tokenId}
+              style={{
+                padding: 12,
+                borderRadius: 10,
+                background: '#111',
+                border: '1px solid #27272a',
+                fontSize: '0.82rem',
+              }}
+            >
+              <code style={{ color: '#a5b4fc' }}>{row.tokenId}</code>
+              <span style={{ margin: '0 10px', color: '#52525b' }}>·</span>
+              <span style={{ color: row.listed ? '#4ade80' : '#71717a' }}>
+                {row.listed ? `listed ${String(row.priceCents)}¢` : 'not listed'}
+              </span>
+              <div style={{ color: '#71717a', fontSize: '0.72rem', marginTop: 6 }}>
+                user <code>{String(row.ownerUserId).slice(0, 16)}</code> · {nftWhen(row)}
+              </div>
+              {row.title ? <div style={{ marginTop: 8, fontWeight: 600 }}>{row.title}</div> : null}
+              {row.body ? (
+                <div style={{ marginTop: 4, color: '#a1a1aa', lineHeight: 1.4 }}>{row.body.slice(0, 280)}</div>
+              ) : null}
+            </div>
+          ))
+        )}
+      </div>
+
+      <h3 style={{ fontSize: '1rem', color: '#22d3ee', margin: '0 0 12px' }}>Live pings</h3>
       <p style={{ fontSize: '0.85rem', color: '#a1a1aa', lineHeight: 1.5, marginBottom: 16 }}>
-        Realtime <code style={{ color: '#38bdf8' }}>nfc_live_ping</code> rows (public table). This is separate
-        from Express/SQLite — use it for live presence, joint rooms, or graph sync after you extend the module.
+        Realtime <code style={{ color: '#38bdf8' }}>nfc_live_ping</code> (public). Separate from Express/SQLite.
       </p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -138,7 +190,7 @@ function SpacetimeNfcPanelConnected() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {sorted.length === 0 ? (
-          <div style={{ color: '#52525b', fontSize: '0.9rem' }}>No rows yet — post a ping or open another client.</div>
+          <div style={{ color: '#52525b', fontSize: '0.9rem' }}>No pings yet.</div>
         ) : (
           sorted.map((row) => {
             const { who, when, body } = formatRow(row);
@@ -172,7 +224,6 @@ function SpacetimeNfcPanelConnected() {
 
 export default function SpacetimeNfcPanel() {
   const uri = import.meta.env.VITE_SPACETIMEDB_URI || '';
-  const database = import.meta.env.VITE_SPACETIMEDB_DATABASE || DEFAULT_DB;
 
   if (!uri) {
     return (
@@ -187,39 +238,12 @@ export default function SpacetimeNfcPanel() {
           <code>{DEFAULT_DB}</code>).
         </p>
         <p style={{ margin: 0, fontSize: '0.85rem', color: '#71717a' }}>
-          Publish the module from the repo: install the SpacetimeDB CLI, then{' '}
+          Republish after schema changes:{' '}
           <code style={{ color: '#c4b5fd' }}>spacetime publish {DEFAULT_DB} -p spacetimedb -y</code>
-          . Run a local server with Docker:{' '}
-          <code style={{ color: '#c4b5fd' }}>
-            docker run --rm -p 3000:3000 clockworklabs/spacetime:latest start
-          </code>
         </p>
       </div>
     );
   }
 
-  let token;
-  try {
-    token = localStorage.getItem('nfc_stdb_token') || undefined;
-  } catch {
-    token = undefined;
-  }
-
-  const builder = useMemo(
-    () =>
-      createNfcStdbConnectionBuilder(uri, database, token).onConnect((_conn, _id, tok) => {
-        try {
-          if (tok) localStorage.setItem('nfc_stdb_token', tok);
-        } catch {
-          /* ignore */
-        }
-      }),
-    [uri, database, token]
-  );
-
-  return (
-    <SpacetimeDBProvider connectionBuilder={builder}>
-      <SpacetimeNfcPanelConnected />
-    </SpacetimeDBProvider>
-  );
+  return <SpacetimeNfcPanelConnected />;
 }

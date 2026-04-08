@@ -911,6 +911,21 @@ const App = () => {
         if (result.settlement.verified) {
             setLogs(prev => [`✅ Tap Verified: Information Closure complete. Trust increased.`, ...prev.slice(0, 8)]);
 
+            try {
+                fetch('/api/nfc/tap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...nfcAuthHeaders() },
+                    body: JSON.stringify({
+                        targetAgentId: targetAgent.nodeId,
+                        serviceId: 'nfc-direct-connection',
+                        tapChannel: 'nfc_phy',
+                        proof: { tapId: tap.id, closureScore: result.settlement?.closureScore },
+                    }),
+                }).catch(() => {});
+            } catch {
+                /* non-fatal if offline */
+            }
+
             // Settlement effects (Closure boost and Weight update)
             setAgents(prev => {
                 const next = prev.map(a => Object.assign(Object.create(Object.getPrototypeOf(a)), a));
@@ -1080,6 +1095,19 @@ const App = () => {
             loadMe();
         };
 
+        const verifyBioScrape = async (linkId) => {
+            const r = await fetch(`/api/me/social-links/${encodeURIComponent(linkId)}/verify-bio-scrape`, {
+                method: 'POST',
+                headers: nfcAuthHeaders(),
+            });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                alert(j.message || j.error || `${r.status}`);
+                return;
+            }
+            loadMe();
+        };
+
         const regenerateSocialCode = async (linkId) => {
             const r = await fetch(`/api/me/social-links/${encodeURIComponent(linkId)}/regenerate-code`, {
                 method: 'POST',
@@ -1123,8 +1151,8 @@ const App = () => {
 
                         <div style={{ padding: '24px', background: '#111', borderRadius: '16px', border: '1px solid #333' }}>
                             <h3 style={{ color: '#38bdf8', marginTop: 0 }}>Public identity</h3>
-                            <p style={{ fontSize: '0.75rem', color: '#666' }}>
-                                Each linked account gets a <strong>verification code</strong>. Put that exact string in the <strong>profile bio</strong> on that platform, then paste the bio here so we can confirm ownership. Only <strong>verified</strong> links appear on your public profile and count for NFT tag checks.
+                                <p style={{ fontSize: '0.75rem', color: '#666' }}>
+                                Each linked account gets a <strong>verification code</strong>. Put that exact string in the <strong>profile bio</strong> on that platform, then paste the bio here <em>or</em> use <strong>Fetch profile page</strong> if you saved a public profile URL on the link. Only <strong>verified</strong> links appear on your public profile and count for NFT tag checks.
                             </p>
                             <input placeholder="Display name" value={profileForm.displayName} onChange={(e) => setProfileForm((s) => ({ ...s, displayName: e.target.value }))} style={{ width: '100%', marginBottom: 8, padding: 10, borderRadius: 8, border: '1px solid #444', background: '#1a1a1a', color: '#fff' }} />
                             <textarea placeholder="Bio" value={profileForm.bio} onChange={(e) => setProfileForm((s) => ({ ...s, bio: e.target.value }))} rows={3} style={{ width: '100%', marginBottom: 8, padding: 10, borderRadius: 8, border: '1px solid #444', background: '#1a1a1a', color: '#fff', resize: 'vertical' }} />
@@ -1178,7 +1206,10 @@ const App = () => {
                                                     rows={2}
                                                     style={{ width: '100%', padding: 8, borderRadius: 8, border: '1px solid #444', background: '#1a1a1a', color: '#fff', fontSize: '0.75rem', resize: 'vertical' }}
                                                 />
-                                                <button type="button" onClick={() => verifyBio(l.link_id)} style={{ alignSelf: 'flex-start', padding: '6px 12px', borderRadius: 8, background: '#14532d', color: '#bbf7d0', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>Verify bio</button>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                                  <button type="button" onClick={() => verifyBio(l.link_id)} style={{ alignSelf: 'flex-start', padding: '6px 12px', borderRadius: 8, background: '#14532d', color: '#bbf7d0', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>Verify bio (paste)</button>
+                                                  <button type="button" onClick={() => verifyBioScrape(l.link_id)} style={{ alignSelf: 'flex-start', padding: '6px 12px', borderRadius: 8, background: '#1e3a5f', color: '#e0f2fe', border: '1px solid #334155', cursor: 'pointer', fontSize: '0.75rem' }}>Fetch profile page</button>
+                                                </div>
                                             </div>
                                         ) : null}
                                     </li>

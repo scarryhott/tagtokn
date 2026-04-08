@@ -1,6 +1,5 @@
 /**
- * Client-side SpacetimeDB schema — must stay in sync with `spacetimedb/src/index.ts`
- * (same tables, columns, reducer names). Publish the server module before connecting.
+ * Client SpacetimeDB schema — keep in sync with `spacetimedb/src/index.ts`.
  */
 import {
   schema,
@@ -23,10 +22,42 @@ const nfcLivePing = table(
   }
 );
 
-const tablesModel = schema({ nfcLivePing });
+const publicGraphNft = table(
+  { name: 'public_graph_nft', public: true },
+  {
+    tokenId: t.string().primaryKey(),
+    owner: t.identity(),
+    ownerUserId: t.string(),
+    nodeId: t.string(),
+    title: t.string(),
+    body: t.string(),
+    listed: t.bool(),
+    priceCents: t.u64(),
+    updatedAt: t.timestamp(),
+  }
+);
+
+const tablesModel = schema({ nfcLivePing, publicGraphNft });
 
 export const postLivePingReducer = reducerSchema('post_live_ping', { body: t.string() });
-const reducerDefs = reducers(postLivePingReducer);
+export const registerPublicGraphNftReducer = reducerSchema('register_public_graph_nft', {
+  tokenId: t.string(),
+  ownerUserId: t.string(),
+  nodeId: t.string(),
+  title: t.string(),
+  body: t.string(),
+});
+export const setPublicGraphNftListingReducer = reducerSchema('set_public_graph_nft_listing', {
+  tokenId: t.string(),
+  listed: t.bool(),
+  priceCents: t.u64(),
+});
+
+const reducerDefs = reducers(
+  postLivePingReducer,
+  registerPublicGraphNftReducer,
+  setPublicGraphNftListingReducer
+);
 
 export const nfcRemoteModule = {
   ...tablesModel.schemaType,
@@ -38,7 +69,7 @@ export const nfcRemoteModule = {
 export const nfcTables = makeQueryBuilder(tablesModel.schemaType);
 
 export function createNfcStdbConnectionBuilder(uri, databaseName, token) {
-  const b = new DbConnectionBuilder(
+  return new DbConnectionBuilder(
     nfcRemoteModule,
     (cfg) => new DbConnectionImpl(cfg)
   )
@@ -47,8 +78,9 @@ export function createNfcStdbConnectionBuilder(uri, databaseName, token) {
     .withToken(token)
     .withLightMode(true)
     .onConnect((conn) => {
-      conn.subscriptionBuilder().subscribe(nfcTables.nfcLivePing.toSql());
+      conn
+        .subscriptionBuilder()
+        .subscribe([nfcTables.nfcLivePing.toSql(), nfcTables.publicGraphNft.toSql()]);
     })
     .onConnectError(() => {});
-  return b;
 }

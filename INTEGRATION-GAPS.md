@@ -19,8 +19,9 @@ Items that are **partially done**, **API-only**, or **not wired** between the Re
 ## Social & verification
 
 - [x] **`POST /api/social/ingest`** — Graph NFTs → Mint & ingest → “Ingest post only” (+ optional admin key).
-- [ ] **Verified posts** — Production: webhook/OAuth/scraper vs admin header + dev `verified` when key unset.
-- [ ] **Bio verification** — Still **paste bio**; not live profile fetch.
+- [x] **`POST /api/social/scrape`** — Basic HTML fetch + text/meta sample; URL guard (`GET /api/social/scrape-check`). Mint tab **Scrape URL** preview.
+- [ ] **Verified posts** — Production: webhook/OAuth vs admin header + dev `verified` when key unset.
+- [x] **Bio verification** — **Paste bio** (same `NFC-…` code) **or** **`verify-bio-scrape`** using link `profile_url`.
 - [ ] **OAuth / “login with …”** — Not implemented.
 
 ---
@@ -48,7 +49,7 @@ Items that are **partially done**, **API-only**, or **not wired** between the Re
 
 ## Simulation vs server graph (unification)
 
-- [ ] **IVI / Digital Tap / L1–L2** — Still in-browser only; not persisted to NFC SQLite.
+- [ ] **IVI / Digital Tap / L1–L2** — Still in-browser only; **verified `nfc_phy` taps** also logged to **`nfc_phy_taps`** (not full IVI state).
 - [ ] **Human `user_id` vs agent `node_id`** — Still dual models; human agent is simulation-only.
 
 ---
@@ -76,10 +77,16 @@ Items that are **partially done**, **API-only**, or **not wired** between the Re
 
 ## SpacetimeDB (realtime)
 
-- [x] **Module** — `spacetimedb/src/index.ts`: public `nfc_live_ping` + `post_live_ping` reducer (demo ping stream).
-- [x] **Client** — Nav **SpacetimeDB** + `SpacetimeNfcPanel.jsx` when `VITE_SPACETIMEDB_URI` is set; token persisted as `nfc_stdb_token`.
-- [ ] **Publish / ops** — Install [CLI](https://spacetimedb.com/install), run local server (`spacetime start` or Docker), then `npm run spacetime:publish` from repo root (database name `nfc-tap` by default).
-- [ ] **Product integration** — Still a side channel vs Express/SQLite; extend module + bind Joint rooms / graph if you want one writer path.
+- [x] **Module** — `nfc_live_ping`, **`public_graph_nft`** (+ `register_public_graph_nft`, `set_public_graph_nft_listing`). Identity owns on-chain-of-trust rows; listing price in cents.
+- [x] **Client** — `NfcStdbRootProvider` in `main.jsx` (single connection). **SpacetimeDB** nav + **Graph NFT hub** pushes mint/list to STDB when connected.
+- [ ] **Publish / ops** — After schema changes: `npm run spacetime:publish` (may need `--break-clients` if upgrading live DB).
+- [ ] **Purchase → STDB** — SQLite transfer on buy; STDB owner still shows seller until a transfer reducer / manual re-sync (future).
+
+---
+
+## NFC physical tap (server log)
+
+- [x] **`nfc_phy_taps`** table + **`POST /api/nfc/tap`** / **`GET /api/nfc/taps`** — Logged when an in-app **verified** `nfc_phy` Digital Tap runs (`App.jsx` → `nfcAuthHeaders`).
 
 ---
 

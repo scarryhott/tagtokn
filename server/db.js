@@ -249,6 +249,19 @@ export function initDb(db) {
       FOREIGN KEY(session_id) REFERENCES joint_kimi_sessions(session_id)
     );
     CREATE INDEX IF NOT EXISTS idx_kimi_msg_session ON joint_kimi_messages(session_id);
+
+    CREATE TABLE IF NOT EXISTS nfc_phy_taps (
+      tap_id TEXT PRIMARY KEY,
+      initiator_user_id TEXT NOT NULL,
+      target_agent_id TEXT NOT NULL,
+      service_id TEXT NOT NULL DEFAULT 'nfc-direct-connection',
+      tap_channel TEXT NOT NULL DEFAULT 'nfc_phy',
+      proof_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(initiator_user_id) REFERENCES users(user_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_nfc_phy_taps_user ON nfc_phy_taps(initiator_user_id);
+    CREATE INDEX IF NOT EXISTS idx_nfc_phy_taps_created ON nfc_phy_taps(created_at);
   `);
   migrateNfcDb(db);
 }
