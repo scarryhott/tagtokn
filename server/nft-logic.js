@@ -1,5 +1,6 @@
 import { id, nowIso } from './ids.js';
 import { computeTutteBarbourNovelty } from './novelty-tutte.js';
+import { writeNrrGenesisOnMint, recordGenesisMutation, recordCustodyTransferMutation } from './nrr-identity.js';
 
 function feeFromBps(priceCents, feeBps) {
   const fee = Math.floor((priceCents * feeBps) / 10000);
@@ -69,6 +70,21 @@ export function mintNftFromVerifiedPost(db, { userId, post, nftNode, novelty: _n
     mintedAt,
     userId,
   );
+
+  writeNrrGenesisOnMint(db, {
+    tokenId,
+    nodeId,
+    mintedFromPostId: post.post_id,
+    mintedByUserId: userId,
+    mintedAt,
+    noveltyScore,
+    connectivity,
+  });
+  recordGenesisMutation(db, {
+    tokenId,
+    minterUserId: userId,
+    payload: { nodeId, postId: post.post_id },
+  });
 
   return { tokenId, nodeId, mintedAt, graphNovelty: geo };
 }
@@ -151,6 +167,13 @@ export function purchaseListing(db, { listingId, buyerUserId, platformFeeBps }) 
     db.prepare(`
       UPDATE graph_nodes SET owner_user_id = ? WHERE node_id = ?
     `).run(buyerUserId, listing.token_node_id);
+
+    recordCustodyTransferMutation(db, {
+      tokenId: listing.token_id,
+      buyerUserId,
+      sellerUserId: listing.seller_user_id,
+      payload: { listingId, purchaseId, price_cents: listing.price_cents },
+    });
   });
   tx();
 

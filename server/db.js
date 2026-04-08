@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { generateBioVerificationCode } from './social-identity.js';
+import { writeNrrGenesisOnMint, recordGenesisMutation } from './nrr-identity.js';
 
 export function openDb({ filename = 'data/nfc.db' } = {}) {
   const dbPath = path.isAbsolute(filename) ? filename : path.join(process.cwd(), filename);
@@ -262,6 +263,33 @@ export function initDb(db) {
     );
     CREATE INDEX IF NOT EXISTS idx_nfc_phy_taps_user ON nfc_phy_taps(initiator_user_id);
     CREATE INDEX IF NOT EXISTS idx_nfc_phy_taps_created ON nfc_phy_taps(created_at);
+
+    CREATE TABLE IF NOT EXISTS nrr_epoch_observations (
+      observation_id TEXT PRIMARY KEY,
+      token_id TEXT NOT NULL,
+      epoch INTEGER NOT NULL,
+      is_face_admissible INTEGER NOT NULL,
+      face_cycle_key TEXT NOT NULL DEFAULT '',
+      graph_stress REAL NOT NULL DEFAULT 0,
+      barbour_alpha_mean REAL NOT NULL DEFAULT 0,
+      observed_at TEXT NOT NULL,
+      UNIQUE (token_id, epoch),
+      FOREIGN KEY(token_id) REFERENCES nft_tokens(token_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_nrr_obs_token ON nrr_epoch_observations(token_id);
+    CREATE INDEX IF NOT EXISTS idx_nrr_obs_epoch ON nrr_epoch_observations(epoch);
+
+    CREATE TABLE IF NOT EXISTS identity_mutations (
+      mutation_id TEXT PRIMARY KEY,
+      token_id TEXT NOT NULL,
+      mutation_kind TEXT NOT NULL,
+      actor_user_id TEXT NOT NULL,
+      counterparty_user_id TEXT NOT NULL DEFAULT '',
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(token_id) REFERENCES nft_tokens(token_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_id_mut_token ON identity_mutations(token_id);
   `);
   migrateNfcDb(db);
 }
@@ -283,12 +311,50 @@ function migrateNfcDb(db) {
   if (!nftCols.includes('last_purchase_id')) {
     db.exec(`ALTER TABLE nft_tokens ADD COLUMN last_purchase_id TEXT NOT NULL DEFAULT ''`);
   }
+  if (!nftCols.includes('nrr_genesis_digest')) {
+    db.exec(`ALTER TABLE nft_tokens ADD COLUMN nrr_genesis_digest TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!nftCols.includes('nrr_genesis_at')) {
+    db.exec(`ALTER TABLE nft_tokens ADD COLUMN nrr_genesis_at TEXT NOT NULL DEFAULT ''`);
+  }
   try {
     db.exec(`
       UPDATE nft_tokens
       SET current_owner_user_id = minted_by_user_id
       WHERE TRIM(COALESCE(current_owner_user_id, '')) = ''
     `);
+  } catch (_) { /* ignore */ }
+
+  try {
+    const blank = db
+      .prepare(
+        `
+      SELECT token_id, node_id, minted_from_post_id, minted_by_user_id, minted_at, novelty_score, connectivity
+      FROM nft_tokens WHERE TRIM(COALESCE(nrr_genesis_digest,'')) = ''
+    `,
+      )
+      .all();
+    for (const r of blank) {
+      writeNrrGenesisOnMint(db, {
+        tokenId: r.token_id,
+        nodeId: r.node_id,
+        mintedFromPostId: r.minted_from_post_id,
+        mintedByUserId: r.minted_by_user_id,
+        mintedAt: r.minted_at,
+        noveltyScore: r.novelty_score,
+        connectivity: r.connectivity,
+      });
+      const hasGen = db
+        .prepare(`SELECT 1 FROM identity_mutations WHERE token_id = ? AND mutation_kind = 'genesis'`)
+        .get(r.token_id);
+      if (!hasGen) {
+        recordGenesisMutation(db, {
+          tokenId: r.token_id,
+          minterUserId: r.minted_by_user_id,
+          payload: { backfill: true },
+        });
+      }
+    }
   } catch (_) { /* ignore */ }
 
   const userCols = db.prepare(`PRAGMA table_info(users)`).all().map((c) => c.name);

@@ -25,6 +25,7 @@ import {
     computeNftTemporalTrail,
 } from './engine.js';
 import { id as makeId, nowIso } from './ids.js';
+import { appendNrrEpochObservations, getNrrLedger } from './nrr-identity.js';
 import { renderNftFacesSvg } from './render.js';
 import { computeUserGuideVectors, previewConnectionImpact, applyConnectionWithCollapse } from './guides-collapse.js';
 import {
@@ -729,6 +730,19 @@ app.post('/api/nft/purchase', requireSession, (req, res) => {
 });
 
 /**
+ * GET /api/identity/:tokenId/nrr-ledger — Temporal NRR identity (genesis + observations + mutations). Read-only.
+ */
+app.get('/api/identity/:tokenId/nrr-ledger', (req, res) => {
+    try {
+        const ledger = getNrrLedger(db, req.params.tokenId);
+        if (!ledger) return res.status(404).json({ error: 'not_found' });
+        res.json(ledger);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
  * GET /api/nft/inventory — NFTs owned by the authenticated user (Buys override mint lineage)
  */
 app.get('/api/nft/inventory', requireSession, (req, res) => {
@@ -737,7 +751,8 @@ app.get('/api/nft/inventory', requireSession, (req, res) => {
         const rows = db.prepare(`
           SELECT token_id, node_id, minted_by_user_id,
                  TRIM(COALESCE(current_owner_user_id,'')) AS co,
-                 acquisition_source, last_purchase_id, minted_at, is_face_nft
+                 acquisition_source, last_purchase_id, minted_at, is_face_nft,
+                 TRIM(COALESCE(nrr_genesis_digest,'')) AS nrr_genesis_digest
           FROM nft_tokens
           WHERE TRIM(COALESCE(current_owner_user_id,'')) = ?
              OR (TRIM(COALESCE(current_owner_user_id,'')) = '' AND minted_by_user_id = ?)
@@ -751,6 +766,8 @@ app.get('/api/nft/inventory', requireSession, (req, res) => {
             lastPurchaseId: r.last_purchase_id,
             mintedAt: r.minted_at,
             isFaceNft: !!r.is_face_nft,
+            nrrGenesisDigest: r.nrr_genesis_digest || '',
+            identityKind: 'temporal_nrr',
         }));
         res.json({ nfts });
     } catch (err) {
@@ -992,6 +1009,7 @@ app.post('/api/engine/recompute', requireSession, (req, res) => {
                 SET alpha_mean = (SELECT COALESCE(AVG(alpha), 0) FROM user_reputation)
                 WHERE epoch = ?
             `).run(result.epoch);
+            appendNrrEpochObservations(db, result.epoch);
         }
         res.status(seed ? 200 : 201).json({
             success: true,

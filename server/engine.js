@@ -261,6 +261,10 @@ export function runTutteRelaxation(db, { seedNodeId = null, radius = 2, maxIters
   return { positions, stress, faces, ids, adj, boundary };
 }
 
+/**
+ * Operational projection of Tutte face admissibility (spring/shape dynamics).
+ * Immutable NRR genesis + append-only epoch observations live in nrr_epoch_observations / nrr-identity.
+ */
 export function refreshFaceNftFlags(db, faces) {
   db.prepare(`UPDATE nft_tokens SET is_face_nft = 0, face_cycle_key = ''`).run();
   const nfts = db.prepare(`SELECT token_id, node_id FROM nft_tokens`).all();

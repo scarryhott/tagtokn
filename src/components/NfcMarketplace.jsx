@@ -286,10 +286,11 @@ function NfcMarketplaceBody({ currentUserId, stdb = null, onOpenTutteForNft }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h2 style={{ margin: 0, fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Gem size={22} color="#f0abfc" /> Graph NFT hub
+            <Gem size={22} color="#f0abfc" /> Temporal NRR identities
           </h2>
           <p style={{ margin: '6px 0 0', color: '#71717a', fontSize: '0.85rem', maxWidth: 720 }}>
-            Internal SQLite ledger: mint from verified posts, list, purchase, inventory, face-NFT interconnects. Distinct from the agent service marketplace.
+            Each mint is a <strong style={{ color: '#e4e4e7' }}>network identity</strong> with an immutable NRR genesis digest and append-only epoch observations (wheel / spring / shape dynamics).
+            Custody transfers append mutator records — the past is not edited. Internal SQLite ledger; distinct from the agent marketplace.
           </p>
         </div>
         <button
@@ -328,7 +329,7 @@ function NfcMarketplaceBody({ currentUserId, stdb = null, onOpenTutteForNft }) {
 
       {tab === 'inventory' && (
         <div style={{ background: '#0c0c0f', border: '1px solid #27272a', borderRadius: 12, padding: 16 }}>
-          <h3 style={{ marginTop: 0, color: '#c084fc', fontSize: '1rem' }}>Inventory</h3>
+          <h3 style={{ marginTop: 0, color: '#c084fc', fontSize: '1rem' }}>Your identities (inventory)</h3>
           {inventory.length === 0 ? (
             <p style={{ color: '#52525b' }}>No NFTs yet. Mint from the Mint tab.</p>
           ) : (
@@ -351,7 +352,20 @@ function NfcMarketplaceBody({ currentUserId, stdb = null, onOpenTutteForNft }) {
                   </div>
                   <div style={{ color: '#71717a', marginTop: 4 }}>
                     node {n.nodeId} · {n.acquisitionSource || 'mint'}
+                    {n.nrrGenesisDigest ? (
+                      <span style={{ display: 'block', marginTop: 4, fontSize: '0.7rem', color: '#52525b' }}>
+                        NRR genesis <code style={{ color: '#94a3b8' }}>{String(n.nrrGenesisDigest).slice(0, 18)}…</code>
+                      </span>
+                    ) : null}
                   </div>
+                  <a
+                    href={`/api/identity/${encodeURIComponent(n.tokenId)}/nrr-ledger`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: 'inline-block', marginTop: 6, fontSize: '0.72rem', color: '#7dd3fc' }}
+                  >
+                    View NRR ledger (JSON)
+                  </a>
                   {typeof onOpenTutteForNft === 'function' ? (
                     <button
                       type="button"

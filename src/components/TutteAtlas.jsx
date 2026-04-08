@@ -606,7 +606,15 @@ export default function TutteAtlas({ currentUserId = '', focusTokenId = '' }) {
             {!selectedToken && <div style={{ color: '#52525b', fontSize: '0.8rem' }}>Click an NFT node on the graph.</div>}
             {selectedToken && overlay && (
               <div style={{ fontSize: '0.78rem', lineHeight: 1.6 }}>
-                <div><strong>Token</strong> {selectedToken}</div>
+                <div><strong>Identity</strong> <code>{selectedToken}</code></div>
+                <a
+                  href={`/api/identity/${encodeURIComponent(selectedToken)}/nrr-ledger`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: '0.72rem', color: '#7dd3fc' }}
+                >
+                  Immutable NRR ledger (genesis + epochs + mutators)
+                </a>
                 {nftTemporal?.points?.length > 0 ? (
                   <div style={{ marginTop: 6, color: '#a78bfa' }}>
                     Epoch trail: {nftTemporal.points.length} sample(s){' '}
