@@ -10,7 +10,7 @@ The participant is never modeled as an isolated account performing separate tag,
 C(t+1) = Integrate(C(t), interaction, modalities, participants, objects, boundary transport)
 ```
 
-Every admitted interaction updates the same append-only runtime. A closure coin is then instantiated deterministically from that relational change. Participants do not manually mint the coin, and a payment does not independently “complete” closure.
+Every admitted interaction updates the same append-only runtime. A closure coin is then instantiated deterministically from that relational change. Participants do not manually mint the coin, and a payment does not independently “complete” closure. The runtime has no terminal close state: local completions become further carriers of continuing closure.
 
 ## Closure coins
 
