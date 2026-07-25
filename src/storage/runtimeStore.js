@@ -1,6 +1,10 @@
-import { createClosureRuntime, integrateInteraction, normalizeParticipant } from '../domain/closureRuntime.js'
+import { createClosureRuntime, createId, integrateInteraction, normalizeParticipant } from '../domain/closureRuntime.js'
 
-const KEY = 'tagtokn.unified-closure-runtime.local/v1'
+const KEY = 'tagtokn.unified-closure-runtime.local/v2'
+
+function createAnonymousBasis(existingId) {
+  return normalizeParticipant({ id: existingId || createId('basis') })
+}
 
 export function loadRuntimeState() {
   try {
@@ -20,30 +24,35 @@ export function saveRuntimeState(state) {
   return state
 }
 
-export async function createRuntimeState(input) {
-  const basis = normalizeParticipant(input.participant)
-  const runtime = await createClosureRuntime({ field: input.field, participant: basis, intent: input.intent })
+export async function createRuntimeState() {
+  const basis = createAnonymousBasis()
+  const runtime = await createClosureRuntime({ participant: basis })
   return { runtime, basis }
 }
 
-export async function admitBasis(state, input) {
-  if (!state.runtime) throw new Error('Open a closure runtime before entering it.')
-  const basis = normalizeParticipant(input)
-  if (!basis.name && !basis.handle) throw new Error('Name the participant basis entering this closure field.')
-  const firstActor = state.runtime.events[0].actor
-  const alreadyPresent = state.runtime.events.some((event) =>
-    event.actor?.id === basis.id || (event.payload?.participants || []).some((participant) => participant.id === basis.id),
+function basisPresent(runtime, basisId) {
+  return runtime.events.some((event) =>
+    event.actor?.id === basisId || (event.payload?.participants || []).some((participant) => participant.id === basisId),
   )
-  const runtime = alreadyPresent
-    ? state.runtime
-    : await integrateInteraction(state.runtime, {
-        actor: basis,
-        participants: [firstActor],
-        modalities: ['internal'],
-        intent: 'Enter the active closure field.',
-        meaning: `${basis.name || basis.handle} enters as a relational basis connected to the existing field.`,
-      })
-  return { runtime, basis }
+}
+
+export async function adoptRuntime(state, runtime) {
+  const basis = state.basis || createAnonymousBasis()
+  if (basisPresent(runtime, basis.id)) return { runtime, basis }
+  const firstActor = runtime.events[0].actor
+  const integrated = await integrateInteraction(runtime, {
+    actor: basis,
+    participants: [firstActor],
+    modalities: ['internal'],
+    intent: 'Admit a local basis through the existing field.',
+    meaning: 'A previously unmodeled local basis enters without declaring an identity; its identity will be learned through future relations.',
+  })
+  return { runtime: integrated, basis }
+}
+
+export async function ensureRuntimeState(state = { runtime: null, basis: null }) {
+  if (!state.runtime) return createRuntimeState()
+  return adoptRuntime(state, state.runtime)
 }
 
 export function replaceRuntime(state, runtime) {
