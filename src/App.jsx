@@ -1,345 +1,285 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  MODALITIES,
-  decodeRuntime,
-  deriveGuidance,
-  deriveIdentity,
-  deriveRuntime,
-  integrateObservation,
-  participantLabel,
-} from './domain/closureRuntime.js'
-import {
-  adoptRuntime,
-  ensureRuntimeState,
-  loadRuntimeState,
-  replaceRuntime,
-  saveRuntimeState,
-} from './storage/runtimeStore.js'
+import { useEffect, useMemo, useState } from 'react'
 
-const INTEGRATION_PATHS = [
-  {
-    id: 'payments',
-    title: 'Payment systems',
-    purpose: 'Translate confirmed money movement into a relational observation without making payment the identity of the interaction.',
-    sequence: [
-      'Receive the provider webhook in a server route.',
-      'Verify its signature and discard untrusted or duplicate events.',
-      'Resolve the payer, recipient, shared context, and any connected platform action.',
-      'Send one normalized observation to the closure ingestion endpoint.',
-    ],
-    source: 'payment-connector',
-    example: `{
-  source: 'payment-connector',
-  amount: 25,
-  currency: 'USD',
-  transactionId: 'provider-event-id',
-  participants: [{ id: 'payer-basis' }, { id: 'recipient-basis' }],
-  context: 'Community exchange',
-  relation: 'payment continued an existing communal relation'
-}`,
-  },
-  {
-    id: 'platforms',
-    title: 'Platform and media systems',
-    purpose: 'Treat posts, messages, links, audio, video, events, and collaborations as boundary carriers rather than imported authority.',
-    sequence: [
-      'Subscribe to an approved webhook, export, share extension, or native client event.',
-      'Preserve the external reference but do not import platform ranking or profile truth.',
-      'Relate the action to known participants and a communal context.',
-      'Submit the platform action and its media carriers as one observation.',
-    ],
-    source: 'platform-connector',
-    example: `{
-  source: 'platform-connector',
-  platformAction: 'shared community project',
-  platformUrl: 'https://platform.example/item',
-  message: 'Discussion continued around the project.',
-  imageUrl: 'https://cdn.example/context.jpg',
-  participants: [{ id: 'basis-a' }, { id: 'basis-b' }],
-  context: 'Shared project'
-}`,
-  },
-  {
-    id: 'contracts',
-    title: 'Internal relational contracts',
-    purpose: 'Encode commitments, permissions, value exchange, completion, and reciprocity as continuing network relations rather than isolated legal records.',
-    sequence: [
-      'Create a stable contract ID and identify its relational parties and communal purpose.',
-      'Record proposed, accepted, fulfilled, disputed, or revised transitions as append-only observations.',
-      'Attach payment, media, platform, and evidence references to the same contract context.',
-      'Let closure coins record continuation lineage; never use them as a human-worth score.',
-    ],
-    source: 'internal-contract',
-    example: `{
-  source: 'internal-contract',
-  contractId: 'contract-001',
-  contractState: 'accepted',
-  participants: [{ id: 'provider-basis' }, { id: 'community-basis' }],
-  context: 'Local service agreement',
-  collaboration: true,
-  relation: 'mutual commitment accepted',
-  evidence: ['proposal-digest', 'acceptance-digest']
-}`,
-  },
-]
+const POLL_INTERVAL_MS = 8000
 
-function modalityLabel(kind) {
-  return MODALITIES.find((item) => item.id === kind)?.label || kind
+function shortDigest(value) {
+  if (!value) return 'none'
+  return `${value.slice(0, 12)}…${value.slice(-8)}`
 }
 
-function sourceLabel(event) {
-  return event.payload.source || (event.kind === 'admit' ? 'closure runtime' : 'network')
+function pretty(value) {
+  return JSON.stringify(value ?? {}, null, 2)
 }
 
-function latestDistinctEvents(runtime, limit = 7) {
-  return [...runtime.events].reverse().slice(0, limit)
-}
-
-function FieldAperture({ runtime, derived }) {
-  const latest = runtime.events[runtime.events.length - 1]
-  const carriers = latest.payload.modalities || []
-  const contexts = derived.objects.slice(-6)
-
+function Readiness({ label, ready, detail }) {
   return (
-    <div className="field-aperture" aria-label="Live multimodal closure field">
-      <div className="field-ripple ripple-one" />
-      <div className="field-ripple ripple-two" />
-      <div className="field-ripple ripple-three" />
-      <div className="closure-core">
-        <span>{runtime.field.symbol}</span>
-        <strong>closure</strong>
+    <article className="readiness-item">
+      <span className={ready ? 'status ready' : 'status blocked'}>{ready ? 'ready' : 'blocked'}</span>
+      <div>
+        <strong>{label}</strong>
+        <p>{detail}</p>
       </div>
-      {carriers.map((carrier, index) => (
-        <div
-          className={`carrier carrier-${carrier.kind}`}
-          style={{ '--carrier-index': index, '--carrier-count': Math.max(1, carriers.length) }}
-          key={`${latest.digest}-${carrier.kind}-${index}`}
-        >
-          {modalityLabel(carrier.kind)}
-        </div>
-      ))}
-      {contexts.map((context, index) => (
-        <div
-          className="context-node"
-          style={{ '--context-index': index, '--context-count': Math.max(1, contexts.length) }}
-          key={context.id}
-        >
-          {context.label}
-        </div>
-      ))}
+    </article>
+  )
+}
+
+function ProofRow({ label, value, positive }) {
+  return (
+    <div className="proof-row">
+      <span>{label}</span>
+      <code className={positive === true ? 'proof-good' : positive === false ? 'proof-bad' : ''}>{value}</code>
     </div>
   )
 }
 
-function AmbientStream({ runtime }) {
+function RecordCard({ record }) {
+  const verification = record.independentVerification || {}
+  const checks = verification.checks || {}
+
   return (
-    <section className="ambient-stream" aria-label="Closure interaction stream">
-      {latestDistinctEvents(runtime).map((event, index) => (
-        <article className={index === 0 ? 'stream-event current' : 'stream-event'} key={event.digest}>
-          <div className="event-origin">
-            <span>{sourceLabel(event)}</span>
-            <i />
-            <span>{participantLabel(event.actor)}</span>
-          </div>
-          <p>{event.payload.meaning}</p>
-          <div className="carrier-line">
-            {(event.payload.modalities || []).map((carrier, carrierIndex) => (
-              <span key={`${carrier.kind}-${carrierIndex}`}>{modalityLabel(carrier.kind)}</span>
-            ))}
-          </div>
-        </article>
-      ))}
-    </section>
-  )
-}
-
-function IntegrationGuidance() {
-  return (
-    <section className="integration-guidance" aria-labelledby="integration-heading">
-      <div className="integration-intro">
-        <p className="eyebrow">implementation path</p>
-        <h2 id="integration-heading">Connect systems to the field</h2>
-        <p>
-          The participant does not select payment, platform, or contract actions in this interface. Your integrations observe those systems, normalize their events, and submit one relational observation to TagTokn.
-        </p>
-      </div>
-
-      <div className="integration-flow" aria-label="Connector flow">
-        <span>provider or internal system</span>
-        <i>→</i>
-        <span>verified adapter</span>
-        <i>→</i>
-        <span>closure observation</span>
-        <i>→</i>
-        <span>shared relational field</span>
-      </div>
-
-      <div className="integration-paths">
-        {INTEGRATION_PATHS.map((path, pathIndex) => (
-          <article className="integration-path" key={path.id}>
-            <div className="path-heading">
-              <span>{String(pathIndex + 1).padStart(2, '0')}</span>
-              <div>
-                <h3>{path.title}</h3>
-                <p>{path.purpose}</p>
-              </div>
-            </div>
-            <ol>
-              {path.sequence.map((step) => <li key={step}>{step}</li>)}
-            </ol>
-            <div className="contract-example">
-              <div>
-                <span>normalized source</span>
-                <code>{path.source}</code>
-              </div>
-              <pre><code>{path.example}</code></pre>
-            </div>
-          </article>
-        ))}
-      </div>
-
-      <div className="ingestion-contract">
+    <article className="record-card">
+      <header className="record-header">
         <div>
-          <span>browser prototype</span>
-          <code>window.TagTokn.observe(observation)</code>
+          <p className="record-source">{record.source.system}</p>
+          <h3>{record.source.eventType}</h3>
+          <span>{record.source.eventId}</span>
+        </div>
+        <span className={verification.valid ? 'record-valid' : 'record-invalid'}>
+          {verification.valid ? 'independently verified' : 'verification failed'}
+        </span>
+      </header>
+
+      <section className="record-proof-grid">
+        <div className="proof-panel">
+          <h4>Source proof</h4>
+          <ProofRow label="signature" value={record.source.signature?.scheme || 'unknown'} positive={record.source.signature?.verified} />
+          <ProofRow label="raw payload" value={shortDigest(record.source.rawPayloadDigest)} />
+          <ProofRow label="received" value={record.source.receivedAt || 'unknown'} />
+        </div>
+        <div className="proof-panel">
+          <h4>Declared adapter</h4>
+          <ProofRow label="adapter" value={`${record.adapter.id}@${record.adapter.version}`} />
+          <ProofRow label="mapping" value={shortDigest(record.adapter.mappingDigest)} positive={checks.normalizedDigest} />
+          <ProofRow label="normalized" value={shortDigest(record.chain.normalizedDigest)} positive={checks.normalizedDigest} />
+        </div>
+        <div className="proof-panel">
+          <h4>Closure chain</h4>
+          <ProofRow label="previous" value={shortDigest(record.chain.previousClosureDigest)} />
+          <ProofRow label="result" value={shortDigest(record.chain.resultingClosureDigest)} positive={checks.resultingClosureDigest} />
+          <ProofRow label="schema" value={record.schema} positive={checks.schema} />
+        </div>
+      </section>
+
+      <section className="fact-inference-grid">
+        <div>
+          <p className="section-label">Observed source facts</p>
+          <pre>{pretty(record.observed)}</pre>
         </div>
         <div>
-          <span>production target</span>
-          <code>POST /api/closure/observe</code>
+          <p className="section-label">Declared inference</p>
+          <pre>{pretty(record.inferred)}</pre>
         </div>
-        <p>
-          The production endpoint should authenticate the connector, verify signatures, enforce idempotency, preserve provider references, and append the normalized observation to shared storage before broadcasting it to clients.
-        </p>
-      </div>
-    </section>
+      </section>
+
+      {(record.contractEvidence || record.contractTransition) && (
+        <section className="contract-effect">
+          <p className="section-label">Contract relation</p>
+          <pre>{pretty(record.contractTransition || record.contractEvidence)}</pre>
+        </section>
+      )}
+    </article>
   )
 }
 
-function OpeningField() {
-  return (
-    <main className="opening-field">
-      <div className="opening-orbit"><i /><i /><i /></div>
-      <p>Opening the closure field</p>
-      <span>No profile or isolated action is being requested.</span>
-    </main>
-  )
-}
-
-export default function App() {
-  const [state, setState] = useState(() => loadRuntimeState())
-  const [booting, setBooting] = useState(true)
-  const [connectionState, setConnectionState] = useState('opening network field')
-  const runtimeRef = useRef(state.runtime)
-  const basisRef = useRef(state.basis)
-
-  function commit(nextState) {
-    saveRuntimeState(nextState)
-    runtimeRef.current = nextState.runtime
-    basisRef.current = nextState.basis
-    setState(nextState)
-    return nextState
-  }
+function App() {
+  const [ledger, setLedger] = useState(null)
+  const [requestError, setRequestError] = useState('')
+  const [lastChecked, setLastChecked] = useState(null)
 
   useEffect(() => {
     let active = true
-    let channel = null
+    let timer
 
-    async function ingest(observation) {
-      if (!observation || typeof observation !== 'object' || !runtimeRef.current || !basisRef.current) return
+    async function loadLedger() {
       try {
-        const runtime = await integrateObservation(runtimeRef.current, { basis: basisRef.current, observation })
+        const response = await fetch('/api/closure/ledger?limit=30', { cache: 'no-store' })
+        const body = await response.json()
         if (!active) return
-        commit(replaceRuntime({ runtime: runtimeRef.current, basis: basisRef.current }, runtime))
-        setConnectionState(`receiving ${observation.source || observation.connector || 'network'} closure input`)
-      } catch {
-        setConnectionState('listening for admissible network closure input')
-      }
-    }
-
-    async function boot() {
-      try {
-        const existing = loadRuntimeState()
-        const encoded = new URLSearchParams(window.location.search).get('runtime')
-        const next = encoded ? await adoptRuntime(existing, decodeRuntime(encoded)) : await ensureRuntimeState(existing)
+        setLedger(body)
+        setRequestError(response.ok ? '' : body.error || 'The ledger endpoint returned an error.')
+        setLastChecked(new Date())
+      } catch (error) {
         if (!active) return
-        commit(next)
-        if (encoded) window.history.replaceState({}, '', window.location.pathname)
-        setConnectionState('listening across socioeconomic and multimodal carriers')
-
-        channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('tagtokn-closure-input') : null
-        if (channel) channel.onmessage = (event) => ingest(event.data?.observation || event.data)
-
-        window.addEventListener('message', (event) => {
-          const payload = event.data
-          if (payload?.type === 'tagtokn:observation' || payload?.source === 'tagtokn-connector') ingest(payload.observation || payload)
-        })
-        window.addEventListener('tagtokn:observe', (event) => ingest(event.detail))
-        window.addEventListener('storage', (event) => {
-          if (event.key?.startsWith('tagtokn.') && event.newValue) {
-            const loaded = loadRuntimeState()
-            if (loaded.runtime && loaded.basis) commit(loaded)
-          }
-        })
-
-        window.TagTokn = {
-          observe: ingest,
-          snapshot: () => runtimeRef.current,
-          channel: 'tagtokn-closure-input',
-        }
-      } catch {
-        setConnectionState('closure field unavailable')
+        setRequestError(error.message || 'The ledger could not be reached.')
+        setLastChecked(new Date())
       } finally {
-        if (active) setBooting(false)
+        if (active) timer = window.setTimeout(loadLedger, POLL_INTERVAL_MS)
       }
     }
 
-    boot()
+    loadLedger()
     return () => {
       active = false
-      channel?.close()
-      if (window.TagTokn) delete window.TagTokn
+      window.clearTimeout(timer)
     }
   }, [])
 
-  const derived = useMemo(() => state.runtime ? deriveRuntime(state.runtime) : null, [state.runtime])
-  const identity = useMemo(() => state.runtime && state.basis ? deriveIdentity(state.runtime, state.basis.id) : null, [state.runtime, state.basis])
-  const guidance = useMemo(() => state.runtime ? deriveGuidance(state.runtime)[0] : null, [state.runtime])
-
-  if (booting || !state.runtime || !state.basis || !derived || !identity) return <OpeningField />
-
-  const latest = state.runtime.events[state.runtime.events.length - 1]
+  const configuration = ledger?.configuration
+  const records = ledger?.records || []
+  const allReady = useMemo(() => {
+    if (!configuration) return false
+    return Boolean(
+      configuration.storage?.configured &&
+      configuration.integrations?.stripe?.configured &&
+      configuration.integrations?.platformAdapter?.configured &&
+      configuration.integrations?.internalContracts?.configured,
+    )
+  }, [configuration])
 
   return (
     <div className="app-shell">
-      <header className="ambient-header">
-        <div className="brand-mark">T</div>
-        <div>
-          <strong>TagTokn</strong>
-          <span>{connectionState}</span>
+      <header className="site-header">
+        <div className="brand">TagTokn</div>
+        <div className="header-state">
+          <span className={allReady ? 'status ready' : 'status blocked'}>{allReady ? 'live path ready' : 'integration setup incomplete'}</span>
+          <small>{lastChecked ? `checked ${lastChecked.toLocaleTimeString()}` : 'checking server'}</small>
         </div>
-        <div className="listening-pulse" aria-hidden="true"><i /><i /><i /></div>
       </header>
 
-      <main className="closure-interface">
-        <section className="field-language">
-          <p className="eyebrow">{sourceLabel(latest)} · unified closure observation</p>
-          <h1>{latest.payload.meaning}</h1>
-          <p className="network-tendency">{guidance?.title}</p>
-          <div className="emergent-basis">
-            <span>relational pattern emerging as</span>
-            <strong>{identity.label}</strong>
+      <main>
+        <section className="hero">
+          <p className="eyebrow">transparent closure architecture v1</p>
+          <h1>Verify every transformation before closure accepts it.</h1>
+          <p className="hero-copy">
+            Source events remain inspectable. Transport signatures are verified against the untouched raw body. Adapter rules are versioned and hashed. Observed facts stay separate from inferred relations. Native contract transitions are state-checked. Only then is an event appended to the closure chain.
+          </p>
+          <div className="architecture-line" aria-label="Transparent closure sequence">
+            <span>source event</span><i>→</i><span>verified transport</span><i>→</i><span>deterministic adapter</span><i>→</i><span>contract or evidence</span><i>→</i><span>closure digest</span>
+          </div>
+          <p className="fail-closed">The server rejects events when signature verification or durable append-only storage is unavailable.</p>
+        </section>
+
+        <section className="readiness-section">
+          <div className="section-heading">
+            <p className="eyebrow">server readiness</p>
+            <h2>What is actually connected</h2>
+          </div>
+          <div className="readiness-grid">
+            <Readiness
+              label="Append-only ledger"
+              ready={configuration?.storage?.configured}
+              detail="UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN"
+            />
+            <Readiness
+              label="Stripe payment verification"
+              ready={configuration?.integrations?.stripe?.configured}
+              detail="STRIPE_WEBHOOK_SECRET · POST /api/webhooks/stripe"
+            />
+            <Readiness
+              label="Platform adapter signatures"
+              ready={configuration?.integrations?.platformAdapter?.configured}
+              detail="TAGTOKN_CONNECTOR_SECRET · POST /api/closure/observe"
+            />
+            <Readiness
+              label="Internal contract transitions"
+              ready={configuration?.integrations?.internalContracts?.configured}
+              detail="TAGTOKN_CONNECTOR_SECRET · POST /api/contracts/transition"
+            />
+          </div>
+          {requestError && <p className="server-error">{requestError}</p>}
+          {ledger?.reason && <p className="server-warning">{ledger.reason}</p>}
+        </section>
+
+        <section className="implementation-section">
+          <div className="section-heading">
+            <p className="eyebrow">first verified integration</p>
+            <h2>Stripe payment → closure evidence</h2>
+          </div>
+          <ol className="implementation-steps">
+            <li><strong>Provision durable storage.</strong><span>Add the two Upstash REST environment variables to the Vercel project.</span></li>
+            <li><strong>Register the webhook.</strong><span>Point Stripe to <code>https://tagtokn.vercel.app/api/webhooks/stripe</code> and copy its signing secret into <code>STRIPE_WEBHOOK_SECRET</code>.</span></li>
+            <li><strong>Declare relational metadata.</strong><span>Attach <code>contract_id</code>, <code>payer_basis_id</code>, <code>recipient_basis_id</code>, and optional <code>communal_context</code> to the PaymentIntent.</span></li>
+            <li><strong>Reconcile the proof.</strong><span>The ledger exposes the provider event ID, raw payload digest, signature result, adapter mapping digest, observed facts, declared inference, and resulting closure digest.</span></li>
+          </ol>
+          <pre className="payload-example"><code>{`{
+  "metadata": {
+    "contract_id": "contract-001",
+    "payer_basis_id": "basis-payer",
+    "recipient_basis_id": "basis-provider",
+    "communal_context": "local service agreement"
+  }
+}`}</code></pre>
+          <p className="principle-note">A successful payment is recorded as evidence. It does not automatically declare that the internal contract was fulfilled.</p>
+        </section>
+
+        <section className="implementation-section two-column">
+          <div>
+            <div className="section-heading compact">
+              <p className="eyebrow">platform adapters</p>
+              <h2>Signed observed/inferred envelope</h2>
+            </div>
+            <pre className="payload-example"><code>{`POST /api/closure/observe
+X-TagTokn-Signature: sha256=<HMAC(raw body)>
+
+{
+  "sourceSystem": "github",
+  "sourceEventId": "delivery-123",
+  "sourceEventType": "pull_request.merged",
+  "observed": {
+    "repository": "owner/repo",
+    "pullRequest": 42,
+    "merged": true
+  },
+  "inferred": {
+    "relationType": "collaboration-continued",
+    "inferenceBasis": ["adapter-rule-v1"]
+  }
+}`}</code></pre>
+          </div>
+          <div>
+            <div className="section-heading compact">
+              <p className="eyebrow">native contracts</p>
+              <h2>Append-only state transition</h2>
+            </div>
+            <pre className="payload-example"><code>{`POST /api/contracts/transition
+X-TagTokn-Signature: sha256=<HMAC(raw body)>
+
+{
+  "contractId": "contract-001",
+  "sourceEventId": "transition-002",
+  "nextState": "accepted",
+  "participants": [
+    { "id": "basis-payer" },
+    { "id": "basis-provider" }
+  ],
+  "evidence": [
+    "proposal-digest",
+    "acceptance-signature-digest"
+  ]
+}`}</code></pre>
           </div>
         </section>
 
-        <FieldAperture runtime={state.runtime} derived={derived} />
-        <AmbientStream runtime={state.runtime} />
-        <IntegrationGuidance />
-
-        <footer className="connector-boundary">
-          <span>Payment, platform, message, image, audio, video, event, collaboration, and internal-contract connectors write into this same field.</span>
-          <code>window.TagTokn.observe(observation)</code>
-        </footer>
+        <section className="ledger-section">
+          <div className="section-heading ledger-heading">
+            <div>
+              <p className="eyebrow">append-only inspection</p>
+              <h2>Verified closure ledger</h2>
+            </div>
+            <code>head {shortDigest(ledger?.head)}</code>
+          </div>
+          {records.length ? (
+            <div className="records">{records.map((record) => <RecordCard record={record} key={record.recordId} />)}</div>
+          ) : (
+            <div className="empty-ledger">
+              <strong>No verified events have been appended.</strong>
+              <p>This remains empty until storage and at least one signed connector are configured. The server does not fabricate demonstration records.</p>
+            </div>
+          )}
+        </section>
       </main>
     </div>
   )
 }
+
+export default App
