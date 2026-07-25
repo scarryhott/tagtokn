@@ -2,7 +2,7 @@
 
 TagTokn is a unified relational network closure runtime.
 
-The participant is never modeled as an isolated account performing separate tag, payment, platform, media, or token actions. Money transfers, external-platform links and actions, messages, images, audio, video, events, collaboration, communal objects, and internal connections are modalities carried by one evolving closure field.
+The participant is never modeled as an isolated account performing separate tag, payment, platform, media, token, or profile actions. Money transfers, external-platform links and actions, messages, images, audio, video, events, collaboration, communal objects, internal connections, and identity are modalities or derived structures carried by one evolving closure field.
 
 ## Runtime law
 
@@ -10,7 +10,41 @@ The participant is never modeled as an isolated account performing separate tag,
 C(t+1) = Integrate(C(t), interaction, modalities, participants, objects, boundary transport)
 ```
 
-Every admitted interaction updates the same append-only runtime. A closure coin is then instantiated deterministically from that relational change. Participants do not manually mint the coin, and a payment does not independently “complete” closure. The runtime has no terminal close state: local completions become further carriers of continuing closure.
+Every admitted interaction updates the same append-only runtime. A closure coin is instantiated deterministically from that relational change. The runtime has no terminal close state: local completions become further carriers of continuing closure.
+
+## Identity remains open
+
+The interface contains no name, handle, biography, profile, amount, URL, object, or descriptive input fields.
+
+A device receives an anonymous local basis automatically. When it opens a shared runtime, that basis is admitted through an internal relation without declaring an identity. Identity is then learned from:
+
+- recurring modalities,
+- internal relation count,
+- connected communal contexts,
+- economic carriers,
+- platform-boundary continuation,
+- collaboration and event history,
+- and closure-coin lineage.
+
+The resulting identity label is provisional and revisable. It is a runtime description of relational behavior, not a permanent classification or imported profile.
+
+## Interaction without forms
+
+The participant continues closure through modality buttons:
+
+- internal connection,
+- money transfer,
+- platform action,
+- message,
+- image,
+- audio,
+- video,
+- event,
+- collaboration.
+
+The runtime generates the interaction meaning from the active field and its current guidance. It automatically relates the local basis to weakly connected participants and stable communal contexts. A platform link can be continued directly from the device clipboard without a URL field.
+
+Money is currently observed structurally. Actual amounts and counterparties should later arrive from payment connectors rather than manual entry.
 
 ## Closure coins
 
@@ -27,18 +61,20 @@ Its numerical units are a structural multiplicity derived from new connections, 
 
 ## Guidance
 
-Guidance is derived from the runtime topology. It looks for weak internal connection, external actions that have not returned into the internal graph, money transfers lacking wider social or multimodal continuation, and closure coins that have not yet been carried forward.
+Guidance is derived from runtime topology. It looks for weak internal connection, external actions that have not returned into the internal graph, money transfers lacking wider social or multimodal continuation, and closure coins that have not yet been carried forward.
 
 The system guides toward deeper internal connection; it does not rank people or import the truth conditions of another social platform.
 
 ## Current executable prototype
 
 - Vite + React on `tagtokn.vercel.app`
-- One persistent device-local closure runtime
+- Automatic anonymous local basis and field admission
+- No user identity or descriptive form fields
 - Append-only digest-linked `admit` and `integrate` events
-- Multimodal interactions: internal, money, platform, message, image, audio, video, event, collaboration
+- Multimodal interactions across internal, money, platform, message, image, audio, video, event, and collaboration carriers
+- Runtime-derived relational identity
 - Automatic closure-coin instantiation and lineage
-- Monetary shadows preserved by currency
+- Monetary shadows preserved by currency when supplied by a connector
 - External URLs treated as boundary references only
 - Runtime-derived connection guidance
 - Internal participant/object graph
@@ -47,7 +83,7 @@ The system guides toward deeper internal connection; it does not rank people or 
 
 ## Prototype boundary
 
-The current runtime is device-local and transported by a complete shared URL. The next layer is persistent shared append-only storage with authenticated participant keys and real settlement connectors. That layer must preserve the same closure runtime rather than splitting coins, payments, social links, media, and network actions into separate authoritative systems.
+The current runtime is device-local and transported by a complete shared URL. The next layer is persistent shared append-only storage with authenticated participant keys, payment connectors, platform connectors, and native multimodal capture. Those systems must supply observations to the same closure runtime rather than reintroducing separate authoritative profiles or forms.
 
 ## Development
 
