@@ -1,16 +1,18 @@
 export const MODALITIES = [
-  { id: 'internal', label: 'Internal connection', description: 'Strengthen relations inside the closure field.' },
-  { id: 'money', label: 'Money transfer', description: 'Observe money as one carrier of the active relation.' },
-  { id: 'platform', label: 'Platform action', description: 'Carry closure across an external platform boundary.' },
-  { id: 'message', label: 'Message', description: 'Continue closure through written language.' },
-  { id: 'image', label: 'Image', description: 'Continue closure through a visual carrier.' },
-  { id: 'audio', label: 'Audio', description: 'Continue closure through voice or sound.' },
-  { id: 'video', label: 'Video', description: 'Continue closure through moving image and sound.' },
-  { id: 'event', label: 'Event', description: 'Continue closure through shared presence.' },
-  { id: 'collaboration', label: 'Collaboration', description: 'Continue closure through shared work.' },
+  { id: 'internal', label: 'Internal connection' },
+  { id: 'money', label: 'Money transfer' },
+  { id: 'platform', label: 'Platform action' },
+  { id: 'message', label: 'Message' },
+  { id: 'image', label: 'Image' },
+  { id: 'audio', label: 'Audio' },
+  { id: 'video', label: 'Video' },
+  { id: 'event', label: 'Event' },
+  { id: 'collaboration', label: 'Collaboration' },
 ]
 
-const SCHEMA = 'tagtokn.closure-runtime/v2'
+const SCHEMA = 'tagtokn.closure-runtime/v3'
+const SUPPORTED_SCHEMAS = new Set([SCHEMA, 'tagtokn.closure-runtime/v2'])
+const MODALITY_IDS = new Set(MODALITIES.map((item) => item.id))
 
 function cleanText(value, maxLength = 800) {
   return String(value ?? '').trim().slice(0, maxLength)
@@ -51,7 +53,7 @@ export function normalizeField(field = {}) {
     id: cleanText(field.id, 120) || createId('field'),
     name: cleanText(field.name, 120) || 'TagTokn closure field',
     symbol: symbol || 'TOKN',
-    mission: cleanText(field.mission, 500) || 'Learn relational identity through continuing social, economic, platform, and multimodal connection.',
+    mission: cleanText(field.mission, 500) || 'Receive socioeconomic and multimodal network activity as one continuing relational field.',
   }
 }
 
@@ -100,41 +102,40 @@ function eventWithoutDigest(event) {
 }
 
 function normalizeObject(object = {}) {
-  const label = cleanText(object.label, 160)
+  const label = cleanText(object.label || object.name, 160)
   return {
     id: cleanText(object.id, 140) || `object:${label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || createId('object')}`,
     label,
-    kind: cleanText(object.kind, 40) || 'communal-object',
-    referenceUrl: normalizeUrl(object.referenceUrl),
+    kind: cleanText(object.kind, 40) || 'communal-context',
+    referenceUrl: normalizeUrl(object.referenceUrl || object.url),
   }
 }
 
 function normalizeModalities(input = {}) {
   const requested = Array.isArray(input.modalities) ? input.modalities : []
-  const allowed = new Set(MODALITIES.map((modality) => modality.id))
-  const kinds = [...new Set(requested.map((value) => cleanText(value, 40)).filter((value) => allowed.has(value)))]
+  const kinds = [...new Set(requested.map((value) => cleanText(typeof value === 'string' ? value : value?.kind, 40)).filter((value) => MODALITY_IDS.has(value)))]
   if (!kinds.length) kinds.push('internal')
   return kinds.map((kind) => {
     if (kind === 'money') {
       return {
         kind,
-        amount: Math.max(0, Number(input.moneyAmount) || 0),
+        amount: Math.max(0, Number(input.moneyAmount ?? input.amount) || 0),
         currency: cleanText(input.currency || 'USD', 8).toUpperCase(),
-        reference: cleanText(input.moneyReference, 180),
+        reference: cleanText(input.moneyReference || input.transactionId, 180),
       }
     }
     if (kind === 'platform') {
       return {
         kind,
-        action: cleanText(input.platformAction, 120),
-        referenceUrl: normalizeUrl(input.platformUrl),
+        action: cleanText(input.platformAction || input.action, 120),
+        referenceUrl: normalizeUrl(input.platformUrl || input.url),
       }
     }
     if (['image', 'audio', 'video'].includes(kind)) {
       return {
         kind,
-        referenceUrl: normalizeUrl(input.mediaUrl),
-        description: cleanText(input.mediaDescription, 300),
+        referenceUrl: normalizeUrl(input[`${kind}Url`] || input.mediaUrl || input.url),
+        description: cleanText(input.mediaDescription || input.description, 300),
       }
     }
     return { kind }
@@ -156,7 +157,8 @@ export async function createClosureRuntime(input = {}) {
       participants: [participant],
       objects: [],
       modalities: [{ kind: 'internal' }],
-      meaning: cleanText(input.meaning || 'A local basis is admitted without a declared identity; identity remains open and is learned through continuing relations.', 800),
+      meaning: cleanText(input.meaning || 'A local basis is admitted without a declared identity. Its relation is learned from continuing network observations.', 800),
+      source: 'runtime',
     },
   }
   event.digest = await digestValue(eventWithoutDigest(event))
@@ -164,7 +166,7 @@ export async function createClosureRuntime(input = {}) {
 }
 
 export function assertRuntimeShape(runtime) {
-  if (!runtime || runtime.schema !== SCHEMA || !runtime.field || !Array.isArray(runtime.events) || !runtime.events.length) {
+  if (!runtime || !SUPPORTED_SCHEMAS.has(runtime.schema) || !runtime.field || !Array.isArray(runtime.events) || !runtime.events.length) {
     throw new Error('This is not a supported TagTokn closure runtime.')
   }
   if (runtime.events[0]?.kind !== 'admit') throw new Error('The closure runtime has no admission event.')
@@ -173,15 +175,13 @@ export function assertRuntimeShape(runtime) {
 
 export async function integrateInteraction(runtime, input = {}) {
   assertRuntimeShape(runtime)
-  const actor = normalizeParticipant(input.actor)
+  const actor = normalizeParticipant(input.actor || runtime.events[0].actor)
   const participants = [actor, ...(Array.isArray(input.participants) ? input.participants : [])]
     .map(normalizeParticipant)
     .filter((participant) => participant.id)
   const uniqueParticipants = [...new Map(participants.map((participant) => [participant.id, participant])).values()]
   const objects = (Array.isArray(input.objects) ? input.objects : [input.object]).filter(Boolean).map(normalizeObject).filter((object) => object.label)
   const modalities = normalizeModalities(input)
-  const intent = cleanText(input.intent, 600)
-  const meaning = cleanText(input.meaning, 1200) || `The closure field continued through ${modalities.map((modality) => modality.kind).join(', ')} and preserved identity as an open relational pattern.`
   const previous = runtime.events[runtime.events.length - 1]
   const event = {
     index: runtime.events.length,
@@ -189,10 +189,87 @@ export async function integrateInteraction(runtime, input = {}) {
     actor,
     at: new Date().toISOString(),
     previousDigest: previous.digest,
-    payload: { intent, meaning, participants: uniqueParticipants, objects, modalities },
+    payload: {
+      intent: cleanText(input.intent, 600),
+      meaning: cleanText(input.meaning, 1200) || `The closure field continued through ${modalities.map((item) => item.kind).join(', ')}.`,
+      participants: uniqueParticipants,
+      objects,
+      modalities,
+      source: cleanText(input.source, 120) || 'network',
+    },
   }
   event.digest = await digestValue(eventWithoutDigest(event))
-  return { ...runtime, events: [...runtime.events, event] }
+  return { ...runtime, schema: SCHEMA, events: [...runtime.events, event] }
+}
+
+export function inferObservationModalities(observation = {}) {
+  const inferred = new Set(
+    (Array.isArray(observation.modalities) ? observation.modalities : [])
+      .map((item) => cleanText(typeof item === 'string' ? item : item?.kind, 40))
+      .filter((item) => MODALITY_IDS.has(item)),
+  )
+
+  if (observation.amount != null || observation.moneyAmount != null || observation.transactionId || observation.payment) inferred.add('money')
+  if (observation.platformUrl || observation.platformAction || observation.actionUrl || observation.platform) inferred.add('platform')
+  if (observation.message || observation.text || observation.caption) inferred.add('message')
+  if (observation.imageUrl || observation.image) inferred.add('image')
+  if (observation.audioUrl || observation.audio) inferred.add('audio')
+  if (observation.videoUrl || observation.video) inferred.add('video')
+  if (observation.eventId || observation.eventName || observation.event) inferred.add('event')
+  if (observation.collaboration || observation.project || observation.task) inferred.add('collaboration')
+  if (observation.participants?.length || observation.relation || observation.internal) inferred.add('internal')
+  if (!inferred.size) inferred.add('internal')
+  return [...inferred]
+}
+
+function inferredObjects(observation, modalities) {
+  const explicit = (Array.isArray(observation.objects) ? observation.objects : [observation.object]).filter(Boolean)
+  if (explicit.length) return explicit
+
+  const label = cleanText(observation.context || observation.contextLabel || observation.objectLabel, 160)
+  if (label) return [{ id: observation.contextId, label, kind: observation.contextKind || 'communal-context', referenceUrl: observation.contextUrl }]
+
+  const map = {
+    money: ['economic-context', 'Economic exchange context', 'exchange'],
+    platform: ['platform-boundary', 'Platform boundary', 'boundary'],
+    message: ['shared-language', 'Shared language context', 'communication'],
+    image: ['shared-visual', 'Shared visual context', 'media'],
+    audio: ['shared-audio', 'Shared audio context', 'media'],
+    video: ['shared-video', 'Shared video context', 'media'],
+    event: ['shared-event', 'Shared event context', 'event'],
+    collaboration: ['shared-work', 'Collaborative work', 'project'],
+  }
+  return modalities.map((kind) => map[kind]).filter(Boolean).map(([id, objectLabel, kind]) => ({ id, label: objectLabel, kind }))
+}
+
+export async function integrateObservation(runtime, input = {}) {
+  const observation = input.observation || input
+  const modalities = inferObservationModalities(observation)
+  const source = cleanText(observation.source || observation.connector || input.source, 120) || 'network'
+  const actor = observation.actor || input.basis || runtime.events[0].actor
+  const participants = Array.isArray(observation.participants) ? observation.participants : []
+  const modalityLabels = modalities.map((kind) => MODALITIES.find((item) => item.id === kind)?.label || kind)
+  const suppliedMeaning = cleanText(observation.meaning || observation.summary || observation.description, 1200)
+
+  return integrateInteraction(runtime, {
+    actor,
+    participants,
+    objects: inferredObjects(observation, modalities),
+    modalities,
+    source,
+    intent: observation.intent || 'Continue the network relation through its available carriers.',
+    meaning: suppliedMeaning || `${source} supplied ${modalityLabels.join(', ')} as one socioeconomic closure observation.`,
+    moneyAmount: observation.moneyAmount ?? observation.amount,
+    currency: observation.currency,
+    transactionId: observation.transactionId,
+    platformAction: observation.platformAction || observation.action,
+    platformUrl: observation.platformUrl || observation.actionUrl || observation.url,
+    imageUrl: observation.imageUrl,
+    audioUrl: observation.audioUrl,
+    videoUrl: observation.videoUrl,
+    mediaUrl: observation.mediaUrl,
+    mediaDescription: observation.mediaDescription,
+  })
 }
 
 export async function verifyRuntime(runtime) {
@@ -201,8 +278,7 @@ export async function verifyRuntime(runtime) {
     const event = runtime.events[index]
     const expectedPrevious = index === 0 ? null : runtime.events[index - 1].digest
     if (event.index !== index || event.previousDigest !== expectedPrevious) return false
-    const expectedDigest = await digestValue(eventWithoutDigest(event))
-    if (event.digest !== expectedDigest) return false
+    if (event.digest !== await digestValue(eventWithoutDigest(event))) return false
   }
   return true
 }
@@ -213,16 +289,8 @@ function eventNodeIds(event) {
   return [...new Set([`participant:${event.actor.id}`, ...participantIds, ...objectIds])]
 }
 
-function pairKey(left, right) {
-  return `${left}→${right}`
-}
-
 function unorderedPairKey(left, right) {
   return [left, right].sort().join('↔')
-}
-
-function moneyShadow(modalities = []) {
-  return modalities.filter((modality) => modality.kind === 'money').reduce((total, modality) => total + (Number(modality.amount) || 0), 0)
 }
 
 export function deriveRuntime(runtime) {
@@ -232,11 +300,9 @@ export function deriveRuntime(runtime) {
   const surfaces = new Map()
   const edges = []
   const edgeSet = new Set()
-  const directedSet = new Set()
   const modalityCounts = new Map()
   const coins = []
   const latestCoinByNode = new Map()
-  let moneyVolume = 0
   const moneyByCurrency = new Map()
 
   for (const event of runtime.events) {
@@ -247,22 +313,17 @@ export function deriveRuntime(runtime) {
     const nodeIds = eventNodeIds(event)
     const fieldNodeId = `field:${runtime.field.id}`
     const actorNodeId = `participant:${event.actor.id}`
-    const connectionTargets = nodeIds.filter((nodeId) => nodeId !== actorNodeId)
-    const candidateEdges = connectionTargets.length ? connectionTargets.map((target) => [actorNodeId, target]) : [[fieldNodeId, actorNodeId]]
-
+    const targets = nodeIds.filter((nodeId) => nodeId !== actorNodeId)
+    const candidateEdges = targets.length ? targets.map((target) => [actorNodeId, target]) : [[fieldNodeId, actorNodeId]]
     let novelConnections = 0
-    let reciprocalConnections = 0
     for (const [from, to] of candidateEdges) {
       const key = unorderedPairKey(from, to)
-      const directed = pairKey(from, to)
       if (!edgeSet.has(key)) novelConnections += 1
-      if (directedSet.has(pairKey(to, from))) reciprocalConnections += 1
       edgeSet.add(key)
-      directedSet.add(directed)
-      edges.push({ eventDigest: event.digest, from, to, modalities: (event.payload.modalities || []).map((modality) => modality.kind) })
+      edges.push({ eventDigest: event.digest, from, to, modalities: (event.payload.modalities || []).map((item) => item.kind) })
     }
 
-    const modalityKinds = [...new Set((event.payload.modalities || []).map((modality) => modality.kind))]
+    const modalityKinds = [...new Set((event.payload.modalities || []).map((item) => item.kind))]
     let newModalities = 0
     for (const kind of modalityKinds) {
       if (!modalityCounts.has(kind)) newModalities += 1
@@ -270,35 +331,30 @@ export function deriveRuntime(runtime) {
     }
 
     for (const modality of event.payload.modalities || []) {
-      if (modality.kind === 'platform' && modality.referenceUrl) surfaces.set(modality.referenceUrl, modality)
-      if (['image', 'audio', 'video'].includes(modality.kind) && modality.referenceUrl) surfaces.set(modality.referenceUrl, modality)
+      if (modality.referenceUrl) surfaces.set(modality.referenceUrl, modality)
+      if (modality.kind === 'money' && modality.amount > 0) {
+        const currency = modality.currency || 'USD'
+        moneyByCurrency.set(currency, (moneyByCurrency.get(currency) || 0) + modality.amount)
+      }
     }
 
-    const parentCoinIds = [...new Set(nodeIds.map((nodeId) => latestCoinByNode.get(nodeId)).filter(Boolean))]
-    const units = Math.max(1, novelConnections + reciprocalConnections + newModalities)
+    const parents = [...new Set(nodeIds.map((nodeId) => latestCoinByNode.get(nodeId)).filter(Boolean))]
     const coin = {
       id: `coin-${event.digest.slice(0, 20)}`,
       closureId: runtime.id,
       eventDigest: event.digest,
       index: event.index,
       at: event.at,
-      units,
-      parents: parentCoinIds,
+      units: Math.max(1, novelConnections + newModalities),
+      parents,
       nodes: nodeIds,
       carriers: modalityKinds,
       meaning: event.payload.meaning,
-      money: (event.payload.modalities || []).filter((modality) => modality.kind === 'money'),
-      externalSurfaces: (event.payload.modalities || []).filter((modality) => modality.referenceUrl).map((modality) => modality.referenceUrl),
+      source: event.payload.source || 'network',
+      money: (event.payload.modalities || []).filter((item) => item.kind === 'money'),
     }
     coins.push(coin)
     for (const nodeId of nodeIds) latestCoinByNode.set(nodeId, coin.id)
-    moneyVolume += moneyShadow(event.payload.modalities)
-    for (const modality of event.payload.modalities || []) {
-      if (modality.kind === 'money' && modality.amount > 0) {
-        const currency = modality.currency || 'USD'
-        moneyByCurrency.set(currency, (moneyByCurrency.get(currency) || 0) + modality.amount)
-      }
-    }
   }
 
   return {
@@ -309,112 +365,42 @@ export function deriveRuntime(runtime) {
     edges,
     coins,
     modalityCounts: Object.fromEntries(modalityCounts),
-    moneyVolume,
     moneyByCurrency: Object.fromEntries(moneyByCurrency),
-    internalConnectionCount: edgeSet.size,
   }
 }
 
 const IDENTITY_SIGNALS = {
-  internal: 'connector',
-  money: 'economic carrier',
-  platform: 'boundary linker',
-  message: 'language carrier',
-  image: 'visual communicator',
-  audio: 'voice carrier',
-  video: 'multimodal communicator',
-  event: 'convener',
-  collaboration: 'collaborator',
+  internal: 'connector', money: 'economic carrier', platform: 'boundary linker', message: 'language carrier',
+  image: 'visual communicator', audio: 'voice carrier', video: 'multimodal communicator', event: 'convener', collaboration: 'collaborator',
 }
 
 export function deriveIdentity(runtime, participantId) {
-  const state = deriveRuntime(runtime)
-  const relevantEvents = runtime.events.filter((event) => {
-    if (event.actor.id === participantId) return true
-    return (event.payload.participants || []).some((participant) => participant.id === participantId)
-  })
+  const relevantEvents = runtime.events.filter((event) => event.actor.id === participantId || (event.payload.participants || []).some((participant) => participant.id === participantId))
   const modalityCounts = new Map()
-  const objectKinds = new Map()
   const relationNodes = new Set()
-  let monetaryCarriers = 0
-
   for (const event of relevantEvents) {
-    for (const modality of event.payload.modalities || []) {
-      modalityCounts.set(modality.kind, (modalityCounts.get(modality.kind) || 0) + 1)
-      if (modality.kind === 'money') monetaryCarriers += 1
-    }
-    for (const object of event.payload.objects || []) {
-      objectKinds.set(object.kind, (objectKinds.get(object.kind) || 0) + 1)
-      relationNodes.add(`object:${object.id}`)
-    }
-    for (const participant of event.payload.participants || []) {
-      if (participant.id !== participantId) relationNodes.add(`participant:${participant.id}`)
-    }
+    for (const modality of event.payload.modalities || []) modalityCounts.set(modality.kind, (modalityCounts.get(modality.kind) || 0) + 1)
+    for (const object of event.payload.objects || []) relationNodes.add(`object:${object.id}`)
+    for (const participant of event.payload.participants || []) if (participant.id !== participantId) relationNodes.add(`participant:${participant.id}`)
   }
-
-  const rankedSignals = [...modalityCounts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .map(([kind, count]) => ({ kind, count, label: IDENTITY_SIGNALS[kind] || kind }))
-  const descriptors = rankedSignals.slice(0, 3).map((signal) => signal.label)
-  const confidence = Math.min(1, relevantEvents.length / 12)
-  const label = descriptors.length ? descriptors.join(' · ') : 'emerging relational basis'
-
+  const signals = [...modalityCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([kind]) => IDENTITY_SIGNALS[kind] || kind)
   return {
     participantId,
-    label,
-    confidence,
+    label: signals.join(' · ') || 'emerging relational basis',
     eventCount: relevantEvents.length,
     relationCount: relationNodes.size,
-    monetaryCarriers,
     modalityCounts: Object.fromEntries(modalityCounts),
-    objectKinds: Object.fromEntries(objectKinds),
-    latestCoin: [...state.coins].reverse().find((coin) => coin.nodes.includes(`participant:${participantId}`)) || null,
   }
 }
 
 export function deriveGuidance(runtime) {
-  const state = deriveRuntime(runtime)
-  const guidance = []
-  const degree = new Map()
-  for (const edge of state.edges) {
-    degree.set(edge.from, (degree.get(edge.from) || 0) + 1)
-    degree.set(edge.to, (degree.get(edge.to) || 0) + 1)
+  const latest = runtime.events[runtime.events.length - 1]
+  const kinds = new Set((latest.payload.modalities || []).map((item) => item.kind))
+  if (kinds.has('platform') && !kinds.has('internal')) return [{ id: 'boundary-return', title: 'The external action tends toward an internal network connection.' }]
+  if (kinds.has('money') && !['message', 'image', 'audio', 'video', 'event', 'collaboration'].some((kind) => kinds.has(kind))) {
+    return [{ id: 'money-context', title: 'The monetary carrier tends toward wider social and multimodal context.' }]
   }
-
-  for (const participant of state.participants) {
-    const nodeId = `participant:${participant.id}`
-    if ((degree.get(nodeId) || 0) <= 1 && state.participants.length > 1) {
-      guidance.push({
-        id: `connect-${participant.id}`,
-        kind: 'internal-connection',
-        participantId: participant.id,
-        title: `Connect ${participantLabel(participant)} deeper into the field`,
-        reason: 'This basis currently touches only one known internal path.',
-      })
-    }
-  }
-
-  const latestEvent = runtime.events[runtime.events.length - 1]
-  const latestKinds = new Set((latestEvent.payload.modalities || []).map((modality) => modality.kind))
-  if (latestKinds.has('platform') && !latestKinds.has('internal')) {
-    guidance.push({ id: 'return-platform', kind: 'boundary-return', title: 'Return the platform action into an internal connection', reason: 'The latest external boundary action has not yet been paired with an explicit internal relation.' })
-  }
-  if (latestKinds.has('money') && !['message', 'image', 'audio', 'video', 'collaboration', 'event'].some((kind) => latestKinds.has(kind))) {
-    guidance.push({ id: 'context-money', kind: 'multimodal-context', title: 'Continue the money transfer with social or multimodal context', reason: 'The monetary carrier is present, but the network meaning has only one visible modality.' })
-  }
-
-  const childCount = new Map()
-  for (const coin of state.coins) for (const parent of coin.parents) childCount.set(parent, (childCount.get(parent) || 0) + 1)
-  for (const coin of state.coins.slice(0, -1)) {
-    if (!childCount.has(coin.id)) {
-      guidance.push({ id: `continue-${coin.id}`, kind: 'coin-continuation', coinId: coin.id, title: `Continue closure coin ${coin.id.slice(-8)}`, reason: 'This instantiated closure unit has not yet been carried into a later interaction.' })
-    }
-  }
-
-  if (!guidance.length) {
-    guidance.push({ id: 'continue-field', kind: 'field-continuation', title: 'Continue the strongest existing relation through another modality', reason: 'The field is internally connected; the next step is a non-isolated continuation rather than a terminal close.' })
-  }
-  return guidance.slice(0, 8)
+  return [{ id: 'continuation', title: 'The field tends toward the next internally connected multimodal continuation.' }]
 }
 
 function toBase64Url(text) {
@@ -437,7 +423,7 @@ export function encodeRuntime(runtime) {
 }
 
 export function decodeRuntime(encoded) {
-  const runtime = JSON.parse(fromBase64Url(cleanText(encoded, 30000)))
+  const runtime = JSON.parse(fromBase64Url(cleanText(encoded, 60000)))
   assertRuntimeShape(runtime)
   return runtime
 }
