@@ -5,6 +5,7 @@ import {
   createClosureRuntime,
   decodeRuntime,
   deriveGuidance,
+  deriveIdentity,
   deriveRuntime,
   encodeRuntime,
   integrateInteraction,
@@ -12,19 +13,24 @@ import {
 } from '../src/domain/closureRuntime.js'
 
 const field = { id: 'field-1', name: 'Local Learning Field', symbol: 'LEARN', mission: 'Connect local teaching, media, and exchange.' }
-const harry = { id: 'p-harry', name: 'Harry' }
-const tutor = { id: 'p-tutor', name: 'Tutor' }
+const basis = { id: 'basis-local' }
+const otherBasis = { id: 'basis-other' }
+
+test('runtime opens without declared identity fields', async () => {
+  const runtime = await createClosureRuntime({ field, participant: basis })
+  assert.equal(runtime.events[0].actor.id, basis.id)
+  assert.equal(runtime.events[0].actor.name, '')
+  assert.equal(await verifyRuntime(runtime), true)
+})
 
 test('closure runtime integrates multimodal interaction and instantiates coin automatically', async () => {
-  let runtime = await createClosureRuntime({ field, participant: harry })
+  let runtime = await createClosureRuntime({ field, participant: basis })
   runtime = await integrateInteraction(runtime, {
-    actor: harry,
-    participants: [tutor],
-    object: { id: 'obj-course', label: 'Free vector course', kind: 'project' },
+    actor: basis,
+    participants: [otherBasis],
+    object: { id: 'obj-course', label: 'Shared learning context', kind: 'project' },
     modalities: ['internal', 'message', 'platform', 'money'],
-    meaning: 'A social post, message, and payment all continue one learning closure.',
     platformUrl: 'https://example.com/post',
-    platformAction: 'shared',
     moneyAmount: 25,
     currency: 'USD',
   })
@@ -38,19 +44,37 @@ test('closure runtime integrates multimodal interaction and instantiates coin au
   assert.equal(await verifyRuntime(runtime), true)
 })
 
-test('coin lineage follows relational continuity without manual minting', async () => {
-  let runtime = await createClosureRuntime({ field, participant: harry })
+test('identity is learned from relational history rather than profile input', async () => {
+  let runtime = await createClosureRuntime({ field, participant: basis })
   runtime = await integrateInteraction(runtime, {
-    actor: harry,
-    participants: [tutor],
-    modalities: ['internal', 'message'],
-    meaning: 'Harry connects with the tutor.',
+    actor: basis,
+    participants: [otherBasis],
+    modalities: ['internal', 'message', 'collaboration'],
+    object: { id: 'obj-work', label: 'Shared work', kind: 'project' },
   })
   runtime = await integrateInteraction(runtime, {
-    actor: tutor,
-    participants: [harry],
+    actor: basis,
+    modalities: ['audio', 'platform'],
+    platformUrl: 'https://example.com/audio',
+  })
+
+  const identity = deriveIdentity(runtime, basis.id)
+  assert.ok(identity.eventCount >= 3)
+  assert.ok(identity.relationCount >= 2)
+  assert.match(identity.label, /(connector|language carrier|collaborator|voice carrier|boundary linker)/)
+})
+
+test('coin lineage follows relational continuity without manual minting', async () => {
+  let runtime = await createClosureRuntime({ field, participant: basis })
+  runtime = await integrateInteraction(runtime, {
+    actor: basis,
+    participants: [otherBasis],
+    modalities: ['internal', 'message'],
+  })
+  runtime = await integrateInteraction(runtime, {
+    actor: otherBasis,
+    participants: [basis],
     modalities: ['internal', 'audio'],
-    meaning: 'The tutor answers with an audio explanation.',
   })
   const coins = deriveRuntime(runtime).coins
   assert.ok(coins[2].parents.includes(coins[1].id))
@@ -58,12 +82,11 @@ test('coin lineage follows relational continuity without manual minting', async 
 })
 
 test('guidance points external or monetary carriers back toward internal multimodal connection', async () => {
-  let runtime = await createClosureRuntime({ field, participant: harry })
+  let runtime = await createClosureRuntime({ field, participant: basis })
   runtime = await integrateInteraction(runtime, {
-    actor: harry,
-    object: { id: 'obj-store', label: 'Local bookstore', kind: 'business' },
+    actor: basis,
+    object: { id: 'obj-store', label: 'Economic exchange', kind: 'exchange' },
     modalities: ['money', 'platform'],
-    meaning: 'A purchase follows a platform link.',
     moneyAmount: 18,
     currency: 'USD',
     platformUrl: 'https://example.com/store',
@@ -74,7 +97,7 @@ test('guidance points external or monetary carriers back toward internal multimo
 })
 
 test('runtime round trips through portable URL transport', async () => {
-  const runtime = await createClosureRuntime({ field, participant: harry })
+  const runtime = await createClosureRuntime({ field, participant: basis })
   const encoded = encodeRuntime(runtime)
   assert.deepEqual(decodeRuntime(encoded), runtime)
   assert.match(buildRuntimeUrl(runtime, { origin: 'https://tagtokn.vercel.app', pathname: '/' }), /\?runtime=/)
