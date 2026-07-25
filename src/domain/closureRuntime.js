@@ -1,16 +1,16 @@
 export const MODALITIES = [
-  { id: 'internal', label: 'Internal connection', description: 'Connect participants or communal objects inside the closure field.' },
-  { id: 'money', label: 'Money transfer', description: 'Carry closure through a direct monetary transfer.' },
-  { id: 'platform', label: 'Platform action', description: 'Carry closure across an external platform boundary by reference.' },
+  { id: 'internal', label: 'Internal connection', description: 'Strengthen relations inside the closure field.' },
+  { id: 'money', label: 'Money transfer', description: 'Observe money as one carrier of the active relation.' },
+  { id: 'platform', label: 'Platform action', description: 'Carry closure across an external platform boundary.' },
   { id: 'message', label: 'Message', description: 'Continue closure through written language.' },
   { id: 'image', label: 'Image', description: 'Continue closure through a visual carrier.' },
   { id: 'audio', label: 'Audio', description: 'Continue closure through voice or sound.' },
   { id: 'video', label: 'Video', description: 'Continue closure through moving image and sound.' },
-  { id: 'event', label: 'Event', description: 'Continue closure through shared presence or participation.' },
+  { id: 'event', label: 'Event', description: 'Continue closure through shared presence.' },
   { id: 'collaboration', label: 'Collaboration', description: 'Continue closure through shared work.' },
 ]
 
-const SCHEMA = 'tagtokn.closure-runtime/v1'
+const SCHEMA = 'tagtokn.closure-runtime/v2'
 
 function cleanText(value, maxLength = 800) {
   return String(value ?? '').trim().slice(0, maxLength)
@@ -34,20 +34,24 @@ export function createId(prefix = 'node') {
 
 export function normalizeParticipant(participant = {}) {
   return {
-    id: cleanText(participant.id, 120) || createId('participant'),
+    id: cleanText(participant.id, 120) || createId('basis'),
     name: cleanText(participant.name || participant.displayName, 100),
     handle: cleanText(participant.handle, 100),
     referenceUrl: normalizeUrl(participant.referenceUrl),
   }
 }
 
+export function participantLabel(participant = {}) {
+  return participant.name || participant.handle || `Emerging basis ${String(participant.id || '').slice(-6) || 'local'}`
+}
+
 export function normalizeField(field = {}) {
   const symbol = cleanText(field.symbol, 12).toUpperCase().replace(/[^A-Z0-9]/g, '')
   return {
     id: cleanText(field.id, 120) || createId('field'),
-    name: cleanText(field.name, 120),
+    name: cleanText(field.name, 120) || 'TagTokn closure field',
     symbol: symbol || 'TOKN',
-    mission: cleanText(field.mission, 500),
+    mission: cleanText(field.mission, 500) || 'Learn relational identity through continuing social, economic, platform, and multimodal connection.',
   }
 }
 
@@ -137,12 +141,9 @@ function normalizeModalities(input = {}) {
   })
 }
 
-export async function createClosureRuntime(input) {
+export async function createClosureRuntime(input = {}) {
   const field = normalizeField(input.field)
   const participant = normalizeParticipant(input.participant)
-  if (!field.name) throw new Error('Name the closure field.')
-  if (!participant.name && !participant.handle) throw new Error('Name the first admitted participant basis.')
-
   const event = {
     index: 0,
     kind: 'admit',
@@ -155,16 +156,11 @@ export async function createClosureRuntime(input) {
       participants: [participant],
       objects: [],
       modalities: [{ kind: 'internal' }],
-      meaning: cleanText(input.meaning || 'The participant enters through the closure field rather than as an isolated account.', 800),
+      meaning: cleanText(input.meaning || 'A local basis is admitted without a declared identity; identity remains open and is learned through continuing relations.', 800),
     },
   }
   event.digest = await digestValue(eventWithoutDigest(event))
-  return {
-    schema: SCHEMA,
-    id: event.digest.slice(0, 24),
-    field,
-    events: [event],
-  }
+  return { schema: SCHEMA, id: event.digest.slice(0, 24), field, events: [event] }
 }
 
 export function assertRuntimeShape(runtime) {
@@ -175,23 +171,17 @@ export function assertRuntimeShape(runtime) {
   return true
 }
 
-export async function integrateInteraction(runtime, input) {
+export async function integrateInteraction(runtime, input = {}) {
   assertRuntimeShape(runtime)
   const actor = normalizeParticipant(input.actor)
-  if (!actor.name && !actor.handle) throw new Error('The interaction needs an admitted participant basis.')
-
   const participants = [actor, ...(Array.isArray(input.participants) ? input.participants : [])]
     .map(normalizeParticipant)
-    .filter((participant) => participant.name || participant.handle)
+    .filter((participant) => participant.id)
   const uniqueParticipants = [...new Map(participants.map((participant) => [participant.id, participant])).values()]
   const objects = (Array.isArray(input.objects) ? input.objects : [input.object]).filter(Boolean).map(normalizeObject).filter((object) => object.label)
   const modalities = normalizeModalities(input)
-  const meaning = cleanText(input.meaning, 1200)
   const intent = cleanText(input.intent, 600)
-
-  if (!meaning) throw new Error('State how this interaction continues the closure field.')
-  if (uniqueParticipants.length < 1 && objects.length < 1) throw new Error('Connect the interaction to at least one participant or communal object.')
-
+  const meaning = cleanText(input.meaning, 1200) || `The closure field continued through ${modalities.map((modality) => modality.kind).join(', ')} and preserved identity as an open relational pattern.`
   const previous = runtime.events[runtime.events.length - 1]
   const event = {
     index: runtime.events.length,
@@ -199,13 +189,7 @@ export async function integrateInteraction(runtime, input) {
     actor,
     at: new Date().toISOString(),
     previousDigest: previous.digest,
-    payload: {
-      intent,
-      meaning,
-      participants: uniqueParticipants,
-      objects,
-      modalities,
-    },
+    payload: { intent, meaning, participants: uniqueParticipants, objects, modalities },
   }
   event.digest = await digestValue(eventWithoutDigest(event))
   return { ...runtime, events: [...runtime.events, event] }
@@ -262,8 +246,8 @@ export function deriveRuntime(runtime) {
 
     const nodeIds = eventNodeIds(event)
     const fieldNodeId = `field:${runtime.field.id}`
-    const connectionTargets = nodeIds.filter((nodeId) => nodeId !== `participant:${event.actor.id}`)
     const actorNodeId = `participant:${event.actor.id}`
+    const connectionTargets = nodeIds.filter((nodeId) => nodeId !== actorNodeId)
     const candidateEdges = connectionTargets.length ? connectionTargets.map((target) => [actorNodeId, target]) : [[fieldNodeId, actorNodeId]]
 
     let novelConnections = 0
@@ -331,6 +315,63 @@ export function deriveRuntime(runtime) {
   }
 }
 
+const IDENTITY_SIGNALS = {
+  internal: 'connector',
+  money: 'economic carrier',
+  platform: 'boundary linker',
+  message: 'language carrier',
+  image: 'visual communicator',
+  audio: 'voice carrier',
+  video: 'multimodal communicator',
+  event: 'convener',
+  collaboration: 'collaborator',
+}
+
+export function deriveIdentity(runtime, participantId) {
+  const state = deriveRuntime(runtime)
+  const relevantEvents = runtime.events.filter((event) => {
+    if (event.actor.id === participantId) return true
+    return (event.payload.participants || []).some((participant) => participant.id === participantId)
+  })
+  const modalityCounts = new Map()
+  const objectKinds = new Map()
+  const relationNodes = new Set()
+  let monetaryCarriers = 0
+
+  for (const event of relevantEvents) {
+    for (const modality of event.payload.modalities || []) {
+      modalityCounts.set(modality.kind, (modalityCounts.get(modality.kind) || 0) + 1)
+      if (modality.kind === 'money') monetaryCarriers += 1
+    }
+    for (const object of event.payload.objects || []) {
+      objectKinds.set(object.kind, (objectKinds.get(object.kind) || 0) + 1)
+      relationNodes.add(`object:${object.id}`)
+    }
+    for (const participant of event.payload.participants || []) {
+      if (participant.id !== participantId) relationNodes.add(`participant:${participant.id}`)
+    }
+  }
+
+  const rankedSignals = [...modalityCounts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .map(([kind, count]) => ({ kind, count, label: IDENTITY_SIGNALS[kind] || kind }))
+  const descriptors = rankedSignals.slice(0, 3).map((signal) => signal.label)
+  const confidence = Math.min(1, relevantEvents.length / 12)
+  const label = descriptors.length ? descriptors.join(' · ') : 'emerging relational basis'
+
+  return {
+    participantId,
+    label,
+    confidence,
+    eventCount: relevantEvents.length,
+    relationCount: relationNodes.size,
+    monetaryCarriers,
+    modalityCounts: Object.fromEntries(modalityCounts),
+    objectKinds: Object.fromEntries(objectKinds),
+    latestCoin: [...state.coins].reverse().find((coin) => coin.nodes.includes(`participant:${participantId}`)) || null,
+  }
+}
+
 export function deriveGuidance(runtime) {
   const state = deriveRuntime(runtime)
   const guidance = []
@@ -346,8 +387,9 @@ export function deriveGuidance(runtime) {
       guidance.push({
         id: `connect-${participant.id}`,
         kind: 'internal-connection',
-        title: `Connect ${participant.name || participant.handle} deeper into the field`,
-        reason: 'This participant currently touches only one known internal path.',
+        participantId: participant.id,
+        title: `Connect ${participantLabel(participant)} deeper into the field`,
+        reason: 'This basis currently touches only one known internal path.',
       })
     }
   }
@@ -365,7 +407,7 @@ export function deriveGuidance(runtime) {
   for (const coin of state.coins) for (const parent of coin.parents) childCount.set(parent, (childCount.get(parent) || 0) + 1)
   for (const coin of state.coins.slice(0, -1)) {
     if (!childCount.has(coin.id)) {
-      guidance.push({ id: `continue-${coin.id}`, kind: 'coin-continuation', title: `Continue closure coin ${coin.id.slice(-8)}`, reason: 'This instantiated closure unit has not yet been carried into a later interaction.' })
+      guidance.push({ id: `continue-${coin.id}`, kind: 'coin-continuation', coinId: coin.id, title: `Continue closure coin ${coin.id.slice(-8)}`, reason: 'This instantiated closure unit has not yet been carried into a later interaction.' })
     }
   }
 
