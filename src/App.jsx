@@ -16,6 +16,73 @@ import {
   saveRuntimeState,
 } from './storage/runtimeStore.js'
 
+const INTEGRATION_PATHS = [
+  {
+    id: 'payments',
+    title: 'Payment systems',
+    purpose: 'Translate confirmed money movement into a relational observation without making payment the identity of the interaction.',
+    sequence: [
+      'Receive the provider webhook in a server route.',
+      'Verify its signature and discard untrusted or duplicate events.',
+      'Resolve the payer, recipient, shared context, and any connected platform action.',
+      'Send one normalized observation to the closure ingestion endpoint.',
+    ],
+    source: 'payment-connector',
+    example: `{
+  source: 'payment-connector',
+  amount: 25,
+  currency: 'USD',
+  transactionId: 'provider-event-id',
+  participants: [{ id: 'payer-basis' }, { id: 'recipient-basis' }],
+  context: 'Community exchange',
+  relation: 'payment continued an existing communal relation'
+}`,
+  },
+  {
+    id: 'platforms',
+    title: 'Platform and media systems',
+    purpose: 'Treat posts, messages, links, audio, video, events, and collaborations as boundary carriers rather than imported authority.',
+    sequence: [
+      'Subscribe to an approved webhook, export, share extension, or native client event.',
+      'Preserve the external reference but do not import platform ranking or profile truth.',
+      'Relate the action to known participants and a communal context.',
+      'Submit the platform action and its media carriers as one observation.',
+    ],
+    source: 'platform-connector',
+    example: `{
+  source: 'platform-connector',
+  platformAction: 'shared community project',
+  platformUrl: 'https://platform.example/item',
+  message: 'Discussion continued around the project.',
+  imageUrl: 'https://cdn.example/context.jpg',
+  participants: [{ id: 'basis-a' }, { id: 'basis-b' }],
+  context: 'Shared project'
+}`,
+  },
+  {
+    id: 'contracts',
+    title: 'Internal relational contracts',
+    purpose: 'Encode commitments, permissions, value exchange, completion, and reciprocity as continuing network relations rather than isolated legal records.',
+    sequence: [
+      'Create a stable contract ID and identify its relational parties and communal purpose.',
+      'Record proposed, accepted, fulfilled, disputed, or revised transitions as append-only observations.',
+      'Attach payment, media, platform, and evidence references to the same contract context.',
+      'Let closure coins record continuation lineage; never use them as a human-worth score.',
+    ],
+    source: 'internal-contract',
+    example: `{
+  source: 'internal-contract',
+  contractId: 'contract-001',
+  contractState: 'accepted',
+  participants: [{ id: 'provider-basis' }, { id: 'community-basis' }],
+  context: 'Local service agreement',
+  collaboration: true,
+  relation: 'mutual commitment accepted',
+  evidence: ['proposal-digest', 'acceptance-digest']
+}`,
+  },
+]
+
 function modalityLabel(kind) {
   return MODALITIES.find((item) => item.id === kind)?.label || kind
 }
@@ -82,6 +149,68 @@ function AmbientStream({ runtime }) {
           </div>
         </article>
       ))}
+    </section>
+  )
+}
+
+function IntegrationGuidance() {
+  return (
+    <section className="integration-guidance" aria-labelledby="integration-heading">
+      <div className="integration-intro">
+        <p className="eyebrow">implementation path</p>
+        <h2 id="integration-heading">Connect systems to the field</h2>
+        <p>
+          The participant does not select payment, platform, or contract actions in this interface. Your integrations observe those systems, normalize their events, and submit one relational observation to TagTokn.
+        </p>
+      </div>
+
+      <div className="integration-flow" aria-label="Connector flow">
+        <span>provider or internal system</span>
+        <i>→</i>
+        <span>verified adapter</span>
+        <i>→</i>
+        <span>closure observation</span>
+        <i>→</i>
+        <span>shared relational field</span>
+      </div>
+
+      <div className="integration-paths">
+        {INTEGRATION_PATHS.map((path, pathIndex) => (
+          <article className="integration-path" key={path.id}>
+            <div className="path-heading">
+              <span>{String(pathIndex + 1).padStart(2, '0')}</span>
+              <div>
+                <h3>{path.title}</h3>
+                <p>{path.purpose}</p>
+              </div>
+            </div>
+            <ol>
+              {path.sequence.map((step) => <li key={step}>{step}</li>)}
+            </ol>
+            <div className="contract-example">
+              <div>
+                <span>normalized source</span>
+                <code>{path.source}</code>
+              </div>
+              <pre><code>{path.example}</code></pre>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="ingestion-contract">
+        <div>
+          <span>browser prototype</span>
+          <code>window.TagTokn.observe(observation)</code>
+        </div>
+        <div>
+          <span>production target</span>
+          <code>POST /api/closure/observe</code>
+        </div>
+        <p>
+          The production endpoint should authenticate the connector, verify signatures, enforce idempotency, preserve provider references, and append the normalized observation to shared storage before broadcasting it to clients.
+        </p>
+      </div>
     </section>
   )
 }
@@ -204,9 +333,10 @@ export default function App() {
 
         <FieldAperture runtime={state.runtime} derived={derived} />
         <AmbientStream runtime={state.runtime} />
+        <IntegrationGuidance />
 
         <footer className="connector-boundary">
-          <span>Payment, platform, message, image, audio, video, event, collaboration, and internal-network connectors write into this same field.</span>
+          <span>Payment, platform, message, image, audio, video, event, collaboration, and internal-contract connectors write into this same field.</span>
           <code>window.TagTokn.observe(observation)</code>
         </footer>
       </main>
