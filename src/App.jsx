@@ -2,40 +2,22 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   MODALITIES,
   buildRuntimeUrl,
-  createId,
   decodeRuntime,
   deriveGuidance,
+  deriveIdentity,
   deriveRuntime,
   integrateInteraction,
+  participantLabel,
 } from './domain/closureRuntime.js'
 import {
-  admitBasis,
-  createRuntimeState,
+  adoptRuntime,
+  ensureRuntimeState,
   loadRuntimeState,
   replaceRuntime,
   saveRuntimeState,
 } from './storage/runtimeStore.js'
 
-const EMPTY_INTERACTION = {
-  intent: '',
-  meaning: '',
-  selectedParticipantIds: [],
-  newParticipantName: '',
-  objectLabel: '',
-  objectKind: 'communal-object',
-  modalities: ['internal', 'message'],
-  platformAction: '',
-  platformUrl: '',
-  moneyAmount: '',
-  currency: 'USD',
-  moneyReference: '',
-  mediaUrl: '',
-  mediaDescription: '',
-}
-
-function participantLabel(participant) {
-  return participant?.name || participant?.handle || 'Unnamed participant'
-}
+const DEFAULT_MODALITIES = ['internal', 'message']
 
 function modalityLabel(kind) {
   return MODALITIES.find((modality) => modality.id === kind)?.label || kind
@@ -44,11 +26,7 @@ function modalityLabel(kind) {
 function formatDate(value) {
   try {
     return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
+      month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
     }).format(new Date(value))
   } catch {
     return value
@@ -63,162 +41,21 @@ function formatMoney(value, currency = 'USD') {
   }
 }
 
-function SetupField({ onCreate }) {
-  const [form, setForm] = useState({
-    fieldName: '',
-    symbol: 'TOKN',
-    mission: '',
-    participantName: '',
-    handle: '',
-    referenceUrl: '',
-  })
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  async function submit(event) {
-    event.preventDefault()
-    setBusy(true)
-    setError('')
-    try {
-      await onCreate({
-        field: {
-          name: form.fieldName,
-          symbol: form.symbol,
-          mission: form.mission,
-        },
-        participant: {
-          name: form.participantName,
-          handle: form.handle,
-          referenceUrl: form.referenceUrl,
-        },
-      })
-    } catch (caught) {
-      setError(caught.message || String(caught))
-    } finally {
-      setBusy(false)
-    }
-  }
-
+function BootScreen() {
   return (
     <main className="onboarding-shell">
       <section className="onboarding-copy">
         <p className="eyebrow">Unified closure runtime</p>
-        <h1>The network acts through every medium at once.</h1>
-        <p>
-          Money transfers, platform links, messages, images, audio, events, collaboration, and internal
-          connection are carriers of one evolving closure field. Coins are instantiated by that field as
-          its relations continue.
-        </p>
-        <div className="closure-sequence">
-          <span>Closure field</span><b>→</b><span>Multimodal interaction</span><b>→</b>
-          <span>Coin instantiation</span><b>→</b><span>Internal connection</span>
-        </div>
+        <h1>Identity begins open.</h1>
+        <p>The local basis is admitted automatically. The network learns its identity from recurring relations, modalities, economic carriers, and internal connection over time.</p>
+        <div className="closure-sequence"><span>Open basis</span><b>→</b><span>Interaction history</span><b>→</b><span>Relational identity</span></div>
       </section>
-
-      <form className="panel onboarding-form" onSubmit={submit}>
-        <p className="eyebrow">Open a field</p>
-        <h2>Enter relationally, not as an isolated account</h2>
-        <label>
-          Closure field
-          <input
-            required
-            value={form.fieldName}
-            onChange={(event) => setForm({ ...form, fieldName: event.target.value })}
-            placeholder="Local learning and service field"
-          />
-        </label>
-        <div className="field-grid two-columns">
-          <label>
-            Closure coin symbol
-            <input
-              required
-              maxLength="12"
-              value={form.symbol}
-              onChange={(event) => setForm({ ...form, symbol: event.target.value })}
-            />
-          </label>
-          <label>
-            Participant basis
-            <input
-              required
-              value={form.participantName}
-              onChange={(event) => setForm({ ...form, participantName: event.target.value })}
-              placeholder="Harry"
-            />
-          </label>
-        </div>
-        <label>
-          Field mission
-          <textarea
-            required
-            rows="4"
-            value={form.mission}
-            onChange={(event) => setForm({ ...form, mission: event.target.value })}
-            placeholder="Connect social appreciation, useful local exchange, and collaborative media into stronger internal relations."
-          />
-        </label>
-        <div className="field-grid two-columns">
-          <label>
-            Optional handle
-            <input value={form.handle} onChange={(event) => setForm({ ...form, handle: event.target.value })} />
-          </label>
-          <label>
-            Optional external reference
-            <input
-              type="url"
-              value={form.referenceUrl}
-              onChange={(event) => setForm({ ...form, referenceUrl: event.target.value })}
-              placeholder="https://..."
-            />
-          </label>
-        </div>
-        <p className="field-note">
-          External references locate a boundary surface. They do not define the participant or the closure field.
-        </p>
-        {error ? <p className="error-message">{error}</p> : null}
-        <button className="button primary wide" type="submit" disabled={busy}>
-          {busy ? 'Opening field…' : 'Open closure runtime'}
-        </button>
-      </form>
-    </main>
-  )
-}
-
-function EnterSharedField({ runtime, onEnter }) {
-  const [form, setForm] = useState({ name: '', handle: '', referenceUrl: '' })
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  async function submit(event) {
-    event.preventDefault()
-    setBusy(true)
-    setError('')
-    try {
-      await onEnter(form)
-    } catch (caught) {
-      setError(caught.message || String(caught))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <main className="onboarding-shell shared-entry">
-      <section className="onboarding-copy">
-        <p className="eyebrow">Shared closure runtime</p>
-        <h1>{runtime.field.name}</h1>
-        <p>{runtime.field.mission}</p>
-        <div className="closure-sequence"><span>{runtime.events.length} integrated events</span><b>·</b><span>{runtime.field.symbol} closure coins</span></div>
+      <section className="panel onboarding-form">
+        <p className="eyebrow">Opening field</p>
+        <h2>No profile declaration required</h2>
+        <p className="section-copy">The runtime is creating a device-local basis and admitting it into the shared closure field.</p>
+        <div className="button primary wide">Opening closure runtime…</div>
       </section>
-      <form className="panel onboarding-form" onSubmit={submit}>
-        <p className="eyebrow">Enter the existing field</p>
-        <h2>Your basis becomes an internal relation</h2>
-        <label>Name<input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
-        <label>Optional handle<input value={form.handle} onChange={(event) => setForm({ ...form, handle: event.target.value })} /></label>
-        <label>Optional reference<input type="url" value={form.referenceUrl} onChange={(event) => setForm({ ...form, referenceUrl: event.target.value })} /></label>
-        {error ? <p className="error-message">{error}</p> : null}
-        <button className="button primary wide" type="submit" disabled={busy}>{busy ? 'Integrating basis…' : 'Enter through closure'}</button>
-      </form>
     </main>
   )
 }
@@ -226,36 +63,29 @@ function EnterSharedField({ runtime, onEnter }) {
 function MetricGrid({ derived }) {
   const moneyEntries = Object.entries(derived.moneyByCurrency || {})
   const metrics = [
-    ['Integrated interactions', derived.coins.length, 'Each event instantiates a closure coin automatically.'],
-    ['Internal connections', derived.internalConnectionCount, 'Known relations inside this closure field.'],
-    ['Participants', derived.participants.length, 'Bases admitted through shared interactions.'],
-    ['Communal objects', derived.objects.length, 'Projects, services, events, products, and ideas carried by the field.'],
-    ['External surfaces', derived.surfaces.length, 'Platform or media boundaries referenced by the runtime.'],
-    ['Money carriers', moneyEntries.length ? moneyEntries.map(([currency, amount]) => formatMoney(amount, currency)).join(' · ') : 'None yet', 'Money is one carrier of closure, not its isolated meaning.'],
+    ['Integrated interactions', derived.coins.length, 'Every relational change instantiates a closure coin.'],
+    ['Internal connections', derived.internalConnectionCount, 'Known relations inside the closure field.'],
+    ['Emerging bases', derived.participants.length, 'Identity is inferred from participation rather than declared in advance.'],
+    ['Communal objects', derived.objects.length, 'Contexts learned from recurring interaction carriers.'],
+    ['External surfaces', derived.surfaces.length, 'Referenced platform or media boundaries.'],
+    ['Money carriers', moneyEntries.length ? moneyEntries.map(([currency, amount]) => formatMoney(amount, currency)).join(' · ') : 'Observed structurally', 'Money is integrated as a modality, not treated as isolated identity.'],
   ]
   return (
     <section className="summary-grid">
-      {metrics.map(([label, value, note]) => (
-        <article className="summary-card" key={label}>
-          <span>{label}</span><strong>{value}</strong><p>{note}</p>
-        </article>
-      ))}
+      {metrics.map(([label, value, note]) => <article className="summary-card" key={label}><span>{label}</span><strong>{value}</strong><p>{note}</p></article>)}
     </section>
   )
 }
 
-function GuidancePanel({ guidance, onIntegrate }) {
+function GuidancePanel({ guidance, onContinue }) {
   return (
     <section className="panel guidance-panel">
-      <div className="section-heading">
-        <div><p className="eyebrow">Closure guidance</p><h2>Continue toward stronger internal connection</h2></div>
-        <span className="pill">Derived from runtime topology</span>
-      </div>
+      <div className="section-heading"><div><p className="eyebrow">Closure guidance</p><h2>Continue toward stronger internal connection</h2></div><span className="pill">Derived from runtime topology</span></div>
       <div className="guidance-list">
         {guidance.map((item) => (
           <article className="guidance-card static" key={item.id}>
             <div><span>{item.kind.replaceAll('-', ' ')}</span><h3>{item.title}</h3><p>{item.reason}</p></div>
-            <button className="button secondary" type="button" onClick={() => onIntegrate(item)}>Continue</button>
+            <button className="button secondary" type="button" onClick={() => onContinue(item)}>Continue</button>
           </article>
         ))}
       </div>
@@ -264,26 +94,17 @@ function GuidancePanel({ guidance, onIntegrate }) {
 }
 
 function InteractionStream({ runtime }) {
-  const events = [...runtime.events].reverse()
   return (
     <section className="panel">
       <div className="section-heading"><div><p className="eyebrow">Live closure memory</p><h2>Integrated interaction stream</h2></div><span className="pill">Append-only</span></div>
       <div className="event-stream">
-        {events.map((event) => (
+        {[...runtime.events].reverse().map((event) => (
           <article className="event-card" key={event.digest}>
-            <div className="event-topline">
-              <div><span>{event.kind}</span><strong>{participantLabel(event.actor)}</strong></div>
-              <time>{formatDate(event.at)}</time>
-            </div>
+            <div className="event-topline"><div><span>{event.kind}</span><strong>{participantLabel(event.actor)}</strong></div><time>{formatDate(event.at)}</time></div>
             <p>{event.payload.meaning}</p>
             {event.payload.intent ? <blockquote>{event.payload.intent}</blockquote> : null}
             <div className="chip-row">
-              {(event.payload.modalities || []).map((modality, index) => (
-                <span key={`${modality.kind}-${index}`}>
-                  {modalityLabel(modality.kind)}
-                  {modality.kind === 'money' && modality.amount ? ` · ${formatMoney(modality.amount, modality.currency)}` : ''}
-                </span>
-              ))}
+              {(event.payload.modalities || []).map((modality, index) => <span key={`${modality.kind}-${index}`}>{modalityLabel(modality.kind)}{modality.kind === 'money' && modality.amount ? ` · ${formatMoney(modality.amount, modality.currency)}` : ''}</span>)}
             </div>
             <code>{event.digest.slice(0, 22)}</code>
           </article>
@@ -293,190 +114,121 @@ function InteractionStream({ runtime }) {
   )
 }
 
-function IntegrateInteraction({ runtime, basis, initialGuidance, onIntegrated }) {
+function inferredObjects(modalities) {
+  const map = {
+    money: { id: 'exchange-context', label: 'Economic exchange context', kind: 'exchange' },
+    platform: { id: 'platform-boundary', label: 'Platform boundary', kind: 'boundary' },
+    message: { id: 'shared-language', label: 'Shared language context', kind: 'communication' },
+    image: { id: 'shared-visual', label: 'Shared visual context', kind: 'media' },
+    audio: { id: 'shared-audio', label: 'Shared audio context', kind: 'media' },
+    video: { id: 'shared-video', label: 'Shared video context', kind: 'media' },
+    event: { id: 'shared-event', label: 'Shared event context', kind: 'event' },
+    collaboration: { id: 'shared-work', label: 'Collaborative work', kind: 'project' },
+  }
+  return modalities.map((kind) => map[kind]).filter(Boolean)
+}
+
+function leastConnectedParticipant(derived, basisId, preferredId) {
+  if (preferredId) return derived.participants.find((participant) => participant.id === preferredId) || null
+  const degree = new Map()
+  for (const edge of derived.edges) {
+    degree.set(edge.from, (degree.get(edge.from) || 0) + 1)
+    degree.set(edge.to, (degree.get(edge.to) || 0) + 1)
+  }
+  return derived.participants
+    .filter((participant) => participant.id !== basisId)
+    .sort((left, right) => (degree.get(`participant:${left.id}`) || 0) - (degree.get(`participant:${right.id}`) || 0))[0] || null
+}
+
+function modalitiesForGuidance(guidance) {
+  if (!guidance) return DEFAULT_MODALITIES
+  if (guidance.kind === 'boundary-return') return ['internal', 'platform', 'message']
+  if (guidance.kind === 'multimodal-context') return ['internal', 'money', 'message']
+  if (guidance.kind === 'internal-connection') return ['internal', 'message', 'collaboration']
+  if (guidance.kind === 'coin-continuation') return ['internal', 'message']
+  return DEFAULT_MODALITIES
+}
+
+function ContinueClosure({ runtime, basis, guidance, onIntegrated }) {
   const derived = useMemo(() => deriveRuntime(runtime), [runtime])
-  const [form, setForm] = useState(() => ({
-    ...EMPTY_INTERACTION,
-    intent: initialGuidance?.title || '',
-    meaning: initialGuidance?.reason || '',
-  }))
-  const [error, setError] = useState('')
+  const [selected, setSelected] = useState(() => modalitiesForGuidance(guidance))
   const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
 
-  useEffect(() => {
-    if (initialGuidance) {
-      setForm((current) => ({ ...current, intent: initialGuidance.title, meaning: initialGuidance.reason }))
-    }
-  }, [initialGuidance])
+  useEffect(() => setSelected(modalitiesForGuidance(guidance)), [guidance])
 
-  function toggleModality(kind) {
-    setForm((current) => {
-      const selected = current.modalities.includes(kind)
-      return {
-        ...current,
-        modalities: selected ? current.modalities.filter((item) => item !== kind) : [...current.modalities, kind],
-      }
-    })
+  function toggle(kind) {
+    setSelected((current) => current.includes(kind) ? current.filter((item) => item !== kind) : [...current, kind])
   }
 
-  function toggleParticipant(id) {
-    setForm((current) => ({
-      ...current,
-      selectedParticipantIds: current.selectedParticipantIds.includes(id)
-        ? current.selectedParticipantIds.filter((item) => item !== id)
-        : [...current.selectedParticipantIds, id],
-    }))
-  }
-
-  async function submit(event) {
-    event.preventDefault()
+  async function continueClosure(extra = {}) {
     setBusy(true)
-    setError('')
+    setMessage('')
     try {
-      const selectedParticipants = derived.participants.filter((participant) => form.selectedParticipantIds.includes(participant.id))
-      const newParticipant = form.newParticipantName
-        ? { id: createId('participant'), name: form.newParticipantName }
-        : null
-      const object = form.objectLabel
-        ? { label: form.objectLabel, kind: form.objectKind }
-        : null
+      const modalities = extra.modalities || (selected.length ? selected : ['internal'])
+      const target = leastConnectedParticipant(derived, basis.id, guidance?.participantId)
+      const labels = modalities.map(modalityLabel)
       const updated = await integrateInteraction(runtime, {
         actor: basis,
-        participants: [...selectedParticipants, ...(newParticipant ? [newParticipant] : [])],
-        object,
-        modalities: form.modalities,
-        intent: form.intent,
-        meaning: form.meaning,
-        platformAction: form.platformAction,
-        platformUrl: form.platformUrl,
-        moneyAmount: form.moneyAmount,
-        currency: form.currency,
-        moneyReference: form.moneyReference,
-        mediaUrl: form.mediaUrl,
-        mediaDescription: form.mediaDescription,
+        participants: target ? [target] : [],
+        objects: inferredObjects(modalities),
+        modalities,
+        intent: guidance?.title || 'Continue the strongest available relation.',
+        meaning: `The runtime observed continuation through ${labels.join(', ')}. Identity remains open and is updated from this relation rather than supplied as profile data.`,
+        platformAction: extra.platformAction || (modalities.includes('platform') ? 'boundary continuation observed' : ''),
+        platformUrl: extra.platformUrl || '',
+        moneyAmount: 0,
+        currency: 'USD',
+        mediaUrl: extra.mediaUrl || '',
+        mediaDescription: modalities.some((kind) => ['image', 'audio', 'video'].includes(kind)) ? 'Multimodal carrier observed by the closure runtime.' : '',
       })
       onIntegrated(updated)
-      setForm(EMPTY_INTERACTION)
     } catch (caught) {
-      setError(caught.message || String(caught))
+      setMessage(caught.message || String(caught))
     } finally {
       setBusy(false)
     }
   }
 
-  const hasMoney = form.modalities.includes('money')
-  const hasPlatform = form.modalities.includes('platform')
-  const hasMedia = form.modalities.some((kind) => ['image', 'audio', 'video'].includes(kind))
+  async function continueClipboardLink() {
+    setBusy(true)
+    setMessage('')
+    try {
+      const text = await navigator.clipboard.readText()
+      const url = new URL(text.trim())
+      if (!['http:', 'https:'].includes(url.protocol)) throw new Error('The clipboard does not contain a supported link.')
+      await continueClosure({ modalities: [...new Set([...selected, 'platform', 'internal'])], platformUrl: url.toString(), platformAction: 'linked from the current boundary context' })
+    } catch (caught) {
+      setMessage(caught.message || 'Clipboard access was unavailable or did not contain a link.')
+      setBusy(false)
+    }
+  }
 
   return (
     <section className="panel composer-panel">
-      <div className="section-heading">
-        <div><p className="eyebrow">Integrate into closure</p><h2>One interaction may carry many modalities</h2></div>
-        <span className="pill">Coins instantiate automatically</span>
+      <div className="section-heading"><div><p className="eyebrow">Continue closure</p><h2>No identity or description fields</h2></div><span className="pill">Identity learned over time</span></div>
+      <p className="section-copy">Choose the media currently carrying the relation. The runtime generates the continuation event, connects available internal nodes, preserves coin lineage, and updates the learned basis.</p>
+      {guidance ? <article className="guidance-card static selected-guidance"><div><span>{guidance.kind.replaceAll('-', ' ')}</span><h3>{guidance.title}</h3><p>{guidance.reason}</p></div></article> : null}
+      <div className="modality-grid" role="group" aria-label="Interaction media">
+        {MODALITIES.map((modality) => (
+          <button className={selected.includes(modality.id) ? 'modality-option selected' : 'modality-option'} type="button" key={modality.id} aria-pressed={selected.includes(modality.id)} onClick={() => toggle(modality.id)}>
+            <strong>{modality.label}</strong><span>{modality.description}</span>
+          </button>
+        ))}
       </div>
-      <p className="section-copy">
-        Do not choose a separate tag, payment, or media workflow. Describe one network continuation and select every medium through which it is occurring.
-      </p>
-      <form onSubmit={submit}>
-        <label>
-          Closure continuation
-          <textarea required rows="4" value={form.meaning} onChange={(event) => setForm({ ...form, meaning: event.target.value })} placeholder="How does this interaction continue the existing field and strengthen internal connection?" />
-        </label>
-        <label>
-          Current guidance or intent
-          <input value={form.intent} onChange={(event) => setForm({ ...form, intent: event.target.value })} placeholder="Connect the tutor, event, and shared audio explanation." />
-        </label>
-
-        <fieldset>
-          <legend>Interaction media</legend>
-          <div className="modality-grid">
-            {MODALITIES.map((modality) => (
-              <label className={form.modalities.includes(modality.id) ? 'modality-option selected' : 'modality-option'} key={modality.id}>
-                <input type="checkbox" checked={form.modalities.includes(modality.id)} onChange={() => toggleModality(modality.id)} />
-                <strong>{modality.label}</strong><span>{modality.description}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <div className="field-grid two-columns">
-          <label>
-            Add a new participant basis
-            <input value={form.newParticipantName} onChange={(event) => setForm({ ...form, newParticipantName: event.target.value })} placeholder="Local tutor" />
-          </label>
-          <label>
-            Connect a communal object
-            <input value={form.objectLabel} onChange={(event) => setForm({ ...form, objectLabel: event.target.value })} placeholder="Learning event, service, project, product, or idea" />
-          </label>
-        </div>
-        {form.objectLabel ? (
-          <label>
-            Object kind
-            <select value={form.objectKind} onChange={(event) => setForm({ ...form, objectKind: event.target.value })}>
-              {['communal-object', 'project', 'service', 'business', 'event', 'product', 'idea', 'resource'].map((kind) => <option key={kind} value={kind}>{kind}</option>)}
-            </select>
-          </label>
-        ) : null}
-
-        {derived.participants.length > 1 ? (
-          <fieldset>
-            <legend>Existing participants carried into this continuation</legend>
-            <div className="participant-picker">
-              {derived.participants.filter((participant) => participant.id !== basis.id).map((participant) => (
-                <label key={participant.id}>
-                  <input type="checkbox" checked={form.selectedParticipantIds.includes(participant.id)} onChange={() => toggleParticipant(participant.id)} />
-                  <span>{participantLabel(participant)}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        ) : null}
-
-        {hasPlatform ? (
-          <div className="carrier-fields">
-            <p className="field-title">Platform boundary carrier</p>
-            <div className="field-grid two-columns">
-              <label>Platform action<input value={form.platformAction} onChange={(event) => setForm({ ...form, platformAction: event.target.value })} placeholder="Shared, followed, referred, linked, invited" /></label>
-              <label>Platform reference<input type="url" value={form.platformUrl} onChange={(event) => setForm({ ...form, platformUrl: event.target.value })} placeholder="https://..." /></label>
-            </div>
-          </div>
-        ) : null}
-
-        {hasMoney ? (
-          <div className="carrier-fields">
-            <p className="field-title">Money-transfer carrier</p>
-            <div className="field-grid three-columns">
-              <label>Amount<input type="number" min="0" step="0.01" value={form.moneyAmount} onChange={(event) => setForm({ ...form, moneyAmount: event.target.value })} /></label>
-              <label>Currency<input maxLength="8" value={form.currency} onChange={(event) => setForm({ ...form, currency: event.target.value.toUpperCase() })} /></label>
-              <label>Transfer reference<input value={form.moneyReference} onChange={(event) => setForm({ ...form, moneyReference: event.target.value })} placeholder="Receipt, payment link, or transaction note" /></label>
-            </div>
-          </div>
-        ) : null}
-
-        {hasMedia ? (
-          <div className="carrier-fields">
-            <p className="field-title">Multimodal carrier</p>
-            <div className="field-grid two-columns">
-              <label>Media reference<input type="url" value={form.mediaUrl} onChange={(event) => setForm({ ...form, mediaUrl: event.target.value })} placeholder="https://..." /></label>
-              <label>Media role<input value={form.mediaDescription} onChange={(event) => setForm({ ...form, mediaDescription: event.target.value })} placeholder="Audio explanation, image invitation, video response" /></label>
-            </div>
-          </div>
-        ) : null}
-
-        {error ? <p className="error-message">{error}</p> : null}
-        <button className="button primary wide" type="submit" disabled={busy}>
-          {busy ? 'Integrating interaction…' : 'Integrate and instantiate closure coin'}
-        </button>
-      </form>
+      <div className="button-row continuation-actions">
+        <button className="button primary" type="button" disabled={busy} onClick={() => continueClosure()}>{busy ? 'Integrating…' : 'Continue current relation'}</button>
+        <button className="button secondary" type="button" disabled={busy} onClick={continueClipboardLink}>Continue a link from clipboard</button>
+      </div>
+      <p className="field-note">Money carriers are observed structurally in this field-only prototype. Actual amounts and counterparties should arrive later from payment connectors, not manual identity forms.</p>
+      {message ? <p className="error-message">{message}</p> : null}
     </section>
   )
 }
 
 function CoinLedger({ derived, symbol }) {
   const children = new Map()
-  for (const coin of derived.coins) {
-    for (const parent of coin.parents) children.set(parent, (children.get(parent) || 0) + 1)
-  }
+  for (const coin of derived.coins) for (const parent of coin.parents) children.set(parent, (children.get(parent) || 0) + 1)
   return (
     <section className="coin-grid">
       {[...derived.coins].reverse().map((coin) => (
@@ -486,12 +238,8 @@ function CoinLedger({ derived, symbol }) {
             <div className="coin-topline"><span>Closure coin #{coin.index}</span><strong>{coin.units} relational unit{coin.units === 1 ? '' : 's'}</strong></div>
             <p>{coin.meaning}</p>
             <div className="chip-row">{coin.carriers.map((carrier) => <span key={carrier}>{modalityLabel(carrier)}</span>)}</div>
-            {coin.money.length ? <p className="money-shadow">Money carrier: {coin.money.map((money) => formatMoney(money.amount, money.currency)).join(' · ')}</p> : null}
-            <dl className="coin-lineage">
-              <div><dt>Parents</dt><dd>{coin.parents.length || 'origin'}</dd></div>
-              <div><dt>Later continuations</dt><dd>{children.get(coin.id) || 0}</dd></div>
-              <div><dt>Connected nodes</dt><dd>{coin.nodes.length}</dd></div>
-            </dl>
+            {coin.money.some((money) => money.amount > 0) ? <p className="money-shadow">Money carrier: {coin.money.filter((money) => money.amount > 0).map((money) => formatMoney(money.amount, money.currency)).join(' · ')}</p> : null}
+            <dl className="coin-lineage"><div><dt>Parents</dt><dd>{coin.parents.length || 'origin'}</dd></div><div><dt>Later continuations</dt><dd>{children.get(coin.id) || 0}</dd></div><div><dt>Connected nodes</dt><dd>{coin.nodes.length}</dd></div></dl>
             <code>{coin.id}</code>
           </div>
         </article>
@@ -507,13 +255,11 @@ function NetworkGraph({ runtime, derived }) {
       ...derived.participants.map((participant) => ({ id: `participant:${participant.id}`, label: participantLabel(participant), kind: 'participant' })),
       ...derived.objects.map((object) => ({ id: `object:${object.id}`, label: object.label, kind: 'object' })),
     ]
-    const width = 940
-    const height = 540
-    const radius = Math.min(width, height) * 0.37
+    const width = 940, height = 540, radius = Math.min(width, height) * 0.37
     const positioned = nodes.map((node, index) => {
       if (node.kind === 'field') return { ...node, x: width / 2, y: height / 2 }
-      const nonFieldCount = Math.max(1, nodes.length - 1)
-      const angle = (Math.PI * 2 * Math.max(0, index - 1)) / nonFieldCount - Math.PI / 2
+      const count = Math.max(1, nodes.length - 1)
+      const angle = (Math.PI * 2 * Math.max(0, index - 1)) / count - Math.PI / 2
       return { ...node, x: width / 2 + Math.cos(angle) * radius, y: height / 2 + Math.sin(angle) * radius }
     })
     return { width, height, nodes: positioned, byId: new Map(positioned.map((node) => [node.id, node])) }
@@ -521,49 +267,36 @@ function NetworkGraph({ runtime, derived }) {
 
   return (
     <section className="panel network-panel">
-      <div className="section-heading"><div><p className="eyebrow">Internal connection topology</p><h2>The closure field, not the external platform, is the graph</h2></div></div>
-      <div className="network-scroll">
-        <svg className="network-svg" viewBox={`0 0 ${layout.width} ${layout.height}`} role="img" aria-label="Unified TagTokn closure network">
-          {derived.edges.map((edge, index) => {
-            const from = layout.byId.get(edge.from)
-            const to = layout.byId.get(edge.to)
-            if (!from || !to) return null
-            return (
-              <g className="edge" key={`${edge.eventDigest}-${index}`}>
-                <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
-                <text x={(from.x + to.x) / 2} y={(from.y + to.y) / 2 - 7}>{edge.modalities.slice(0, 2).map(modalityLabel).join(' + ')}</text>
-              </g>
-            )
-          })}
-          {layout.nodes.map((node) => (
-            <g className={`node node-${node.kind}`} key={node.id}>
-              <circle cx={node.x} cy={node.y} r={node.kind === 'field' ? 42 : 29} />
-              <text x={node.x} y={node.y + (node.kind === 'field' ? 62 : 48)} textAnchor="middle">{node.label.slice(0, 28)}</text>
-            </g>
-          ))}
-        </svg>
-      </div>
-      <div className="network-legend"><span><i className="legend-dot field" /> Closure field</span><span><i className="legend-dot participant" /> Participant basis</span><span><i className="legend-dot object" /> Communal object</span></div>
+      <div className="section-heading"><div><p className="eyebrow">Internal connection topology</p><h2>The graph learns identity through relations</h2></div></div>
+      <div className="network-scroll"><svg className="network-svg" viewBox={`0 0 ${layout.width} ${layout.height}`} role="img" aria-label="Unified TagTokn closure network">
+        {derived.edges.map((edge, index) => {
+          const from = layout.byId.get(edge.from), to = layout.byId.get(edge.to)
+          if (!from || !to) return null
+          return <g className="edge" key={`${edge.eventDigest}-${index}`}><line x1={from.x} y1={from.y} x2={to.x} y2={to.y} /><text x={(from.x + to.x) / 2} y={(from.y + to.y) / 2 - 7}>{edge.modalities.slice(0, 2).map(modalityLabel).join(' + ')}</text></g>
+        })}
+        {layout.nodes.map((node) => <g className={`node node-${node.kind}`} key={node.id}><circle cx={node.x} cy={node.y} r={node.kind === 'field' ? 42 : 29} /><text x={node.x} y={node.y + (node.kind === 'field' ? 62 : 48)} textAnchor="middle">{node.label.slice(0, 28)}</text></g>)}
+      </svg></div>
+      <div className="network-legend"><span><i className="legend-dot field" /> Closure field</span><span><i className="legend-dot participant" /> Emerging basis</span><span><i className="legend-dot object" /> Learned communal context</span></div>
     </section>
   )
 }
 
-function BasisPanel({ state, derived, onShare }) {
+function IdentityPanel({ runtime, basis, derived, onShare }) {
+  const identity = useMemo(() => deriveIdentity(runtime, basis.id), [runtime, basis.id])
+  const ranked = Object.entries(identity.modalityCounts).sort((left, right) => right[1] - left[1])
   return (
     <section className="panel identity-panel">
       <div>
-        <p className="eyebrow">Current relational basis</p>
-        <h2>{participantLabel(state.basis)}</h2>
-        <p>{state.basis.handle || 'No external handle required'}</p>
-        <code>{state.basis.id}</code>
+        <p className="eyebrow">Learned relational identity</p>
+        <h2>{identity.label}</h2>
+        <p>{Math.round(identity.confidence * 100)}% runtime depth · identity remains revisable</p>
+        <code>{basis.id}</code>
       </div>
       <div className="identity-principles">
-        <h3>{state.runtime.field.name}</h3>
-        <p>{state.runtime.field.mission}</p>
-        <p>
-          This basis is not a detached account. It is one participant node admitted through the same append-only runtime that carries money, links, media, social actions, objects, and coin lineage.
-        </p>
-        <dl className="basis-stats"><div><dt>Participants</dt><dd>{derived.participants.length}</dd></div><div><dt>Coins</dt><dd>{derived.coins.length}</dd></div><div><dt>Modalities</dt><dd>{Object.keys(derived.modalityCounts).length}</dd></div></dl>
+        <h3>No declared profile</h3>
+        <p>This basis is represented only by its continuing pattern across internal connection, money, platforms, language, media, events, and collaboration.</p>
+        <dl className="basis-stats"><div><dt>Observed events</dt><dd>{identity.eventCount}</dd></div><div><dt>Relations</dt><dd>{identity.relationCount}</dd></div><div><dt>Modalities</dt><dd>{ranked.length}</dd></div><div><dt>Coins carried</dt><dd>{derived.coins.filter((coin) => coin.nodes.includes(`participant:${basis.id}`)).length}</dd></div></dl>
+        <div className="chip-row">{ranked.map(([kind, count]) => <span key={kind}>{modalityLabel(kind)} · {count}</span>)}</div>
         <button className="button secondary" type="button" onClick={onShare}>Share complete runtime</button>
       </div>
     </section>
@@ -572,13 +305,11 @@ function BasisPanel({ state, derived, onShare }) {
 
 export default function App() {
   const [state, setState] = useState(() => loadRuntimeState())
+  const [booting, setBooting] = useState(true)
   const [activeTab, setActiveTab] = useState('field')
   const [selectedGuidance, setSelectedGuidance] = useState(null)
   const [notice, setNotice] = useState('')
   const [urlError, setUrlError] = useState('')
-
-  const derived = useMemo(() => state.runtime ? deriveRuntime(state.runtime) : null, [state.runtime])
-  const guidance = useMemo(() => state.runtime ? deriveGuidance(state.runtime) : [], [state.runtime])
 
   function commit(nextState) {
     saveRuntimeState(nextState)
@@ -587,66 +318,55 @@ export default function App() {
   }
 
   useEffect(() => {
-    const encoded = new URLSearchParams(window.location.search).get('runtime')
-    if (!encoded) return
-    try {
-      const runtime = decodeRuntime(encoded)
-      const existing = loadRuntimeState()
-      const next = { runtime, basis: existing.basis }
-      commit(next)
-      setUrlError('')
-    } catch (caught) {
-      setUrlError(caught.message || 'The shared closure runtime could not be decoded.')
+    let active = true
+    async function boot() {
+      try {
+        const existing = loadRuntimeState()
+        const encoded = new URLSearchParams(window.location.search).get('runtime')
+        const next = encoded ? await adoptRuntime(existing, decodeRuntime(encoded)) : await ensureRuntimeState(existing)
+        if (!active) return
+        commit(next)
+        if (encoded) window.history.replaceState({}, '', window.location.pathname)
+        setUrlError('')
+      } catch (caught) {
+        if (active) setUrlError(caught.message || 'The closure runtime could not be opened.')
+      } finally {
+        if (active) setBooting(false)
+      }
     }
+    boot()
+    return () => { active = false }
   }, [])
 
-  async function createField(input) {
-    const next = await createRuntimeState(input)
-    commit(next)
-  }
-
-  async function enterField(input) {
-    const next = await admitBasis(state, input)
-    commit(next)
-    window.history.replaceState({}, '', window.location.pathname)
-  }
+  const derived = useMemo(() => state.runtime ? deriveRuntime(state.runtime) : null, [state.runtime])
+  const guidance = useMemo(() => state.runtime ? deriveGuidance(state.runtime) : [], [state.runtime])
 
   function updateRuntime(runtime) {
-    const next = replaceRuntime(state, runtime)
-    commit(next)
+    commit(replaceRuntime(state, runtime))
     window.history.replaceState({}, '', buildRuntimeUrl(runtime))
     setActiveTab('field')
     setSelectedGuidance(null)
-    setNotice('Interaction integrated. A new closure coin was instantiated from the updated runtime.')
+    setNotice('Interaction integrated. Identity and coin lineage were updated from the relation.')
   }
 
   async function shareRuntime() {
     const url = buildRuntimeUrl(state.runtime)
     try {
-      if (navigator.share) {
-        await navigator.share({ title: state.runtime.field.name, text: state.runtime.field.mission, url })
-      } else {
-        await navigator.clipboard.writeText(url)
-        setNotice('Complete runtime URL copied.')
-      }
+      if (navigator.share) await navigator.share({ title: state.runtime.field.name, text: state.runtime.field.mission, url })
+      else { await navigator.clipboard.writeText(url); setNotice('Complete runtime URL copied.') }
     } catch (caught) {
       if (caught?.name !== 'AbortError') setNotice('The runtime could not be shared.')
     }
   }
 
-  if (!state.runtime) return <SetupField onCreate={createField} />
-  if (!state.basis) return <EnterSharedField runtime={state.runtime} onEnter={enterField} />
+  if (booting || !state.runtime || !state.basis || !derived) return <BootScreen />
 
   return (
     <div className="app-shell">
       <header className="site-header">
-        <button className="brand-button" type="button" onClick={() => setActiveTab('field')}>
-          <span className="brand-mark">T</span><span>TagTokn</span>
-        </button>
+        <button className="brand-button" type="button" onClick={() => setActiveTab('field')}><span className="brand-mark">T</span><span>TagTokn</span></button>
         <nav aria-label="Primary navigation">
-          {[['field', 'Closure field'], ['integrate', 'Integrate'], ['coins', `Coins (${derived.coins.length})`], ['network', 'Network'], ['basis', 'Basis']].map(([id, label]) => (
-            <button className={activeTab === id ? 'nav-button active' : 'nav-button'} type="button" key={id} onClick={() => setActiveTab(id)}>{label}</button>
-          ))}
+          {[['field', 'Closure field'], ['continue', 'Continue'], ['coins', `Coins (${derived.coins.length})`], ['network', 'Network'], ['identity', 'Identity']].map(([id, label]) => <button className={activeTab === id ? 'nav-button active' : 'nav-button'} type="button" key={id} onClick={() => setActiveTab(id)}>{label}</button>)}
         </nav>
         <button className="button secondary compact-action" type="button" onClick={shareRuntime}>Share runtime</button>
       </header>
@@ -655,31 +375,17 @@ export default function App() {
         {urlError ? <p className="error-message">{urlError}</p> : null}
         {notice ? <p className="notice-message">{notice}</p> : null}
 
-        {activeTab === 'field' ? (
-          <>
-            <section className="hero">
-              <p className="eyebrow">{state.runtime.field.symbol} · unified closure runtime</p>
-              <h1>{state.runtime.field.name}</h1>
-              <p>{state.runtime.field.mission}</p>
-              <div className="closure-sequence"><span>Money</span><span>Platforms</span><span>Messages</span><span>Media</span><span>Events</span><span>Collaboration</span><b>→</b><span>Internal connection</span></div>
-            </section>
-            <MetricGrid derived={derived} />
-            <GuidancePanel guidance={guidance} onIntegrate={(item) => { setSelectedGuidance(item); setActiveTab('integrate') }} />
-            <InteractionStream runtime={state.runtime} />
-          </>
-        ) : null}
+        {activeTab === 'field' ? <>
+          <section className="hero"><p className="eyebrow">{state.runtime.field.symbol} · identity-learning closure runtime</p><h1>{state.runtime.field.name}</h1><p>{state.runtime.field.mission}</p><div className="closure-sequence"><span>Observe</span><span>Relate</span><span>Integrate</span><span>Learn identity</span><span>Instantiate coin</span><b>→</b><span>Deeper connection</span></div></section>
+          <MetricGrid derived={derived} />
+          <GuidancePanel guidance={guidance} onContinue={(item) => { setSelectedGuidance(item); setActiveTab('continue') }} />
+          <InteractionStream runtime={state.runtime} />
+        </> : null}
 
-        {activeTab === 'integrate' ? <IntegrateInteraction runtime={state.runtime} basis={state.basis} initialGuidance={selectedGuidance} onIntegrated={updateRuntime} /> : null}
-
-        {activeTab === 'coins' ? (
-          <>
-            <section className="page-heading"><p className="eyebrow">Closure-instantiated coins</p><h1>Coin lineage is network continuation.</h1><p>No participant manually mints these units. Each appears when the closure field integrates a relational change, and later interactions carry earlier coins forward through money, links, media, and internal connections.</p></section>
-            <CoinLedger derived={derived} symbol={state.runtime.field.symbol} />
-          </>
-        ) : null}
-
+        {activeTab === 'continue' ? <ContinueClosure runtime={state.runtime} basis={state.basis} guidance={selectedGuidance} onIntegrated={updateRuntime} /> : null}
+        {activeTab === 'coins' ? <><section className="page-heading"><p className="eyebrow">Closure-instantiated coins</p><h1>Coin lineage records learned relation.</h1><p>Each coin appears from an integrated interaction. It preserves modalities, connected nodes, prior lineage, and any monetary shadow without requiring manual mint or identity entry.</p></section><CoinLedger derived={derived} symbol={state.runtime.field.symbol} /></> : null}
         {activeTab === 'network' ? <NetworkGraph runtime={state.runtime} derived={derived} /> : null}
-        {activeTab === 'basis' ? <BasisPanel state={state} derived={derived} onShare={shareRuntime} /> : null}
+        {activeTab === 'identity' ? <IdentityPanel runtime={state.runtime} basis={state.basis} derived={derived} onShare={shareRuntime} /> : null}
       </main>
     </div>
   )
