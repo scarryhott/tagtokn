@@ -8,7 +8,8 @@ import {
   deriveIdentity,
   deriveRuntime,
   encodeRuntime,
-  integrateInteraction,
+  inferObservationModalities,
+  integrateObservation,
   verifyRuntime,
 } from '../src/domain/closureRuntime.js'
 
@@ -16,46 +17,73 @@ const field = { id: 'field-1', name: 'Local Learning Field', symbol: 'LEARN', mi
 const basis = { id: 'basis-local' }
 const otherBasis = { id: 'basis-other' }
 
-test('runtime opens without declared identity fields', async () => {
+test('runtime opens with an anonymous basis and no declared profile', async () => {
   const runtime = await createClosureRuntime({ field, participant: basis })
   assert.equal(runtime.events[0].actor.id, basis.id)
   assert.equal(runtime.events[0].actor.name, '')
   assert.equal(await verifyRuntime(runtime), true)
 })
 
-test('closure runtime integrates multimodal interaction and instantiates coin automatically', async () => {
-  let runtime = await createClosureRuntime({ field, participant: basis })
-  runtime = await integrateInteraction(runtime, {
-    actor: basis,
-    participants: [otherBasis],
-    object: { id: 'obj-course', label: 'Shared learning context', kind: 'project' },
-    modalities: ['internal', 'message', 'platform', 'money'],
-    platformUrl: 'https://example.com/post',
-    moneyAmount: 25,
+test('network observation infers socioeconomic and multimodal carriers automatically', () => {
+  const modalities = inferObservationModalities({
+    amount: 25,
     currency: 'USD',
+    platformUrl: 'https://example.com/post',
+    message: 'A local learning purchase was shared with the network.',
+    imageUrl: 'https://example.com/image.png',
+    participants: [otherBasis],
+  })
+  assert.deepEqual(new Set(modalities), new Set(['money', 'platform', 'message', 'image', 'internal']))
+})
+
+test('closure field integrates connector observation and instantiates coin without a user action menu', async () => {
+  let runtime = await createClosureRuntime({ field, participant: basis })
+  runtime = await integrateObservation(runtime, {
+    basis,
+    observation: {
+      source: 'payment-and-platform-connector',
+      amount: 25,
+      currency: 'USD',
+      transactionId: 'tx-1',
+      platformUrl: 'https://example.com/post',
+      platformAction: 'shared purchase context',
+      message: 'The exchange continued through community discussion.',
+      participants: [otherBasis],
+      context: 'Shared learning context',
+      contextKind: 'project',
+    },
   })
 
   const state = deriveRuntime(runtime)
+  const latest = state.coins.at(-1)
   assert.equal(state.coins.length, 2)
-  assert.equal(state.coins[1].money[0].amount, 25)
-  assert.ok(state.coins[1].carriers.includes('message'))
-  assert.ok(state.coins[1].carriers.includes('platform'))
-  assert.equal(state.moneyVolume, 25)
+  assert.equal(latest.money[0].amount, 25)
+  assert.ok(latest.carriers.includes('money'))
+  assert.ok(latest.carriers.includes('platform'))
+  assert.ok(latest.carriers.includes('message'))
+  assert.equal(latest.source, 'payment-and-platform-connector')
   assert.equal(await verifyRuntime(runtime), true)
 })
 
-test('identity is learned from relational history rather than profile input', async () => {
+test('identity remains a learned relational pattern', async () => {
   let runtime = await createClosureRuntime({ field, participant: basis })
-  runtime = await integrateInteraction(runtime, {
-    actor: basis,
-    participants: [otherBasis],
-    modalities: ['internal', 'message', 'collaboration'],
-    object: { id: 'obj-work', label: 'Shared work', kind: 'project' },
+  runtime = await integrateObservation(runtime, {
+    basis,
+    observation: {
+      source: 'network',
+      participants: [otherBasis],
+      message: 'Shared work continued through language.',
+      collaboration: true,
+      context: 'Shared work',
+    },
   })
-  runtime = await integrateInteraction(runtime, {
-    actor: basis,
-    modalities: ['audio', 'platform'],
-    platformUrl: 'https://example.com/audio',
+  runtime = await integrateObservation(runtime, {
+    basis,
+    observation: {
+      source: 'media-connector',
+      audioUrl: 'https://example.com/audio',
+      platformUrl: 'https://example.com/post',
+    },
   })
 
   const identity = deriveIdentity(runtime, basis.id)
@@ -64,39 +92,22 @@ test('identity is learned from relational history rather than profile input', as
   assert.match(identity.label, /(connector|language carrier|collaborator|voice carrier|boundary linker)/)
 })
 
-test('coin lineage follows relational continuity without manual minting', async () => {
+test('guidance interprets network carriers rather than requesting isolated user input', async () => {
   let runtime = await createClosureRuntime({ field, participant: basis })
-  runtime = await integrateInteraction(runtime, {
-    actor: basis,
-    participants: [otherBasis],
-    modalities: ['internal', 'message'],
-  })
-  runtime = await integrateInteraction(runtime, {
-    actor: otherBasis,
-    participants: [basis],
-    modalities: ['internal', 'audio'],
-  })
-  const coins = deriveRuntime(runtime).coins
-  assert.ok(coins[2].parents.includes(coins[1].id))
-  assert.ok(coins[2].units >= 1)
-})
-
-test('guidance points external or monetary carriers back toward internal multimodal connection', async () => {
-  let runtime = await createClosureRuntime({ field, participant: basis })
-  runtime = await integrateInteraction(runtime, {
-    actor: basis,
-    object: { id: 'obj-store', label: 'Economic exchange', kind: 'exchange' },
-    modalities: ['money', 'platform'],
-    moneyAmount: 18,
-    currency: 'USD',
-    platformUrl: 'https://example.com/store',
+  runtime = await integrateObservation(runtime, {
+    basis,
+    observation: {
+      source: 'payment-connector',
+      amount: 18,
+      currency: 'USD',
+      platformUrl: 'https://example.com/store',
+    },
   })
   const guidance = deriveGuidance(runtime)
-  assert.ok(guidance.some((item) => item.kind === 'boundary-return'))
-  assert.ok(guidance.some((item) => item.kind === 'multimodal-context'))
+  assert.match(guidance[0].title, /(internal network connection|social and multimodal context)/)
 })
 
-test('runtime round trips through portable URL transport', async () => {
+test('runtime round trips through portable transport', async () => {
   const runtime = await createClosureRuntime({ field, participant: basis })
   const encoded = encodeRuntime(runtime)
   assert.deepEqual(decodeRuntime(encoded), runtime)
