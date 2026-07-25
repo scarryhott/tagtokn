@@ -1,154 +1,166 @@
-# TagTokn
+# TagTokn transparent closure architecture
 
-TagTokn is a unified relational network closure runtime.
-
-The interface is not a dashboard where an isolated user selects actions. It is an ambient multimodal field whose socioeconomic input is supplied by the network itself: payment systems, platform actions, messages, images, audio, video, events, collaboration, communal objects, internal contracts, and internal relations.
-
-## Runtime law
+TagTokn begins with a verifiable socioeconomic integration pipeline rather than a visual network metaphor.
 
 ```text
-C(t+1) = Integrate(C(t), network observation, carriers, relations, communal context)
+source event
+→ verified raw transport
+→ deterministic versioned adapter
+→ observed facts + declared inference
+→ native contract transition or external evidence
+→ append-only closure digest
 ```
 
-Every admitted observation updates the same append-only runtime. Closure coins arise deterministically from relational continuation; they are not manually minted. Money is one carrier within the relation rather than a separate terminal settlement system.
+An event is rejected when its signature cannot be verified or durable append-only storage is unavailable. The server does not accept unpersisted events and does not generate demonstration ledger records.
 
-## Interface law
+## Implemented endpoints
 
-The screen contains no:
+### Stripe payments
 
-- identity or profile form,
-- descriptive input field,
-- amount or counterparty field,
-- modality selector,
-- metric dashboard,
-- action menu,
-- terminal close button.
+`POST /api/webhooks/stripe`
 
-The visible interface renders:
+- verifies the `Stripe-Signature` header against the untouched raw request body;
+- preserves the Stripe event ID, event type, object ID, amount in minor units, currency, status, metadata, and raw payload digest;
+- maps relational metadata through a declared, versioned adapter;
+- records payment success, failure, refund, and dispute as evidence;
+- never advances an internal contract to fulfilled merely because payment succeeded;
+- rejects duplicates through the provider event ID.
 
-- the live closure field,
-- the multimodal carriers currently moving through it,
-- communal contexts learned from network activity,
-- the incoming append-only interaction stream,
-- the current relational tendency toward deeper internal connection,
-- an identity pattern learned from continuing relations,
-- and concrete integration guidance for payment providers, external platforms, and internal relational contracts.
+Supported initial events:
 
-## Integration architecture
+- `payment_intent.succeeded`
+- `payment_intent.payment_failed`
+- `charge.refunded`
+- `charge.dispute.created`
+- `checkout.session.completed`
 
-The participant does not manually choose a payment, platform, or contract action inside TagTokn. The system that already produced the action emits an event. A verified adapter converts that event into one normalized relational observation.
+Recommended PaymentIntent metadata:
 
-```text
-provider or internal system
-        ↓
-verified adapter
-        ↓
-normalized closure observation
-        ↓
-shared append-only closure field
-```
-
-### Payment systems
-
-1. Receive a confirmed payment-provider webhook in a server route.
-2. Verify the provider signature and reject duplicate or untrusted events.
-3. Resolve the payer, recipient, communal context, and any related platform or contract references.
-4. Submit one normalized observation to the closure ingestion endpoint.
-
-```js
+```json
 {
-  source: 'payment-connector',
-  amount: 25,
-  currency: 'USD',
-  transactionId: 'provider-event-id',
-  participants: [{ id: 'payer-basis' }, { id: 'recipient-basis' }],
-  context: 'Community exchange',
-  relation: 'payment continued an existing communal relation'
+  "contract_id": "contract-001",
+  "payer_basis_id": "basis-payer",
+  "recipient_basis_id": "basis-provider",
+  "communal_context": "local service agreement"
 }
 ```
 
-### Platform and media systems
+### Platform and external-system adapters
 
-1. Receive an approved webhook, export, share-extension event, or native client event.
-2. Preserve the platform reference without importing platform ranking or profile claims as truth.
-3. Relate the action to known participants and a communal context.
-4. Submit the platform action and its media carriers as one observation.
+`POST /api/closure/observe`
 
-```js
-{
-  source: 'platform-connector',
-  platformAction: 'shared community project',
-  platformUrl: 'https://platform.example/item',
-  message: 'Discussion continued around the project.',
-  imageUrl: 'https://cdn.example/context.jpg',
-  participants: [{ id: 'basis-a' }, { id: 'basis-b' }],
-  context: 'Shared project'
-}
-```
-
-### Internal relational contracts
-
-Internal contracts are append-only relational contexts, not isolated documents. Proposed, accepted, fulfilled, disputed, and revised transitions all continue the same contract relation.
-
-```js
-{
-  source: 'internal-contract',
-  contractId: 'contract-001',
-  contractState: 'accepted',
-  participants: [{ id: 'provider-basis' }, { id: 'community-basis' }],
-  context: 'Local service agreement',
-  collaboration: true,
-  relation: 'mutual commitment accepted',
-  evidence: ['proposal-digest', 'acceptance-digest']
-}
-```
-
-Payment, media, platform, evidence, completion, and dispute events should all reference the same `contractId` and communal context. Closure-coin lineage records continuation; it must never become a human-worth score.
-
-## Network observation contract
-
-The browser prototype accepts observations through:
-
-- `window.TagTokn.observe(observation)`,
-- a `tagtokn:observe` browser event,
-- `window.postMessage` using `type: 'tagtokn:observation'`,
-- or the `tagtokn-closure-input` `BroadcastChannel`.
-
-The production target is:
+Requests are signed with:
 
 ```text
-POST /api/closure/observe
+X-TagTokn-Signature: sha256=<HMAC_SHA256(TAGTOKN_CONNECTOR_SECRET, raw_request_body)>
 ```
 
-That endpoint should:
+The envelope requires an explicit separation between facts observed at the provider boundary and relations inferred by the adapter:
 
-- authenticate the connector,
-- verify provider signatures,
-- enforce idempotency,
-- preserve external references,
-- normalize events into the shared observation schema,
-- append them to persistent storage,
-- and broadcast the resulting closure continuation to connected clients.
+```json
+{
+  "sourceSystem": "github",
+  "sourceEventId": "delivery-123",
+  "sourceEventType": "pull_request.merged",
+  "occurredAt": "2026-07-25T12:00:00.000Z",
+  "observed": {
+    "repository": "owner/repo",
+    "pullRequest": 42,
+    "merged": true
+  },
+  "inferred": {
+    "relationType": "collaboration-continued",
+    "inferenceBasis": ["adapter-rule-v1"]
+  }
+}
+```
 
-The runtime infers the relevant carriers and integrates them as one event. A payment plus a platform share plus a message plus a contract transition is one socioeconomic closure observation, not four disconnected user commands.
+External rankings, profiles, and platform classifications are not imported as closure truth.
 
-## Identity remains open
+### Native internal contracts
 
-A device receives an anonymous local basis automatically. Identity is learned from recurring relations, communal contexts, economic carriers, platform-boundary continuation, collaboration, events, media, contracts, and closure-coin lineage. The resulting description remains provisional and revisable.
+`POST /api/contracts/transition`
 
-## Closure coins
+Internal contracts are append-only state transitions. The current state is read from durable storage, the proposed transition is validated, and the new state is written atomically with the closure ledger record.
 
-A closure coin records the event digest, connected nodes, media and economic carriers, prior lineage, communal context, contract references, and source connector. Its numerical units are only a structural multiplicity of relational continuation; they are not a human score or an externally assigned price.
+```json
+{
+  "contractId": "contract-001",
+  "sourceEventId": "transition-002",
+  "nextState": "accepted",
+  "participants": [
+    { "id": "basis-payer" },
+    { "id": "basis-provider" }
+  ],
+  "evidence": [
+    "proposal-digest",
+    "acceptance-signature-digest"
+  ],
+  "acknowledgements": [
+    { "participant": "basis-payer", "signatureDigest": "sha256:..." },
+    { "participant": "basis-provider", "signatureDigest": "sha256:..." }
+  ]
+}
+```
 
-## Prototype boundary
+Initial state graph:
 
-The current runtime is device-local and can be transported by a complete shared runtime URL. The next layer is persistent append-only storage with authenticated participant keys, a production observation endpoint, payment adapters, platform adapters, and internal-contract storage. Those systems must supply observations to this same closure field rather than reintroducing separate profiles, dashboards, or manual action systems.
+```text
+none → proposed
+proposed → accepted | rejected | revised
+revised → accepted | rejected | revised
+accepted → active | revised | disputed | terminated
+active → fulfilled | revised | disputed | terminated
+disputed → resolved | revised | terminated
+resolved → active | fulfilled | terminated
+```
 
-## Development
+### Ledger and independent verification
+
+- `GET /api/closure/ledger?limit=30` returns configuration readiness, the current head digest, and recent records.
+- `POST /api/closure/verify` recomputes a record's normalized digest and resulting closure digest without trusting the stored verification label.
+
+Each record exposes:
+
+- raw payload digest;
+- signature scheme and verification result;
+- adapter ID, version, and mapping digest;
+- observed facts;
+- declared inference and its basis;
+- contract evidence or state transition;
+- previous closure digest;
+- normalized digest;
+- resulting closure digest.
+
+## Durable storage
+
+The append-only ledger uses Upstash Redis through its REST API. A Lua script performs duplicate detection, head compare-and-set, ledger append, and optional contract-state update atomically.
+
+Required Vercel environment variables:
+
+```text
+UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN
+STRIPE_WEBHOOK_SECRET
+TAGTOKN_CONNECTOR_SECRET
+```
+
+Do not expose these values to browser code.
+
+## Vercel setup
+
+1. Add an Upstash Redis integration to the `tagtokn` Vercel project or create a database and add its REST URL and standard token.
+2. Add `TAGTOKN_CONNECTOR_SECRET` as a strong random secret.
+3. Deploy the project.
+4. In Stripe, register `https://tagtokn.vercel.app/api/webhooks/stripe` and add the endpoint signing secret as `STRIPE_WEBHOOK_SECRET`.
+5. Send a Stripe test payment carrying the relational metadata above.
+6. Inspect `https://tagtokn.vercel.app` or `GET /api/closure/ledger` and reconcile every transformation.
+
+## Validation
 
 ```bash
-npm install
 npm test
-npm run dev
 npm run build
 ```
+
+The test suite checks canonical hashing, raw-body signature binding, payload-tamper rejection, Stripe normalization, observed/inferred separation, internal contract transition rules, deterministic closure digests, and independent mutation detection.
