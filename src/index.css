@@ -65,7 +65,32 @@ button, input, textarea, select { font: inherit; }
 .carrier-line span { color: var(--muted); font-size: .68rem; }
 .carrier-line span + span::before { content: '·'; margin-right: 7px; color: var(--accent); }
 
-.connector-boundary { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: end; margin-top: 36px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.06); color: var(--muted); font-size: .72rem; line-height: 1.55; }
+.integration-guidance { margin-top: 90px; padding-top: 68px; border-top: 1px solid rgba(255,255,255,.08); }
+.integration-intro { max-width: 820px; }
+.integration-intro h2 { margin: 0; font-size: clamp(2.2rem, 5vw, 4.8rem); line-height: 1; letter-spacing: -.05em; }
+.integration-intro > p:last-child { max-width: 760px; margin: 20px 0 0; color: #afc5b9; line-height: 1.65; }
+.integration-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 34px 0 42px; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; }
+.integration-flow span { padding: 10px 13px; border: 1px solid rgba(122,240,174,.16); border-radius: 999px; background: rgba(8,24,16,.52); }
+.integration-flow i { color: var(--accent); font-style: normal; }
+.integration-paths { display: grid; gap: 22px; }
+.integration-path { padding: 28px; border: 1px solid rgba(255,255,255,.07); border-radius: 28px; background: linear-gradient(145deg, rgba(10,31,20,.72), rgba(4,16,11,.32)); }
+.path-heading { display: grid; grid-template-columns: 48px 1fr; gap: 18px; }
+.path-heading > span { color: var(--accent); font-size: .74rem; font-weight: 900; letter-spacing: .12em; }
+.path-heading h3 { margin: 0; font-size: clamp(1.35rem, 3vw, 2.2rem); letter-spacing: -.035em; }
+.path-heading p { max-width: 820px; margin: 10px 0 0; color: #9fb6aa; line-height: 1.55; }
+.integration-path ol { display: grid; gap: 10px; margin: 26px 0 0 66px; padding-left: 18px; color: #c8dad0; line-height: 1.5; }
+.integration-path li::marker { color: var(--accent); font-weight: 850; }
+.contract-example { display: grid; grid-template-columns: 190px 1fr; gap: 18px; margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.06); }
+.contract-example > div { display: grid; align-content: start; gap: 7px; }
+.contract-example span, .ingestion-contract span { color: var(--muted); font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; }
+.contract-example code, .ingestion-contract code { color: var(--gold); font-size: .74rem; overflow-wrap: anywhere; }
+.contract-example pre { margin: 0; padding: 18px; overflow-x: auto; border: 1px solid rgba(126,188,255,.11); border-radius: 18px; background: rgba(1,9,5,.62); }
+.contract-example pre code { color: #bcd4c7; font-size: .72rem; line-height: 1.55; }
+.ingestion-contract { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 24px; padding: 26px 28px; border: 1px solid rgba(227,189,105,.16); border-radius: 24px; background: rgba(34,27,10,.16); }
+.ingestion-contract > div { display: grid; gap: 7px; }
+.ingestion-contract p { grid-column: 1 / -1; margin: 2px 0 0; color: #aebfb5; line-height: 1.6; }
+
+.connector-boundary { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: end; margin-top: 50px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.06); color: var(--muted); font-size: .72rem; line-height: 1.55; }
 .connector-boundary code { color: #638274; font-size: .68rem; }
 
 .opening-field { min-height: 100vh; display: grid; place-items: center; align-content: center; gap: 14px; text-align: center; background: radial-gradient(circle, rgba(122,240,174,.09), transparent 26rem); }
@@ -88,6 +113,8 @@ button, input, textarea, select { font: inherit; }
   .carrier { transform: translate(-50%, -50%) rotate(var(--angle)) translateX(175px) rotate(calc(var(--angle) * -1)); }
   .stream-event { grid-template-columns: 1fr; gap: 10px; }
   .carrier-line { grid-column: 1; }
+  .contract-example { grid-template-columns: 1fr; }
+  .integration-path ol { margin-left: 20px; }
   .connector-boundary { grid-template-columns: 1fr; }
 }
 
@@ -101,5 +128,11 @@ button, input, textarea, select { font: inherit; }
   .carrier { width: 88px; min-height: 46px; transform: translate(-50%, -50%) rotate(var(--angle)) translateX(142px) rotate(calc(var(--angle) * -1)); font-size: .64rem; }
   .context-node { display: none; }
   .closure-core { width: 116px; height: 116px; }
+  .integration-guidance { margin-top: 64px; padding-top: 48px; }
+  .integration-path { padding: 22px 18px; }
+  .path-heading { grid-template-columns: 1fr; gap: 8px; }
+  .integration-path ol { margin-left: 0; }
+  .ingestion-contract { grid-template-columns: 1fr; padding: 22px 18px; }
+  .ingestion-contract p { grid-column: 1; }
   .connector-boundary code { overflow-wrap: anywhere; }
 }
