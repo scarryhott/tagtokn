@@ -50,9 +50,9 @@ test('classical Firebase and Instagram verification are absent', () => {
 })
 
 test('unified verification keeps OPEN, admitted return, residual opening, and contradiction distinct', () => {
-  assert.match(source, /Return still missing/)
-  assert.match(source, /Self-authored replay/)
-  assert.match(source, /FALSE_COLLAPSE/)
-  assert.match(source, /Independent recoverable return/)
-  assert.match(source, /CLOSED_TO_NEW_OPENING/)
+  assert.match(source, /RETURN_MODE_META/)
+  assert.match(source, /CLOSURE_STATUS\.OPEN/)
+  assert.match(source, /CLOSURE_STATUS\.FALSE_COLLAPSE/)
+  assert.match(source, /CLOSURE_STATUS\.CLOSED/)
+  assert.match(source, /CLOSURE_STATUS\.CLOSED_TO_NEW_OPENING/)
 })
