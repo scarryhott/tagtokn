@@ -4,14 +4,14 @@ import { dirname, resolve } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 
 const root = resolve(import.meta.dirname, '..')
-const sourceDir = resolve(root, 'src/app-source-v7')
+const sourceDir = resolve(root, 'src/app-source-v8')
 const outputPath = resolve(root, 'src/App.generated.jsx')
-const expectedSha256 = '10de7fc7bb5d57eb9e5b6d3823652d86e82717b14115b8e41b834bdfb6c4c030'
+const expectedSha256 = '05e55f71e1e4335018201c3a3b5445bec1786887710ed7e43733aa3c38bdb59e'
 const chunkNames = Array.from({ length: 8 }, (_, index) => `${String(index).padStart(2, '0')}.b64`)
 
 const encoded = chunkNames.map((name) => {
   const path = resolve(sourceDir, name)
-  if (!existsSync(path)) throw new Error(`Missing return-unified application source chunk: ${name}`)
+  if (!existsSync(path)) throw new Error(`Missing paper-audited application source chunk: ${name}`)
   return readFileSync(path, 'utf8').trim()
 }).join('')
 
@@ -19,7 +19,7 @@ const source = gunzipSync(Buffer.from(encoded, 'base64'))
 const actualSha256 = createHash('sha256').update(source).digest('hex')
 
 if (actualSha256 !== expectedSha256) {
-  throw new Error(`Return-unified application source digest mismatch: expected ${expectedSha256}, received ${actualSha256}`)
+  throw new Error(`Paper-audited application source digest mismatch: expected ${expectedSha256}, received ${actualSha256}`)
 }
 
 mkdirSync(dirname(outputPath), { recursive: true })
