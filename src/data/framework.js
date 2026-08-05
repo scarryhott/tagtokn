@@ -37,11 +37,14 @@ export const whiteHoleSources = [
   { year: '2024', title: 'Spin-foam amplitude of the transition', authors: 'Muxin Han, Dongxue Qu, and Cong Zhang', result: 'A numerical transition amplitude on a finite 2-complex, with orientation-changing terms dominating in the studied model.', comparison: 'Orientation change is dynamically represented rather than merely named.', boundary: 'Finite model and conjectural physical process; not direct detection.', href: 'https://arxiv.org/abs/2404.02796' },
 ]
 
+const rawBase = 'https://raw.githubusercontent.com/scarryhott/tagtokn/main'
+const blobBase = 'https://github.com/scarryhott/tagtokn/blob/main'
+
 export const documents = [
-  { title: 'Version 5.0 — Transcript and Evidence Edition', meta: 'Markdown · repository edition', href: '/documents/BLACK_MIRROR_CLOSURE_AXIOMETRY_TRANSCRIPT_EVIDENCE_EDITION.md' },
-  { title: 'Version 4.1 — Connected Return Integrated', meta: 'Markdown · source-paper archive', href: '/documents/BLACK_MIRROR_CLOSURE_AXIOMETRY_WHITEPAPER_CONNECTED_RETURN_INTEGRATED_V4_1.md' },
-  { title: 'Transcript quotation index', meta: 'Markdown · direct quotation corpus', href: '/transcripts/TRANSCRIPT_QUOTATION_INDEX.md' },
-  { title: 'Evidence ledger', meta: 'JSON · machine-readable evidence status', href: '/data/evidence-ledger.json' },
-  { title: 'Xenobot evidence table', meta: 'CSV · bounded empirical measurements', href: '/data/xenobot-evidence.csv' },
-  { title: 'Artifact index', meta: 'Markdown · tests, results, and availability', href: '/research/ARTIFACT_INDEX.md' },
+  { title: 'Version 5.0 — Transcript and Evidence Edition', meta: 'Markdown · repository edition', href: `${blobBase}/documents/BLACK_MIRROR_CLOSURE_AXIOMETRY_TRANSCRIPT_EVIDENCE_EDITION.md` },
+  { title: 'Version 4.1 — Connected Return Integrated', meta: 'Markdown · source-paper archive', href: `${blobBase}/documents/BLACK_MIRROR_CLOSURE_AXIOMETRY_WHITEPAPER_CONNECTED_RETURN_INTEGRATED_V4_1.md` },
+  { title: 'Transcript quotation index', meta: 'Markdown · direct quotation corpus', href: `${blobBase}/transcripts/TRANSCRIPT_QUOTATION_INDEX.md` },
+  { title: 'Evidence ledger', meta: 'JSON · machine-readable evidence status', href: `${rawBase}/data/evidence-ledger.json` },
+  { title: 'Xenobot evidence table', meta: 'CSV · bounded empirical measurements', href: `${rawBase}/data/xenobot-evidence.csv` },
+  { title: 'Artifact index', meta: 'Markdown · tests, results, and availability', href: `${blobBase}/research/ARTIFACT_INDEX.md` },
 ]
