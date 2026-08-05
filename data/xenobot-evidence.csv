@@ -1,0 +1,9 @@
+measurement,observed_value,unit_or_scope,status,boundary
+Embryo pool mean coefficient of variation,1.2537,pooled transcriptomics,PUBLISHED/SOURCE-DERIVED,not same-individual longitudinal variability
+Xenobot pool mean coefficient of variation,2.6115,pooled transcriptomics,PUBLISHED/SOURCE-DERIVED,not same-individual longitudinal variability
+Post/pre coefficient of variation ratio,2.083,ratio,PUBLISHED/SOURCE-DERIVED,descriptive variability witness only
+Genes with greater Xenobot variability,96.06,percent of 25276 included genes,PUBLISHED/SOURCE-DERIVED,between-condition evidence
+Uniquely upregulated transcripts,537,project high-stringency threshold,PUBLISHED/SOURCE-DERIVED,threshold-dependent
+Lacerated Xenobots recovering characteristic morphology,15/15,aggregate organisms,PUBLISHED/SOURCE-DERIVED,target policy not independently measured
+Most visible wound closure,approximately 5,minutes,PUBLISHED/SOURCE-DERIVED,visual aggregate observation
+Recorded trajectory positions,345592,positions from eight organisms,PUBLISHED/SOURCE-DERIVED,trajectory quotient not phenomenal memory
