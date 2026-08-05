@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "repository": {
+    "provider": "github",
+    "fullName": "scarryhott/tagtokn",
+    "productionBranch": "main",
+    "rootDirectory": "."
+  },
+  "vercelProject": {
+    "projectId": "prj_eZGLHSZcMUMr3yvllDhmyaDILHz2",
+    "projectSlug": "tagtoken",
+    "teamId": "team_8lwRiE0ISUD66ftmTcnduSCb",
+    "teamSlug": "harrys-projects-08015ef2"
+  },
+  "build": {
+    "framework": "vite",
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist"
+  },
+  "requestedDeployment": {
+    "url": "https://tagtoken-gxcqxpti5-harrys-projects-08015ef2.vercel.app",
+    "role": "deployment-reference-not-project-identity",
+    "verificationStatus": "NOT_FOUND_AT_2026-08-05T21:16:00Z"
+  },
+  "bindingRule": "The Vercel project ID, team ID, GitHub repository, and production branch are authoritative. A generated deployment hostname is an immutable deployment reference and must not be used as the project identity."
+}
