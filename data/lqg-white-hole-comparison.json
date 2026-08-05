@@ -1,0 +1,37 @@
+[
+  {
+    "source": "Rovelli and Vidotto, Planck stars (2014)",
+    "url": "https://arxiv.org/abs/1401.6562",
+    "establishes": "Quantum-gravity pressure/bounce scenario with short proper time and long external time.",
+    "closure_comparison": "Local/global time asymmetry and return after extreme compression.",
+    "boundary": "Proposal, not observed white-hole evidence or proof of Black Mirror closure."
+  },
+  {
+    "source": "Haggard and Rovelli, Black hole fireworks (2014/2015)",
+    "url": "https://arxiv.org/abs/1407.0989",
+    "establishes": "Geometry outside a finite quantum region for black-to-white-hole tunneling.",
+    "closure_comparison": "A bounded transition region mediates an orientation-changing return.",
+    "boundary": "Ball-hair language does not supply this metric or tunneling dynamics."
+  },
+  {
+    "source": "Bianchi et al., White holes as remnants (2018)",
+    "url": "https://arxiv.org/abs/1802.04264",
+    "establishes": "White-hole remnant scenario for late black-hole evaporation and retained information.",
+    "closure_comparison": "Returned history after apparent external completion.",
+    "boundary": "Remnant stability and phenomenology remain open."
+  },
+  {
+    "source": "Han, Rovelli, and Soltani, Geometry of the black-to-white transition (2023)",
+    "url": "https://arxiv.org/abs/2302.03872",
+    "establishes": "A singularity-free Lorentzian metric in one asymptotic region with loop-quantum-cosmology corrections.",
+    "closure_comparison": "Interior and exterior charts are related by a global transition-duration parameter.",
+    "boundary": "Specific gravitational model; no cross-domain identity follows."
+  },
+  {
+    "source": "Han, Qu, and Zhang, Spin-foam amplitude (2024)",
+    "url": "https://arxiv.org/abs/2404.02796",
+    "establishes": "A numerical transition amplitude on a finite 2-complex.",
+    "closure_comparison": "Orientation change is dynamically represented rather than merely named.",
+    "boundary": "Finite model and conjectural process, not direct astrophysical detection."
+  }
+]
