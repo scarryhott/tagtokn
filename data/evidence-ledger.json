@@ -1,0 +1,22 @@
+{
+  "edition": "5.0",
+  "date": "2026-08-05",
+  "method": "transcript basis -> operational translation -> bounded evidence -> explicit boundary",
+  "current_snapshot": {
+    "connected_return": { "run": 14, "passed": 14, "status": "RERUNNABLE" },
+    "emergent_topology": { "run": 13, "passed": 13, "status": "RERUNNABLE" },
+    "react_projection": { "run": 12, "passed": 12, "status": "RERUNNABLE" },
+    "combined": { "run": 39, "passed": 39, "status": "RERUNNABLE" },
+    "arc_monolithic": {
+      "status": "BLOCKED",
+      "reason": "missing arc_agi dependency and live game assets"
+    }
+  },
+  "reported_artifacts": {
+    "whole_loop_ablation": { "complete_loops": 2, "ablations": 24, "false_admissions": 0 },
+    "coevolutionary_architecture": { "tests": 94, "passed": 94, "primitive_relations": 64, "higher_relations": 63, "occurrences": 254, "cells": 127, "levels": 7 },
+    "closure_chaitin": { "tests": 24, "passed": 24, "strings": 5, "shared_contacts": 4, "labeled_occurrences": 36 },
+    "radical_numerics": { "reported_checks": 28 }
+  },
+  "boundary": "Counts establish declared finite controls only. They do not establish unrestricted AGI, a universal topology, RH, or a physical black-to-white-hole identity."
+}

@@ -1,26 +1,7 @@
-# Dependencies
 node_modules/
-.npm_cache/
-
-# Environment (NEVER commit keys)
-.env
-.env.local
-.env.*.local
-
-# Build output
 dist/
-
-# Local SQLite / runtime data
-data/
-*.db
-:memory:
-:memory:*
-**/:memory:*
-
-# OS files
+.vercel/
+.env
+.env.*
+!.env.example
 .DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/

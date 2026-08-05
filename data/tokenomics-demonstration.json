@@ -1,0 +1,21 @@
+{
+  "unsupported_dilution": {
+    "external_support": 100,
+    "initial_supply": 10,
+    "initial_basis_price": 10,
+    "unsupported_new_supply": 10,
+    "final_supply": 20,
+    "final_basis_price": 5
+  },
+  "circular_transfer": {
+    "external_support": 100,
+    "transfers": [
+      { "from": "A", "to": "B", "amount": 500 },
+      { "from": "B", "to": "A", "amount": 500 }
+    ],
+    "gross_archived_activity": 1100,
+    "network_integration": 100,
+    "new_integration_from_internal_cycle": 0
+  },
+  "interpretation": "Internal cycles remain auditable but do not create another independent relation or closure rank."
+}

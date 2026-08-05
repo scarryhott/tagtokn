@@ -2,27 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, refactor/transcript-evidence-framework]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
-  build-and-test:
+  test-and-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: npm
-
+          node-version: '24'
       - name: Install
-        run: npm ci
-
+        run: npm install
       - name: Test
         run: npm test
-
-      - name: Build client
+      - name: Build
         run: npm run build
