@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { documents, evidence, transcriptQuotes, whiteHoleSources } from './data/framework.js'
 
+const paperUrl = 'https://github.com/scarryhott/tagtokn/blob/main/documents/BLACK_MIRROR_CLOSURE_AXIOMETRY_TRANSCRIPT_EVIDENCE_EDITION.md'
 const navItems = [
   ['framework', 'Framework'], ['transcript', 'Transcript'], ['evidence', 'Evidence'],
   ['tokenomics', 'Tokenomics'], ['coevolution', 'Coevolution'], ['white-holes', 'White holes'],
@@ -40,7 +41,7 @@ export default function App() {
             <h1>Relation before object. Return before receipt.</h1>
             <blockquote>“closure means unity not isolation. closure maximizes focus because it is resolution of unity”</blockquote>
             <p className="hero-summary">Tagtokn is now a public research interface for Black Mirror closure axiometry, perspectival AGI, coevolution, and native network tokenomics. The theory begins with transcript statements. Formal models, tests, prices, and ledgers appear only as bounded evidence and projections.</p>
-            <div className="hero-actions"><a className="button button-primary" href="#framework">Enter the framework <ArrowIcon /></a><a className="button button-secondary" href="/documents/BLACK_MIRROR_CLOSURE_AXIOMETRY_TRANSCRIPT_EVIDENCE_EDITION.md">Read the paper</a></div>
+            <div className="hero-actions"><a className="button button-primary" href="#framework">Enter the framework <ArrowIcon /></a><a className="button button-secondary" href={paperUrl}>Read the paper</a></div>
           </div>
           <div className="hero-visual" aria-label="Closure sequence">
             <div className="orbit orbit-a" /><div className="orbit orbit-b" />
@@ -118,7 +119,7 @@ export default function App() {
         <div className="archive-note"><h3>Raw transcript archive status</h3><p>The migrated repository contains the Version 5.0 repository paper, the Version 4.1 source-paper archive, and the complete quotation corpus used by this site. The separately named raw archives <code>user_inputs_only(3).md</code> and <code>user_inputs_theory_only.md</code> were referenced by the paper but were not present as local files in the migration runtime, so the repository does not falsely represent reconstructed excerpts as those full raw archives.</p></div>
       </section>
 
-      <section className="section final-section"><blockquote>Closure is the originless unity that generates perspectives; perspectives transform the relation; independent return discloses what is recoverable; data verify a bounded translation; and every unresolved residual remains available as the next opening.</blockquote><a className="button button-primary" href="/documents/BLACK_MIRROR_CLOSURE_AXIOMETRY_TRANSCRIPT_EVIDENCE_EDITION.md">Open the complete paper <ArrowIcon /></a></section>
+      <section className="section final-section"><blockquote>Closure is the originless unity that generates perspectives; perspectives transform the relation; independent return discloses what is recoverable; data verify a bounded translation; and every unresolved residual remains available as the next opening.</blockquote><a className="button button-primary" href={paperUrl}>Open the complete paper <ArrowIcon /></a></section>
     </main>
 
     <footer><div><strong>TAGTOKN</strong><span>Black Mirror closure axiometry · transcript and evidence edition</span></div><p>Formal systems, ledgers, scores, and prices are projections of a relation—not its origin.</p></footer>
